@@ -27,7 +27,7 @@ Regeln: CLAUDE.md. Vorher klären: ADR-Nummern der SIM-Tickets (008 doppelt bele
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand: run_match hängt Fahrmodell, Sensormodelle (Odometrie/IMU/GPS ins Log), Kollisionen (Roboter/Roboter, Feldrand), Regelprüfer (SG2 beim Start, Matchende-Halt) ein; Handsteuerung per RobotSetup::open_loop bis zum Routen-Ticket. Tests: test/test_sim_integration.cpp. Nicht lokal gebaut (Toolchain fehlt), CI entscheidet. Abhängigkeit SIM-05 war noch im Review: Branch baut auf ticket/sim-05 auf (PR #15 zuerst mergen). Offen: SG3 (Höhe nicht in sim_params), Kollision mit Feldelementen (field.json null), Score-Spalte (SIM-10), CLI-Option für das Rauschprofil.
 
 Review PR #17 (KI, 2026-11-01), Empfehlung: ändern:
 1. Blocker: zirkuläre Includes world.hpp <-> sensor_models.hpp, Rng unbekannt (CI rot) → Rng nach sim/rng.hpp.
@@ -39,3 +39,4 @@ Review PR #17 (KI, 2026-11-01), Empfehlung: ändern:
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-01 · matelechner01 (KI) · Ticket angelegt (Lücke aus Reviews PR #11/#13) · –
+2026-11-01 · matelechner01 (KI) · run_match-Integration samt Tests

@@ -18,6 +18,26 @@ jobs:
       - name: Laptop-Tests ausführen
         run: ctest --test-dir build-test --output-on-failure
 
+  # Demo-Seite (Viewer + Demo-Logs) wie im Pages-Workflow; als Artefakt "viewer-demo" herunterladbar (Ordner entpacken,
+  # im Ordner "python3 -m http.server" starten, http://localhost:8000/ öffnen). Kein Pflicht-Check.
+  viewer-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Simulation bauen und Demo-Logs erzeugen
+        run: |
+          cmake -S test -B build-test -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-test --target frostbyte_sim
+          ./build-test/frostbyte_sim --demo --seed 1 --out viewer-demo/demo
+          test -s viewer-demo/demo/run000_stacker.csv
+          test -s viewer-demo/demo/run000_runner.csv
+          cp tools/viewer/index.html tools/viewer/logparse.js tools/viewer/robots.js viewer-demo/
+          cp field/field.json viewer-demo/field.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: viewer-demo
+          path: viewer-demo
+
   # Eigener Job statt Matrix, damit der Pflicht-Check "tests" seinen Namen behält.
   # Apples libc++ hinkt GCC hinterher (z. B. from_chars für double erst ab libc++ 20).
   # Bewusst macos-15 (Xcode 16, Apple clang 17) statt latest: so alt wie die Macs im Team.

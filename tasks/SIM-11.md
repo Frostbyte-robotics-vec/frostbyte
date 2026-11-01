@@ -24,8 +24,9 @@ Vom Menschen priorisiert (1.11.): die Simulation soll am nächsten Morgen im Bro
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand: sim/demo.* (apply_demo), frostbyte_sim --demo/--noise, Tests in test/test_sim_demo.cpp. Baut auf ticket/sim-09 (PR #17) auf. Nicht lokal gebaut, CI entscheidet. Die Fahrfolgen sind Platzhalter; ob sich die Roboter wirklich berühren, prüft der Test.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-01 · matelechner01 (KI) · Ticket angelegt · –
+2026-11-01 · matelechner01 (KI) · Demo-Szenario, --demo und --noise
