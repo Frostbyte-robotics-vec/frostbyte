@@ -35,7 +35,7 @@ PR-Text (Vorlage .github/pull_request_template.md):
   - tools/viewer/index.html: Feld 144″, beide Roboter in 3D (Modelle 1:1 aus reference/ via robots.js), Zeitregler mit
     Ereignis-Markierungen, Overlay beliebig vieler Logs über t_s (je Roboter erstes Log = Modell, weitere = Geist, Δ-Anzeige),
     Posen-Quelle Odometrie/GPS/wahr, Ereignisliste mit Filter und Sprung, Zustandstabelle, Versatz je Log, Draufsicht, Folgen.
-  - Läuft per Doppelklick (file://); three.js r128 per CDN (ADR-002). Ohne Internet: Tabellen/Ereignisse gehen, kein 3D.
+  - Läuft per Doppelklick (file://); three.js r128 per CDN (ADR-005). Ohne Internet: Tabellen/Ereignisse gehen, kein 3D.
   - Starre Modellteile werden zusammengefasst: 3 Modelle 3491 → 345 Zeichenaufrufe. ?stats zeigt Bilder/s.
   - logparse.js (Spalten nach Namen, leer = NaN, Gruppierung nach robot-Spalte, Interpolation inkl. Winkel), make_test_logs.py.
   ## Fertig-Kriterien
@@ -50,7 +50,7 @@ PR-Text (Vorlage .github/pull_request_template.md):
   ## Review (Mensch)
   - [ ] Code gelesen und verstanden
 
-Stand: tools/viewer/ index.html, logparse.js, logparse_test.js, robots.js, make_test_logs.py, test_*.py; ADR-002; docs/notes.md.
+Stand: tools/viewer/ index.html, logparse.js, logparse_test.js, robots.js, make_test_logs.py, test_*.py; ADR-005; docs/notes.md.
 Testen: python3 tools/viewer/make_test_logs.py --out out/viewer_test; index.html doppelklicken, CSVs hineinziehen.
 Oder python3 -m http.server 8765 im Repo und
 http://localhost:8765/tools/viewer/index.html?selftest&stats&log=../../out/viewer_test/sim_stacker.csv&log=../../out/viewer_test/robot_stacker.csv
@@ -62,9 +62,12 @@ Offene Fragen (für Menschen):
 docs/plan.md hat keinen Abschnitt zu SIM-07, gearbeitet nach Ticket-Text.
 Advisor-Rat umgesetzt: three.js fest auf r128 (ADR), file:// als Normalfall, Parser-Tests über osascript, Draw-Calls gemessen.
 
-Review (KI, PR #3) „ändern“: (1) ADR-002-viewer-threejs → ADR-005 umbenennen (ADR-002 ist S-04, 003/004 sind vergeben); (2) Start der Viewer-Tests in der Übergabe nennen; (3) Heading-Konvention/lift_deg im PR unter „Am echten Roboter“ aufführen. Browser-Flüssigkeit konnte die KI nicht prüfen.
+Review (KI, PR #3) „ändern“ – erledigt (2d6c422): (1) ADR → ADR-005; (2) Viewer-Tests: `python3 -m unittest discover -s tools/viewer -p "test_*.py"` → 16 ok, 0 übersprungen auf macOS, Gegenprobe (Mutation in logparse.js) schlägt fehl; (3) Heading/lift_deg im PR unter „Am echten Roboter“.
+main in den Branch eingemergt (kein Rebase); dabei docs/notes.md wiederhergestellt (Kopf + S-01-Einträge, bei PR #4 verloren).
+Offen: Roboter-Builds (keine ARM-Toolchain auf diesem Rechner), Bildrate im Browser (Mensch, ?stats), Node-Runner für Windows/CI (Vorschlag für S-03).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
-2026-11-01 · Arved Janssen (KI) · Viewer, Parser, Testlog-Generator, ADR-002, Performance · 395c17d
+2026-11-01 · Arved Janssen (KI) · Viewer, Parser, Testlog-Generator, ADR-005, Performance · 395c17d
 2026-11-01 · Arved Janssen (KI) · PR #3 geöffnet, Status review · –
+2026-11-01 · Arved Janssen (KI) · Review-Punkte PR #3 erledigt, main eingemergt · 2d6c422
