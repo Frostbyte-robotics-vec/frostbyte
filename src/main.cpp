@@ -8,26 +8,47 @@
 namespace {
 
 constexpr std::uint32_t control_period_ms = 10;
+constexpr std::uint32_t display_period_ms = 200;
 
 // Alles statisch: der Steuer-Task legt nach dem Start nichts an.
 frostbyte::PhaseFlag g_phase;
+frostbyte::SharedCycleStats g_cycle_stats;
+
+std::uint32_t micros_u32() { return static_cast<std::uint32_t>(pros::micros()); }
 
 // Ein Steuer-Task fuer alle Phasen. Die Callbacks setzen nur g_phase, damit beim Uebergang
-// Autonomie -> Fahrer kein Regler neu startet. Taktung mit task_delay_until (kein driftender Takt);
-// Jitter wird mit micros() gemessen. Nach einem Ueberzug wird das Raster uebersprungen statt nachgeholt.
+// Autonomie -> Fahrer kein Regler neu startet. Raster in millis() mit task_delay_until (kein Drift),
+// Jitter aus micros()-Abstaenden. Nach einem Ueberzug wird das Raster uebersprungen statt nachgeholt.
 void control_task(void*) {
-	// Raster ms-ausgerichtet starten: task_delay_until weckt auf ms-Ticks, sonst steckt ein fester Versatz im Jitter.
-	std::uint32_t wake_ms = pros::millis();
-	static frostbyte::ControlLoop loop(control_period_ms / 1000.0, wake_ms / 1000.0);
+	static frostbyte::ControlLoop loop(control_period_ms, pros::millis());
+	frostbyte::Phase last_phase = g_phase.get();
 	while (true) {
-		loop.begin(pros::micros() / 1e6);
-		// TODO: Sensoren lesen, Odometrie, Logik, Regler, Motoren schreiben (je nach g_phase.get()).
+		loop.begin(micros_u32());
+		const frostbyte::Phase phase = g_phase.get();
+		if (phase != last_phase) {
+			// Maxima je Phase: Ausreisser beim Start (initialize, LCD) sollen den Fahrbetrieb nicht ueberdecken.
+			loop.reset_stats();
+			last_phase = phase;
+		}
+		// TODO: Sensoren lesen, Odometrie, Logik, Regler, Motoren schreiben (je nach phase).
 		// TODO(RuleGuard): in Phase Disabled alle Motoren auf Halt (Ticket mit Regelwaechter).
-		loop.end(pros::micros() / 1e6);
-		// Rasterzeit des Loops (micros) -> naechster Wecker in ms, task_delay_until addiert die Periode selbst.
-		const std::uint32_t next_ms = static_cast<std::uint32_t>(loop.next_wake_s() * 1000.0 + 0.5);
-		wake_ms = next_ms - control_period_ms;
-		pros::c::task_delay_until(&wake_ms, control_period_ms);
+		loop.end(pros::millis(), micros_u32());
+		g_cycle_stats.publish(loop.stats());
+		std::uint32_t base_ms = frostbyte::delay_until_base_ms(loop.wake_ms(), control_period_ms);
+		pros::c::task_delay_until(&base_ms, control_period_ms);
+	}
+}
+
+// Zeigt die Takt-Statistik der aktuellen Phase auf dem LCD (Ablesen am Roboter, bis der Logger aus F-05 da ist).
+// Eigener Task mit niedriger Prioritaet: die Ausgabe bleibt aus dem Steuer-Task heraus. Liest nur, setzt nie zurueck.
+void display_task(void*) {
+	std::uint32_t now_ms = pros::millis();
+	while (true) {
+		const frostbyte::CycleStatsView v = g_cycle_stats.load();
+		pros::lcd::print(2, "jitter max %lu us", static_cast<unsigned long>(v.jitter_max_us));
+		pros::lcd::print(3, "cpu max %lu us  ueberzuege %lu", static_cast<unsigned long>(v.work_max_us),
+		                 static_cast<unsigned long>(v.overruns));
+		pros::c::task_delay_until(&now_ms, display_period_ms);
 	}
 }
 
@@ -37,6 +58,7 @@ void initialize() {
 	pros::lcd::initialize();
 	pros::lcd::set_text(1, config::robot_name);
 	static pros::Task task(control_task, nullptr, TASK_PRIORITY_MAX - 1, TASK_STACK_DEPTH_DEFAULT, "control");
+	static pros::Task display(display_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "display");
 }
 
 void disabled() { g_phase.set(frostbyte::Phase::Disabled); }
