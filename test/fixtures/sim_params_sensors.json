@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "rauschen_profile": {
+    "none": { "skala": 0.0 },
+    "realistic": { "skala": 1.0 },
+    "harsh": { "skala": 2.0 }
+  },
+  "roboter": {
+    "alpha": {
+      "sensoren": {
+        "tracking": { "skalierung_fehler": 0.01, "sigma_in_pro_takt": 0.1 },
+        "imu": { "drift_deg_pro_min": 2.0, "sigma_deg": 0.2 },
+        "gps": { "sigma_in": 1.0, "sigma_deg": 2.0, "aussetzer_anteil": 0.1, "guete_verlust_pro_in_s": 0.05 }
+      }
+    },
+    "beta": {
+      "sensoren": {
+        "encoder": { "skalierung_fehler": 0.02, "sigma_in_pro_takt": 0.3 },
+        "imu": { "drift_deg_pro_min": 1.0, "sigma_deg": 0.1 },
+        "gps": { "sigma_in": 0.5, "sigma_deg": 1.0, "aussetzer_anteil": 0.0, "guete_verlust_pro_in_s": 0.0 }
+      }
+    }
+  }
+}
