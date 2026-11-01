@@ -19,7 +19,7 @@ if(FB_SOURCES)
 else()
     set(FB_SCOPE INTERFACE)
 endif()
-target_include_directories(frostbyte_lib ${FB_SCOPE} "${FB_ROOT}/lib" "${FB_ROOT}/hal" "${FB_ROOT}")
+target_include_directories(frostbyte_lib ${FB_SCOPE} "${FB_ROOT}/lib" "${FB_ROOT}")
 
 file(GLOB FB_TESTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
 add_executable(frostbyte_tests main.cpp ${FB_TESTS})

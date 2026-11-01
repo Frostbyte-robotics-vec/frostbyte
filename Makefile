@@ -27,7 +27,7 @@ WARNFLAGS+=
 ROBOT_DEFINE:=$(if $(filter stacker,$(ROBOT)),FROSTBYTE_ROBOT_STACKER,FROSTBYTE_ROBOT_RUNNER)
 # -iquote$(ROOT): config/ liegt ausserhalb von include/
 EXTRA_CFLAGS=-D$(ROBOT_DEFINE)
-EXTRA_CXXFLAGS=-D$(ROBOT_DEFINE) -iquote$(ROOT)
+EXTRA_CXXFLAGS=-D$(ROBOT_DEFINE) -iquote$(ROOT) -iquote$(ROOT)/lib
 
 # Set to 1 to enable hot/cold linking
 # Frostbyte: 0, weil pros upload die Ausgabe-Pfade aus project.pros liest und BINDIR je Roboter verschieden ist (ADR-003)
