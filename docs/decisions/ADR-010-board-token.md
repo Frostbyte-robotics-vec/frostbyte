@@ -1,4 +1,4 @@
-# ADR-009: board-done.yml pusht mit BOARD_TOKEN
+# ADR-010: board-done.yml pusht mit BOARD_TOKEN
 
 Status: angenommen (1. Nov 2026), Ticket S-06.
 
