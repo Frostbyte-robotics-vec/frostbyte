@@ -153,6 +153,22 @@ TEST_CASE("ControlLoop: reset_stats() beim Phasenwechsel, danach zaehlen die Tak
     CHECK(loop.stats().jitter_max_us() == 300u);
 }
 
+TEST_CASE("ControlLoop: reset_stats() in der Reihenfolge des Steuer-Tasks (zwischen begin und end)") {
+    ControlLoop loop(10, 0);
+    loop.begin(0);
+    loop.end(1, 1000);
+    loop.begin(16'000);  // Phasenwechsel erkannt in diesem Takt, nach dem Ausreisser
+    loop.reset_stats();
+    loop.end(17, 17'000);
+    CHECK(loop.stats().jitter_max_us() == 0u);
+    CHECK(loop.stats().work_max_us() == 1000u);  // Rechenzeit des laufenden Takts zaehlt schon zur neuen Phase
+    loop.begin(20'200);  // kein Vorgaenger: zaehlt nicht
+    loop.end(21, 21'200);
+    CHECK(loop.stats().jitter_max_us() == 0u);
+    loop.begin(30'500);  // erst der uebernaechste Abstand zaehlt
+    CHECK(loop.stats().jitter_max_us() == 300u);
+}
+
 TEST_CASE("SharedCycleStats: Anzeige-Task liest, was der Steuer-Task veroeffentlicht") {
     SharedCycleStats shared;
     CHECK(shared.load().jitter_max_us == 0u);
