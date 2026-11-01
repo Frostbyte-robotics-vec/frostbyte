@@ -588,12 +588,15 @@ renderLogList();
 const q = new URLSearchParams(location.search);
 const fetchText = u => fetch(u).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); });
 if (location.protocol !== 'file:') {
-  fetchText(q.get('field') || '../../field/field.json').then(t => loadField(t, 'field.json')).catch(() => {});
-  Promise.all(q.getAll('log').map(u => fetchText(u).then(t => [u, t]))).then(list => {
+  // Lokal liegt das Feld zwei Ordner höher, auf der Veröffentlichung (Pages) neben dem Viewer.
+  fetchText(q.get('field') || '../../field/field.json').catch(() => fetchText('field.json')).then(t => loadField(t, 'field.json')).catch(() => {});
+  // Ohne ?log=… lädt die Veröffentlichung die Demo (demo/run000_*.csv, falls vorhanden).
+  const logUrls = q.getAll('log').length ? q.getAll('log') : (q.has('nodemo') ? [] : ['demo/run000_stacker.csv', 'demo/run000_runner.csv']);
+  Promise.all(logUrls.map(u => fetchText(u).then(t => [u, t]))).then(list => {
     list.forEach(([u, t]) => addLog(t, u.split('/').pop()));
     if (q.has('t')) setTime(+q.get('t'));
     document.body.dataset.ready = '1';
-  }).catch(e => { document.body.dataset.ready = 'fehler ' + e.message; });
+  }).catch(e => { document.body.dataset.ready = q.getAll('log').length ? 'fehler ' + e.message : '1'; });
 } else document.body.dataset.ready = '1';
 if (q.has('selftest')) {
   const s = document.createElement('script'); s.src = 'logparse_test.js';

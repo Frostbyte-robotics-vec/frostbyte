@@ -24,8 +24,9 @@ Vom Menschen priorisiert (1.11.): die Simulation soll am nächsten Morgen im Bro
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand: dashboard.yml baut frostbyte_sim, erzeugt Demo-Logs und legt Viewer + Demo + field.json nach site/viewer/ (Board-Seite verlinkt „Simulation ansehen“); Viewer lädt demo/run000_*.csv ohne Parameter (?nodemo schaltet ab, Feld-Fallback field.json). ci.yml: Job viewer-demo prüft die Pipeline schon im PR und stellt das Artefakt viewer-demo bereit. Der Pages-Workflow selbst läuft nur auf main und ist deshalb erst nach dem Merge belegt. Nicht lokal gebaut.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-01 · matelechner01 (KI) · Ticket angelegt · –
+2026-11-01 · matelechner01 (KI) · Pages-Veröffentlichung, Viewer-Autoload, CI-Artefakt
