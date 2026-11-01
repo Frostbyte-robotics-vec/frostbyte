@@ -30,13 +30,16 @@ WAYPOINTS = {
     "runner": [("START", 48, 48), ("A", 36, 12), ("B", 50, -24), ("C", 18, -46), ("D", 24, 30), ("E", 54, 2)],
 }
 
-# Phasen am Wegpunkt: (Zustand, Dauer s, Lift-Soll Grad, Arm-Soll Grad, Greifer Zoll)
+# Liftwinkel unten/oben wie im Modell tools/viewer/reference/ (nur Darstellung, keine Hardwarewerte).
+LIFT_DEG = {"stacker": (-40.0, 45.0), "runner": (-20.0, 60.0)}
+
+# Phasen am Wegpunkt: (Zustand, Dauer s, Lift-Soll als Anteil unten→oben, Arm-Soll Grad, Greifer Zoll)
 PHASES = [
-    ("GREIFEN", 0.5, 0, 0, 0.0),
-    ("HEBEN", 0.8, 300, 60, 0.0),
-    ("AM_GOAL", 0.4, 300, 60, 0.0),
-    ("SETZEN", 0.5, 260, 45, 2.0),
-    ("RUECKZUG", 0.6, 0, 0, 2.0),
+    ("GREIFEN", 0.5, 0.0, 0, 0.0),
+    ("HEBEN", 0.8, 1.0, 60, 0.0),
+    ("AM_GOAL", 0.4, 1.0, 60, 0.0),
+    ("SETZEN", 0.5, 0.85, 45, 2.0),
+    ("RUECKZUG", 0.6, 0.0, 0, 2.0),
 ]
 SPEED_IN_S = 30.0
 TURN_DEG_S = 240.0
@@ -55,7 +58,8 @@ def simulate(robot, rng):
     wps = WAYPOINTS[robot]
     x, y = wps[0][1], wps[0][2]
     h = 45.0 if robot == "stacker" else -135.0   # Grad, 0° = +x (rot → blau), gegen Uhrzeigersinn positiv
-    lift = arm = 0.0
+    lo, hi = LIFT_DEG[robot]
+    lift, arm = lo, 0.0
     claw = 2.0
     wi, phase, phase_t = 1, None, 0.0
     score, has_cup, has_pin = 0, 0, 0
@@ -65,7 +69,7 @@ def simulate(robot, rng):
         t = k * DT_S
         events = []
         name, wx, wy = wps[wi]
-        lift_set, arm_set, claw_set = 0.0, 0.0, 2.0
+        lift_set, arm_set, claw_set = lo, 0.0, 2.0
         if phase is None:
             dx, dy = wx - x, wy - y
             dist = math.hypot(dx, dy)
@@ -81,7 +85,8 @@ def simulate(robot, rng):
                 phase, phase_t = 0, 0.0
                 has_cup = 1
         if phase is not None:
-            cycle, dur, lift_set, arm_set, claw_set = PHASES[phase]
+            cycle, dur, lift_f, arm_set, claw_set = PHASES[phase]
+            lift_set = lo + lift_f * (hi - lo)
             if cycle == "GREIFEN" and robot == "stacker" and wi % 3 == 0:
                 has_pin = 1
             phase_t += DT_S
