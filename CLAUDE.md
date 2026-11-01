@@ -8,7 +8,8 @@ Plan und Tickets: docs/plan.md. Immer genau ein Ticket pro Branch und PR.
 - Laptop:   cmake -S test -B build-test && cmake --build build-test && ctest --test-dir build-test
 - Simulation: ./build-test/frostbyte_sim --stacker routes/skills_stacker.route --runner routes/skills_runner.route --runs 20 --out out/sim/
 - Bericht:    python tools/sim_report.py out/sim/   ·   Viewer: tools/viewer/index.html im Browser öffnen
-- Vor jedem Commit: Laptop-Tests grün, beide Roboter bauen.
+- Format:     python3 tools/format.py (formatiert) · python3 tools/format.py --check (wie die CI)
+- Vor jedem Commit: Format ok, Laptop-Tests grün, beide Roboter bauen.
 
 ## Architektur (nicht verletzen)
 - 5 Schichten: match → tasks → subsystems → control/localization → hal. Nur nach unten aufrufen.

@@ -1,0 +1,15 @@
+name: format
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  clang-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install clang-format==18.1.8
+      - run: python3 tools/format.py --check
