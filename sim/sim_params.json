@@ -20,7 +20,7 @@
       "sensoren": {
         "tracking": { "skalierung_fehler": 0.005, "sigma_in_pro_takt": 0.01 },
         "imu": { "drift_deg_pro_min": 1.0, "sigma_deg": 0.05 },
-        "gps": { "sigma_in": 0.5, "sigma_deg": 1.0, "aussetzer_anteil": 0.02, "guete_verlust_pro_in_s": 0.02 }
+        "gps": { "sigma_in": 0.5, "sigma_deg": 1.0, "aussetzer_anteil": 0.02, "guete_verlust_pro_in_s": 0.02, "quelle": "schaetzung (sigma_deg neu in SIM-03)" }
       }
     },
     "runner": {
@@ -34,7 +34,7 @@
       "sensoren": {
         "encoder": { "skalierung_fehler": 0.01, "sigma_in_pro_takt": 0.02 },
         "imu": { "drift_deg_pro_min": 1.0, "sigma_deg": 0.05 },
-        "gps": { "sigma_in": 0.5, "sigma_deg": 1.0, "aussetzer_anteil": 0.02, "guete_verlust_pro_in_s": 0.02 }
+        "gps": { "sigma_in": 0.5, "sigma_deg": 1.0, "aussetzer_anteil": 0.02, "guete_verlust_pro_in_s": 0.02, "quelle": "schaetzung (sigma_deg neu in SIM-03)" }
       }
     }
   },

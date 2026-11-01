@@ -161,14 +161,16 @@ TEST_CASE("GPS: Güte sinkt mit der Fahrgeschwindigkeit, Rauschen folgt der geme
     CHECK(stats_of(ex).sigma == doctest::Approx(2.0).epsilon(0.10));
 }
 
-TEST_CASE("GPS: Aussetzeranteil +-10 % der Vorgabe (20000 Proben: 10 % in 1000 Proben streuen zu stark)") {
-    const SensorParams p = alpha();
-    GpsModel m(p.gps, p.noise_scale, 23);
-    const int n = 20000;
+TEST_CASE("GPS: Aussetzeranteil +-10 % der Vorgabe in 1000 Proben") {
+    // Eigener Wert 0,5: erwartet 500 Aussetzer, Streuung 16 (3,2 %), +-10 % sind rund 3 Sigma.
+    GpsParams gp;
+    gp.sigma_in = 1.0;
+    gp.dropout_fraction = 0.5;
+    GpsModel m(gp, 1.0, 23);
     int invalid = 0;
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < samples; ++i)
         invalid += m.measure(0, 0, 0, 0).valid ? 0 : 1;
-    CHECK(static_cast<double>(invalid) / n == doctest::Approx(0.1).epsilon(0.10));
+    CHECK(static_cast<double>(invalid) / samples == doctest::Approx(0.5).epsilon(0.10));
 }
 
 TEST_CASE("GPS: Aussetzer verschiebt die übrigen Messungen nicht") {

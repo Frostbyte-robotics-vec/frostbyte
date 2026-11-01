@@ -24,7 +24,7 @@ Details im Plan: docs/plan.md (Ticket SIM-03). Regeln: CLAUDE.md.
 —
 
 ## Übergabe
-Stand: Modelle fertig und getestet (sim/sensor_models.hpp/.cpp, test/test_sim_sensor_models.cpp). Odometrie (Tracking/Encoder), IMU (Drift+Rauschen), GPS (Rauschen, Aussetzer, Güte~Geschwindigkeit), Rauschprofil skaliert alles. Noch nicht in run_match eingehängt: das braucht das Fahrmodell (SIM-02) für wahre Wege/Posen. Neuer Schlüssel gps.sigma_deg (Schätzung). Aussetzer-Test nutzt 20000 statt 1000 Proben (siehe docs/notes.md).
+Stand: Modelle fertig und getestet (sim/sensor_models.hpp/.cpp, test/test_sim_sensor_models.cpp). Odometrie (Tracking/Encoder), IMU (Drift+Rauschen), GPS (Rauschen, Aussetzer, Güte~Geschwindigkeit), Rauschprofil skaliert alles. Noch nicht in run_match eingehängt: das braucht das Fahrmodell (SIM-02) für wahre Wege/Posen. Neuer Schlüssel gps.sigma_deg (Schätzung). Entscheidungen in ADR-008. Aussetzer-Test mit eigenem Wert 0,5 (1000 Proben).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
