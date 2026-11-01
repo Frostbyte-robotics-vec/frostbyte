@@ -1,4 +1,4 @@
-# ADR-008: Sensormodelle der Simulation
+# ADR-010: Sensormodelle der Simulation
 
 Status: angenommen (1. Nov 2026), Ticket SIM-03. Der Advisor (Opus) hat den Stand vor /finish geprüft; sein Hinweis, die Tests an eigene Werte statt an Schätzwerte zu binden und die Entscheidungen hier festzuhalten, ist eingearbeitet.
 
