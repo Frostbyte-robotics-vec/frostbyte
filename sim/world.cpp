@@ -53,15 +53,15 @@ public:
         out_ << buf << '\n' << logfmt::columns << '\n';
     }
 
-    void row(int t_ms) {
+    // truth: wahre Pose aus dem Fahrmodell; leer, solange die Startpose null ist (keine Pose erfinden).
+    void row(int t_ms, const std::optional<Pose>& truth) {
         logfmt::Row r;
         r.t_s = t_ms / 1000.0;
         r.robot = robot_.name.c_str();
-        if (robot_.start) {
-            // Ohne Fahrmodell steht der Roboter an der Startpose (wahre Pose).
-            r.tx_in = robot_.start->x_in;
-            r.ty_in = robot_.start->y_in;
-            r.th_deg = robot_.start->h_deg;
+        if (truth) {
+            r.tx_in = truth->x_in;
+            r.ty_in = truth->y_in;
+            r.th_deg = truth->h_deg;
         }
         char buf[512];
         if (logfmt::format_row(buf, sizeof buf, r) >= static_cast<int>(sizeof buf))
@@ -93,8 +93,10 @@ SimConfig load_config(const std::string& params_path, const std::string& field_p
         throw std::runtime_error("sim_params welt: log_ms muss die Matchdauer (" + std::to_string(match_ms) +
                                  " ms) ohne Rest teilen");
 
-    cfg.stacker = {"stacker", start_pose(field, "START_STACKER"), load_route(stacker_route)};
-    cfg.runner = {"runner", start_pose(field, "START_RUNNER"), load_route(runner_route)};
+    cfg.stacker = {"stacker", start_pose(field, "START_STACKER"), load_route(stacker_route),
+                   load_drive_params(params, "stacker")};
+    cfg.runner = {"runner", start_pose(field, "START_RUNNER"), load_route(runner_route),
+                  load_drive_params(params, "runner")};
     return cfg;
 }
 
@@ -120,18 +122,33 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
     (void)rng;
     RobotLog stacker(cfg.stacker, seed, cfg.build, stacker_csv);
     RobotLog runner(cfg.runner, seed, cfg.build, runner_csv);
+    // Ohne Startpose kein Fahrmodell: es gibt nichts, wovon die wahre Pose ausgehen koennte.
+    std::optional<DriveModel> stacker_drive, runner_drive;
+    if (cfg.stacker.start)
+        stacker_drive.emplace(cfg.stacker.drive, *cfg.stacker.start);
+    if (cfg.runner.start)
+        runner_drive.emplace(cfg.runner.drive, *cfg.runner.start);
+    const auto truth = [](const std::optional<DriveModel>& d) {
+        return d ? std::optional<Pose>(d->pose()) : std::nullopt;
+    };
+    const double dt_s = cfg.schritt_ms / 1000.0;
 
     RunResult result;
     // Zeit als ganzzahlige ms; t_s wird pro Zeile neu berechnet, nie aufaddiert.
+    // Je ms: Steuerung (auf ihrem Raster), Log des Zustands bei t_ms, dann Physik t_ms -> t_ms + schritt_ms.
     for (int t_ms = 0; t_ms <= match_ms; t_ms += cfg.schritt_ms) {
-        // Physik-Schritt: folgt mit dem Fahrmodell.
         if (t_ms % cfg.steuer_ms == 0)
             ++result.control_ticks;  // Steuerung beider Roboter: folgt mit dem Routen-Ticket
         if (t_ms % cfg.log_ms == 0) {
-            stacker.row(t_ms);
-            runner.row(t_ms);
+            stacker.row(t_ms, truth(stacker_drive));
+            runner.row(t_ms, truth(runner_drive));
             ++result.log_rows;
         }
+        // Noch kein Regler: 0 V, die Haftreibung haelt die Roboter an der Startpose.
+        if (stacker_drive)
+            stacker_drive->step(dt_s, 0.0, 0.0);
+        if (runner_drive)
+            runner_drive->step(dt_s, 0.0, 0.0);
     }
     return result;
 }

@@ -34,6 +34,9 @@ TEST_CASE("Welt: Raster aus sim_params, Startpose aus field, null bleibt leer") 
     CHECK(cfg.stacker.start->h_deg == doctest::Approx(90.0));
     CHECK_FALSE(cfg.runner.start.has_value());
     CHECK(cfg.stacker.route.empty());
+    CHECK(cfg.stacker.drive.kA_V_per_in_s2 == 0.04);  // Fahrmodell aus roboter.<name> (SIM-02)
+    CHECK(cfg.runner.drive.kA_V_per_in_s2 == 0.03);
+    CHECK(cfg.runner.drive.g_in_s2 == 386.1);
 }
 
 TEST_CASE("Welt: leere Route läuft 60 s durch, Zeilen- und Taktzahl exakt") {
