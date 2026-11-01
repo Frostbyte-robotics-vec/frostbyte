@@ -28,3 +28,8 @@ Details im Plan: docs/plan.md (Ticket SIM-03). Regeln: CLAUDE.md.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
+
+## Review-Punkte (KI, PR #11)
+1. Test für gps.sigma_deg (1000 Proben, ±10 %) ergänzen.
+2. Einhängen der Sensormodelle in run_match einem Ticket zuweisen.
+3. Vor Merge auf main rebasen.
