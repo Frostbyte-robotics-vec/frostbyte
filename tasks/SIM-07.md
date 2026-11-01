@@ -2,7 +2,7 @@
 id: SIM-07
 phase: "1b"
 titel: Browser-Viewer tools/viewer/index.html: CSV laden, Feld, beide Roboter in 3D (Vorlage tools/viewer/reference/), Zeitregler, Overlay zweier Logs, Ereignisliste
-status: blocked
+status: review
 owner: Arved Janssen
 branch: ticket/sim-07
 depends: []
@@ -25,9 +25,7 @@ Details im Plan: docs/plan.md (Ticket SIM-07). Regeln: CLAUDE.md.
 Dabei Heading-Konvention und Bedeutung von lift_deg am echten Roboter bestätigen (siehe offene Fragen).
 
 ## Übergabe
-blockiert – nur noch Pull Request öffnen: auf diesem Rechner fehlt `gh`. Code ist fertig und auf ticket/sim-07 gepusht.
-PR mit einem Klick: https://github.com/matelechner01/frostbyte/compare/main...ticket/sim-07?expand=1
-Danach Status auf review setzen (board.py status SIM-07 review, auf main pushen).
+In Review: https://github.com/matelechner01/frostbyte/pull/3 (Code auf ticket/sim-07).
 
 PR-Titel: SIM-07: Browser-Viewer für Logs (3D, Zeitregler, Overlay, Ereignisse)
 PR-Text (Vorlage .github/pull_request_template.md):
@@ -67,3 +65,4 @@ Advisor-Rat umgesetzt: three.js fest auf r128 (ADR), file:// als Normalfall, Par
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-01 · Arved Janssen (KI) · Viewer, Parser, Testlog-Generator, ADR-002, Performance · 395c17d
+2026-11-01 · Arved Janssen (KI) · PR #3 geöffnet, Status review · –
