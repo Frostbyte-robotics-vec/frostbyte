@@ -16,8 +16,9 @@ frostbyte::PhaseFlag g_phase;
 // Autonomie -> Fahrer kein Regler neu startet. Taktung mit task_delay_until (kein driftender Takt);
 // Jitter wird mit micros() gemessen. Nach einem Ueberzug wird das Raster uebersprungen statt nachgeholt.
 void control_task(void*) {
-	static frostbyte::ControlLoop loop(control_period_ms / 1000.0, pros::micros() / 1e6);
+	// Raster ms-ausgerichtet starten: task_delay_until weckt auf ms-Ticks, sonst steckt ein fester Versatz im Jitter.
 	std::uint32_t wake_ms = pros::millis();
+	static frostbyte::ControlLoop loop(control_period_ms / 1000.0, wake_ms / 1000.0);
 	while (true) {
 		loop.begin(pros::micros() / 1e6);
 		// TODO: Sensoren lesen, Odometrie, Logik, Regler, Motoren schreiben (je nach g_phase.get()).
