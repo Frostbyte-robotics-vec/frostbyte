@@ -38,3 +38,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Board validieren
         run: python3 tools/board.py validate
+      - name: Board-Werkzeug testen
+        run: python3 -m unittest discover -s tools -p "test_board.py"
