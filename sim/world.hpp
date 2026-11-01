@@ -10,6 +10,7 @@
 
 #include "sim/collision.hpp"
 #include "sim/drive.hpp"
+#include "sim/rng.hpp"
 #include "sim/sensor_models.hpp"
 
 // Welt der Simulation: fester 1-ms-Schritt, Steuerung und Log auf ganzzahligen ms-Rastern aus sim_params.json.
@@ -48,18 +49,6 @@ struct RunResult {
     int wall_contacts = 0;   // Kontakte mit dem Feldrand (je Beginn), beide Roboter zusammen
     int robot_contacts = 0;  // Kontakte der Roboter untereinander (je Beginn)
     int rule_violations = 0;
-};
-
-// splitmix64: auf allen Plattformen gleiche Folge.
-class Rng {
-public:
-    explicit Rng(std::uint64_t seed) : state_(seed) {}
-    std::uint64_t next();
-    // Gleichverteilt in [0, 1).
-    double uniform();
-
-private:
-    std::uint64_t state_;
 };
 
 // Liest welt und roboter.<name> (Fahrmodell) aus sim_params.json, Startposen aus field.json (posen START_STACKER/START_RUNNER) und die Routen.
