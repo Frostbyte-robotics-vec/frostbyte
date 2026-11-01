@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "match/controls_doc.hpp"
+#include "controls_doc.hpp"
 
 int main(int argc, char** argv) {
     if (argc != 2) {

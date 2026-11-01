@@ -6,17 +6,24 @@
 #include "config/runner.hpp"
 #include "config/stacker.hpp"
 #include "doctest/doctest.h"
-#include "match/controls_doc.hpp"
+#include "controls_doc.hpp"
 #include "match/driver_map.hpp"
 
 using namespace frostbyte;
 
 namespace {
 
-DriverMap stacker_map() {
-    return DriverMap(config::stacker::bindings, config::stacker::bindings_count, config::stacker::profiles,
-                     config::stacker::profile_count);
-}
+// Testwerte, unabhängig von config/.
+const Binding kBindings[] = {
+    {Action::grab, Button::r1},   {Action::place, Button::r2}, {Action::slow, Button::l2},
+    {Action::hold, Button::b},    {Action::assist_toggle, Button::x},
+};
+const DriverProfile kProfiles[] = {
+    {"p0", {.deadband = 0.1, .exponent = 2.0, .max_speed = 1.0}},
+    {"p1", {.deadband = 0.1, .exponent = 3.0, .max_speed = 0.5}},
+};
+
+DriverMap test_map() { return DriverMap(kBindings, 5, kProfiles, 2); }
 
 ControllerInput press(Button b) {
     ControllerInput in;
@@ -67,9 +74,9 @@ TEST_CASE("Jedes Makro hat genau eine Taste, keine Taste ist doppelt belegt") {
 }
 
 TEST_CASE("Taste löst ihre Aktion einmal pro Drücken aus (Flanke)") {
-    DriverMap m = stacker_map();
-    Button grab_btn = config::stacker::bindings[0].button;
-    Action grab_act = config::stacker::bindings[0].action;
+    DriverMap m = test_map();
+    Button grab_btn = kBindings[0].button;
+    Action grab_act = kBindings[0].action;
     ControllerInput in = press(grab_btn);
     CHECK(m.update(in).pressed(grab_act));
     CHECK_FALSE(m.update(in).pressed(grab_act));  // gehalten
@@ -80,14 +87,14 @@ TEST_CASE("Taste löst ihre Aktion einmal pro Drücken aus (Flanke)") {
 }
 
 TEST_CASE("Langsam und Hold gelten, solange die Taste gehalten wird") {
-    DriverMap m = stacker_map();
+    DriverMap m = test_map();
     Button slow_btn{};
     Button hold_btn{};
-    for (int i = 0; i < config::stacker::bindings_count; ++i) {
-        if (config::stacker::bindings[i].action == Action::slow)
-            slow_btn = config::stacker::bindings[i].button;
-        if (config::stacker::bindings[i].action == Action::hold)
-            hold_btn = config::stacker::bindings[i].button;
+    for (int i = 0; i < 5; ++i) {
+        if (kBindings[i].action == Action::slow)
+            slow_btn = kBindings[i].button;
+        if (kBindings[i].action == Action::hold)
+            hold_btn = kBindings[i].button;
     }
     CHECK_FALSE(m.update(ControllerInput{}).drive.slow);
     CHECK(m.update(press(slow_btn)).drive.slow);
@@ -97,7 +104,7 @@ TEST_CASE("Langsam und Hold gelten, solange die Taste gehalten wird") {
 }
 
 TEST_CASE("Sticks: links vor/zurück, rechts drehen (rechts = im Uhrzeigersinn = turn < 0)") {
-    DriverMap m = stacker_map();
+    DriverMap m = test_map();
     ControllerInput in;
     in.left_y = 0.8;
     in.right_x = 0.5;
@@ -108,31 +115,40 @@ TEST_CASE("Sticks: links vor/zurück, rechts drehen (rechts = im Uhrzeigersinn =
 }
 
 TEST_CASE("Manuelle Eingabe übernimmt sofort, auch während eine Makro-Taste gedrückt ist") {
-    DriverMap m = stacker_map();
-    ControllerInput in = press(config::stacker::bindings[0].button);
+    DriverMap m = test_map();
+    ControllerInput in = press(kBindings[0].button);
     CHECK_FALSE(m.update(in).manual_drive);  // Makro allein: kein manueller Eingriff
-    in.set(config::stacker::bindings[0].button, false);
-    in.set(config::stacker::bindings[1].button);
+    in.set(kBindings[0].button, false);
+    in.set(kBindings[1].button);
     in.left_y = 0.5;
     DriverIntent i = m.update(in);
     CHECK(i.manual_drive);
     CHECK(i.drive.mode == DriveMode::arcade);
-    CHECK(i.pressed(config::stacker::bindings[1].action));
+    CHECK(i.pressed(kBindings[1].action));
 }
 
 TEST_CASE("Stick innerhalb der Totzone zählt nicht als manueller Eingriff") {
-    DriverMap m = stacker_map();
+    DriverMap m = test_map();
     ControllerInput in;
     in.left_y = m.drive_config().deadband * 0.5;
     CHECK_FALSE(m.update(in).manual_drive);
 }
 
+TEST_CASE("Hold gehalten, aber Stick außerhalb der Totzone: Fahren übernimmt") {
+    DriverMap m = test_map();
+    ControllerInput in = press(Button::b);
+    in.left_y = 0.5;
+    DriverIntent i = m.update(in);
+    CHECK(i.drive.mode == DriveMode::arcade);
+    CHECK(i.manual_drive);
+}
+
 TEST_CASE("Assistenz ist standardmäßig aus und nur per Taste umschaltbar") {
-    DriverMap m = stacker_map();
+    DriverMap m = test_map();
     Button b{};
-    for (int i = 0; i < config::stacker::bindings_count; ++i)
-        if (config::stacker::bindings[i].action == Action::assist_toggle)
-            b = config::stacker::bindings[i].button;
+    for (int i = 0; i < 5; ++i)
+        if (kBindings[i].action == Action::assist_toggle)
+            b = kBindings[i].button;
     CHECK_FALSE(m.update(ControllerInput{}).assist_enabled);
     CHECK(m.update(press(b)).assist_enabled);
     CHECK(m.update(press(b)).assist_enabled);  // gehalten schaltet nicht wieder um
@@ -141,15 +157,14 @@ TEST_CASE("Assistenz ist standardmäßig aus und nur per Taste umschaltbar") {
 }
 
 TEST_CASE("Fahrerprofil: Kurve und Höchstgeschwindigkeit wählbar") {
-    DriverMap m = stacker_map();
-    REQUIRE(config::stacker::profile_count >= 2);
+    DriverMap m = test_map();
     m.select_profile(0);
     DriveConfig p0 = m.drive_config();
     m.select_profile(1);
     CHECK(m.profile_index() == 1);
     CHECK((m.drive_config().max_speed != p0.max_speed || m.drive_config().exponent != p0.exponent));
     m.select_profile(99);  // außerhalb: auf letztes Profil begrenzt
-    CHECK(m.profile_index() == config::stacker::profile_count - 1);
+    CHECK(m.profile_index() == 2 - 1);
 }
 
 TEST_CASE("Endgame-Vibration bei 15 s und 10 s Restzeit, je einmal pro Überschreiten") {
