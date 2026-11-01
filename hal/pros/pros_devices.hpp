@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 
@@ -18,13 +19,14 @@ namespace frostbyte::hal {
 class ProsMotor : public Motor {
 public:
     // Negativer Port dreht die Richtung um (PROS 4). Position in Grad am Motorausgang des Getriebeeinsatzes.
-    ProsMotor(std::int8_t port, pros::v5::MotorGears gearset) : motor_(port, gearset) {
+    // Der Bremsmodus ist absichtlich ohne Standardwert: er bestimmt, was stop() bei Matchende tut (TODO(HW), RuleGuard).
+    ProsMotor(std::int8_t port, pros::v5::MotorGears gearset, pros::v5::MotorBrake brake) : motor_(port, gearset) {
         motor_.set_encoder_units(pros::v5::MotorUnits::degrees);
-        motor_.set_brake_mode(pros::v5::MotorBrake::hold);
+        motor_.set_brake_mode(brake);
     }
 
     void set_voltage_v(double volts) override {
-        motor_.move_voltage(static_cast<std::int32_t>(std::lround(volts * 1000.0)));
+        motor_.move_voltage(static_cast<std::int32_t>(std::lround(std::clamp(volts, -12.0, 12.0) * 1000.0)));
     }
     void stop() override {
         motor_.move_voltage(0);

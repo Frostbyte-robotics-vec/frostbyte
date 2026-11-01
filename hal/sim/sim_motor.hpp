@@ -59,7 +59,7 @@ private:
     double voltage_v_ = 0.0;
     double position_deg_ = 0.0;
     double velocity_deg_s_ = 0.0;
-    double temperature_c_ = 25.0;
+    double temperature_c_ = 25.0;  // kein Temperaturmodell
     bool braking_ = false;
     bool connected_ = true;
 };

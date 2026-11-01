@@ -10,6 +10,9 @@ Status: angenommen (1. Nov 2026), Ticket F-02. Der Advisor (Opus) hat den Entwur
 - `hal/pros/pros_devices.hpp` ist header-only, weil das Makefile nur `src/` kompiliert. `src/main.cpp` bindet ihn ein, damit beide Roboter ihn kompilieren; instanziert wird nichts. mV, RPM, Zentigrad und Meter werden nur dort umgerechnet.
 - Include-Wurzeln: Laptop-Build und Roboter-Build kennen beide `lib/` und das Repo-Wurzelverzeichnis (`-iquote$(ROOT)/lib` im Makefile). Header in `hal/` binden sich als `"hal/..."` ein, nie als `"pros/..."` (Namenskonflikt mit dem PROS-Verzeichnis).
 
+## Offene Frage für einen Menschen
+- Welcher Bremsmodus (coast, brake, hold) erfüllt „alle Motoren auf Halt bei 0:00“? `ProsMotor` verlangt den Modus als Konstruktorparameter; die Wahl je Gerät gehört nach config/ (TODO(HW)) und ist eine Regelauslegung.
+
 ## Am Roboter zu prüfen
 - Vorzeichen von IMU-Heading und GPS-Heading gegen die Feldkonvention (0° = rot -> blau); GPS-Ursprung und Achsen.
 - Geschwindigkeitseinheit des Motors (RPM, hier mal 6 zu Grad/s) und Encodereinheit nach `set_encoder_units`.
