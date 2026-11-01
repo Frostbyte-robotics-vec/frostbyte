@@ -2,9 +2,9 @@
 id: SIM-09
 phase: "1b"
 titel: Sensormodelle, Kollisionen und Regelprüfer in run_match einhängen
-status: todo
-owner:
-branch:
+status: in_progress
+owner: matelechner01
+branch: ticket/sim-09
 depends: [SIM-03, SIM-05]
 hw: nein
 ---
