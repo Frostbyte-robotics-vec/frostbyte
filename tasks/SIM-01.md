@@ -25,6 +25,12 @@ Details im Plan: docs/plan.md (Ticket SIM-01). Regeln: CLAUDE.md.
 
 ## Übergabe
 (aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Review (KI, PR #9) „ändern“ – Details im PR-Kommentar:
+1. BLOCKIERT: sim/json.cpp:127 std::from_chars(double) fehlt in Apples libc++ → ganzer Laptop-Build scheitert auf macOS
+   (CI nur Ubuntu). Fix: std::strtod (C-Locale, kein setlocale) oder from_chars hinter __cpp_lib_to_chars; optional macos-latest in ci.yml.
+2. RobotLog::row ignoriert Abschneiden von format_row (Rückgabe ≥ n) → erkennen/melden, Test (wichtig für F-05).
+3. Textzellen (cycle, route_step, event) ohne Komma-Schutz → ablehnen/ersetzen oder in log_format.md festhalten.
+4. Fehlermeldung match_ms % log_ms in load_config ungenau.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
