@@ -29,6 +29,13 @@ Regeln: CLAUDE.md. Vorher klären: ADR-Nummern der SIM-Tickets (008 doppelt bele
 ## Übergabe
 (aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
 
+Review PR #17 (KI, 2026-11-01), Empfehlung: ändern:
+1. Blocker: zirkuläre Includes world.hpp <-> sensor_models.hpp, Rng unbekannt (CI rot) → Rng nach sim/rng.hpp.
+2. Danach rot: test/test_sim_world.cpp:85 (erste Logzeile hat jetzt Sensorwerte).
+3. Kriterium 2: SG3/SG6 werden im Lauf nicht geprüft (nur SG2 beim Start); Besitzmodell fehlt → prüfen oder als Ticket abspalten.
+4. Frage: Bericht (sim_report.py = SIM-06?) und Ausgabe von rule_violations in sim/main.cpp.
+5. Klein: CLI-Option Rauschprofil; Board-Status review setzen; nächste ADR-Nummer 013.
+
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-01 · matelechner01 (KI) · Ticket angelegt (Lücke aus Reviews PR #11/#13) · –
