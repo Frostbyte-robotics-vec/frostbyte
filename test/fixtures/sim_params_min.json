@@ -1,0 +1,4 @@
+{
+  "version": 1,
+  "welt": { "schritt_ms": 1, "steuer_ms": 10, "log_ms": 20, "g_in_s2": 386.1 }
+}
