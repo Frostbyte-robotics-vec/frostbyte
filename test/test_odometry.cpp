@@ -26,7 +26,7 @@ sim::DriveParams drive_params() {
 }
 
 // Beide Raeder abseits der Drehmitte, damit die Versatzkorrektur wirklich gebraucht wird.
-constexpr double parallel_y_in = 2.5;       // Parallelrad links der Mitte
+constexpr double parallel_y_in = 2.5;        // Parallelrad links der Mitte
 constexpr double perpendicular_x_in = -3.0;  // Querrad hinter der Mitte
 constexpr double imu_offset_deg = 37.0;      // Einbaulage des IMU gegenueber dem Feld
 constexpr double dt_s = 0.001;

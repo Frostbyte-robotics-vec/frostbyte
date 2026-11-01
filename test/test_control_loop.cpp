@@ -63,7 +63,8 @@ TEST_CASE("CycleStats: Ueberzug zaehlt, Folge-Zaehler setzt bei gutem Zyklus zur
 
 TEST_CASE("CycleStats: Warnung ab 3 Ueberzuegen in Folge") {
     CycleStats s(10000);
-    for (int i = 0; i < 3; ++i) s.record_work_us(15000);
+    for (int i = 0; i < 3; ++i)
+        s.record_work_us(15000);
     CHECK(s.warning());
 }
 
@@ -95,7 +96,8 @@ TEST_CASE("ControlLoop: erster Takt zur Startzeit, danach festes Raster ohne Dri
     CHECK(loop.stats().jitter_max_us() == 300u);
 }
 
-TEST_CASE("ControlLoop: puenktlicher Takt ergibt Jitter 0, auch bei beliebigem Versatz zwischen millis() und micros()") {
+TEST_CASE(
+    "ControlLoop: puenktlicher Takt ergibt Jitter 0, auch bei beliebigem Versatz zwischen millis() und micros()") {
     // micros() laeuft hier 123,456 ms vor millis(): der Versatz darf nicht im Jitter auftauchen.
     ControlLoop loop(10, 0);
     for (std::uint32_t i = 0; i < 100; ++i) {
@@ -162,7 +164,7 @@ TEST_CASE("ControlLoop: reset_stats() in der Reihenfolge des Steuer-Tasks (zwisc
     loop.end(17, 17'000);
     CHECK(loop.stats().jitter_max_us() == 0u);
     CHECK(loop.stats().work_max_us() == 1000u);  // Rechenzeit des laufenden Takts zaehlt schon zur neuen Phase
-    loop.begin(20'200);  // kein Vorgaenger: zaehlt nicht
+    loop.begin(20'200);                          // kein Vorgaenger: zaehlt nicht
     loop.end(21, 21'200);
     CHECK(loop.stats().jitter_max_us() == 0u);
     loop.begin(30'500);  // erst der uebernaechste Abstand zaehlt

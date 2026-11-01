@@ -109,7 +109,8 @@ TEST_CASE("Integration: zwei Roboter fahren aufeinander zu, überlappen nie und 
     // Endlage: Boxen berühren sich höchstens (kein Eindringen über die Auflösetoleranz hinaus).
     const auto cs = cells(last_line(s.str()));
     const auto cr = cells(last_line(r.str()));
-    const double gap = std::stod(cr[col_tx]) - std::stod(cs[col_tx]) - cfg.stacker.length_in / 2.0 - cfg.runner.length_in / 2.0;
+    const double gap =
+        std::stod(cr[col_tx]) - std::stod(cs[col_tx]) - cfg.stacker.length_in / 2.0 - cfg.runner.length_in / 2.0;
     CHECK(gap > -0.01);
 }
 
@@ -139,7 +140,9 @@ TEST_CASE("Integration: Matchende 0:00 mit laufenden Motoren ist ein Regelversto
 TEST_CASE("Integration: gleicher Seed = byte-gleiches Log, anderer Seed = anderes (Profil realistic)") {
     const auto run = [](std::uint64_t seed) {
         SimConfig cfg = two_robots("realistic");
-        cfg.stacker.open_loop = [](int t_ms) { return t_ms < 2000 ? std::make_pair(4.0, 4.0) : std::make_pair(0.0, 0.0); };
+        cfg.stacker.open_loop = [](int t_ms) {
+            return t_ms < 2000 ? std::make_pair(4.0, 4.0) : std::make_pair(0.0, 0.0);
+        };
         std::ostringstream s, r;
         run_match(cfg, seed, s, r);
         return s.str() + r.str();
@@ -154,7 +157,8 @@ TEST_CASE("Integration: Schätzpose driftet mit realistischen Sensoren leicht vo
     std::ostringstream s, r;
     run_match(cfg, 2, s, r);
     const auto c = cells(last_line(s.str()));
-    const double err = std::hypot(std::stod(c[col_x]) - std::stod(c[col_tx]), std::stod(c[col_y]) - std::stod(c[col_ty]));
+    const double err =
+        std::hypot(std::stod(c[col_x]) - std::stod(c[col_tx]), std::stod(c[col_y]) - std::stod(c[col_ty]));
     CHECK(err > 0.0);
     CHECK(err < 20.0);  // grob: Fehler bleibt in der Größenordnung des Modells
 }

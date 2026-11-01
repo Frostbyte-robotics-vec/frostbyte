@@ -13,13 +13,13 @@
 namespace frostbyte {
 
 struct DriveConfig {
-    double deadband = 0.05;     // Eingaben darunter zählen als 0
-    double exponent = 2.0;      // 1 = linear, größer = feinfühliger um die Mitte
-    double max_speed = 1.0;     // Höchstgeschwindigkeit pro Fahrer (Anteil der Maximalspannung)
-    double slow_factor = 0.4;   // Faktor im Langsam-Modus
+    double deadband = 0.05;    // Eingaben darunter zählen als 0
+    double exponent = 2.0;     // 1 = linear, größer = feinfühliger um die Mitte
+    double max_speed = 1.0;    // Höchstgeschwindigkeit pro Fahrer (Anteil der Maximalspannung)
+    double slow_factor = 0.4;  // Faktor im Langsam-Modus
     double max_volts = 12.0;
-    double timeout_s = 0.25;       // Arcade ohne neuen Befehl
-    double hold_timeout_s = 1.0;   // HOLD ohne neuen Befehl
+    double timeout_s = 0.25;      // Arcade ohne neuen Befehl
+    double hold_timeout_s = 1.0;  // HOLD ohne neuen Befehl
 };
 
 // Totzone abziehen, auf 0..1 dehnen, potenzieren, Vorzeichen zurück; Eingabe wird auf -1..1 begrenzt.
@@ -57,15 +57,9 @@ public:
     void request(const DriveRequest& r, double now_s) {
         req_ = r;
         switch (r.mode) {
-            case DriveMode::arcade:
-                sm_.enter(DriveState::driving, now_s, cfg_.timeout_s, DriveState::idle);
-                break;
-            case DriveMode::hold:
-                sm_.enter(DriveState::holding, now_s, cfg_.hold_timeout_s, DriveState::idle);
-                break;
-            case DriveMode::stop:
-                sm_.enter(DriveState::idle, now_s);
-                break;
+            case DriveMode::arcade: sm_.enter(DriveState::driving, now_s, cfg_.timeout_s, DriveState::idle); break;
+            case DriveMode::hold: sm_.enter(DriveState::holding, now_s, cfg_.hold_timeout_s, DriveState::idle); break;
+            case DriveMode::stop: sm_.enter(DriveState::idle, now_s); break;
         }
     }
 
@@ -74,14 +68,9 @@ public:
         sm_.update(now_s);
         out_ = DriveOutput{};
         switch (sm_.state()) {
-            case DriveState::idle:
-                break;
-            case DriveState::holding:
-                out_.hold = true;
-                break;
-            case DriveState::driving:
-                mix(req_);
-                break;
+            case DriveState::idle: break;
+            case DriveState::holding: out_.hold = true; break;
+            case DriveState::driving: mix(req_); break;
         }
         return out_;
     }

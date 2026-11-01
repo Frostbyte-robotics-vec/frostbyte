@@ -13,8 +13,8 @@ constexpr double pi = 3.14159265358979323846;
 double number(const Json& obj, const char* key, const std::string& where, bool allow_zero) {
     const double v = obj.at(key).as_number();
     if (v < 0.0 || (!allow_zero && v == 0.0))
-        throw std::runtime_error("sim_params " + where + "." + key + (allow_zero ? " darf nicht negativ sein"
-                                                                                 : " muss positiv sein"));
+        throw std::runtime_error("sim_params " + where + "." + key +
+                                 (allow_zero ? " darf nicht negativ sein" : " muss positiv sein"));
     return v;
 }
 
