@@ -2,9 +2,9 @@
 id: SIM-07
 phase: "1b"
 titel: Browser-Viewer tools/viewer/index.html: CSV laden, Feld, beide Roboter in 3D (Vorlage tools/viewer/reference/), Zeitregler, Overlay zweier Logs, Ereignisliste
-status: todo
-owner:
-branch:
+status: in_progress
+owner: Arved Janssen
+branch: ticket/sim-07
 depends: []
 hw: nein
 ---
