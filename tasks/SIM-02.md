@@ -49,4 +49,4 @@ Am echten Roboter: nichts (Laptop); kS/kV/kA/mu/Akku sind Schätzungen, SIM-08 m
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
-2026-11-01 · Arved Janssen (KI) · DriveModel, Tests, Welt-Einbau, ADR-008 · Branch ticket/sim-02
+2026-11-01 · Arved Janssen (KI) · DriveModel, Tests, Welt-Einbau, ADR-008, Advisor-Review eingearbeitet · 209d672
