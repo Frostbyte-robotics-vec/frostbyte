@@ -1,4 +1,4 @@
-# ADR-002: three.js r128 für den Browser-Viewer
+# ADR-005: three.js r128 für den Browser-Viewer
 
 Status: angenommen (1. Nov 2026)
 
