@@ -2,9 +2,9 @@
 id: SIM-02
 phase: "1b"
 titel: Fahrmodell (kS, kV, kA, Spurbreite, Schlupf, Akkuspannung) aus sim/sim_params.json
-status: todo
-owner:
-branch:
+status: in_progress
+owner: Arved Janssen
+branch: ticket/sim-02
 depends: [SIM-01]
 hw: nein
 ---
