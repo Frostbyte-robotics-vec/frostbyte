@@ -18,6 +18,20 @@ jobs:
       - name: Laptop-Tests ausführen
         run: ctest --test-dir build-test --output-on-failure
 
+  # Eigener Job statt Matrix, damit der Pflicht-Check "tests" seinen Namen behält.
+  # Apples libc++ hinkt GCC hinterher (z. B. from_chars für double erst ab libc++ 20).
+  # Bewusst macos-15 (Xcode 16, Apple clang 17) statt latest: so alt wie die Macs im Team.
+  tests-macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Laptop-Tests bauen
+        run: |
+          cmake -S test -B build-test
+          cmake --build build-test
+      - name: Laptop-Tests ausführen
+        run: ctest --test-dir build-test --output-on-failure
+
   roboter:
     runs-on: ubuntu-latest
     strategy:
@@ -38,3 +52,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Board validieren
         run: python3 tools/board.py validate
+      - name: Board-Werkzeug testen
+        run: python3 -m unittest discover -s tools -p "test_board.py"

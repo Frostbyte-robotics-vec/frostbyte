@@ -7,6 +7,7 @@ Befehle:
   show ID                 Ticket ausgeben
   claim ID OWNER          Ticket übernehmen: status in_progress, owner, branch
   status ID STATUS        Status setzen (todo|in_progress|needs_hw|review|done|blocked)
+  merged ID               nach dem Merge des PRs (board-done.yml): done, außer needs_hw bleibt needs_hw
   release ID              Ticket freigeben (status todo, owner leer) – z. B. wenn man aufhört
   validate                Konsistenz prüfen (läuft in CI)
   export DIR [--demo] [--fragment]  Fortschritts-Webseite nach DIR/index.html (+ board.json) schreiben
@@ -95,6 +96,11 @@ def cmd_next(tasks, args):
         print("Kein freies Ticket" + (" mit Hardware." if want_hw else " ohne Hardware."))
         return 1
     print(r[0]["id"])
+
+
+def status_after_merge(status):
+    """Status nach dem Merge des PRs (board-done.yml). needs_hw bleibt: der Hardware-Test steht noch aus."""
+    return status if status == "needs_hw" else "done"
 
 
 def cmd_validate(tasks):
@@ -209,6 +215,14 @@ def main(argv):
         if a[1] not in STATUS:
             print("Status muss einer von", STATUS, "sein"); return 1
         write_field(tasks[a[0]], "status", a[1]); print(f"{a[0]} → {a[1]}"); return 0
+    if c == "merged":
+        if not a or a[0] not in tasks:
+            print(f"Ticket {a[0] if a else '?'} gibt es nicht"); return 1
+        t = tasks[a[0]]
+        new = status_after_merge(t["status"])
+        if new == t["status"]:
+            print(f"{t['id']} bleibt {new}" + (" (Hardware-Test steht aus)" if new == "needs_hw" else "")); return 0
+        write_field(t, "status", new); print(f"{t['id']} → {new}"); return 0
     if c == "release":
         write_field(tasks[a[0]], "status", "todo"); write_field(tasks[a[0]], "owner", ""); write_field(tasks[a[0]], "branch", ""); print(f"{a[0]} freigegeben"); return 0
     if c == "validate":
