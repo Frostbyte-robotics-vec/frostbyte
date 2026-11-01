@@ -47,6 +47,7 @@ def _num(cell):
 def run_metrics(path):
     errs, rows, with_truth, gps_valid = [], 0, 0, 0
     wall = robot = rules = 0
+    timeouts = {}
     score = None
     with open(path, encoding="utf-8", newline="") as f:
         lines = [ln for ln in f if not ln.startswith("#")]
@@ -70,6 +71,9 @@ def run_metrics(path):
                 robot += 1
             elif ev.startswith("RULE:"):
                 rules += 1
+            elif ev.startswith("TIMEOUT:"):
+                state = ev[len("TIMEOUT:"):]
+                timeouts[state] = timeouts.get(state, 0) + 1
     return {
         "rows": rows,
         "odo_err_max_in": max(errs) if errs else None,
@@ -78,6 +82,7 @@ def run_metrics(path):
         "wall_contacts": wall,
         "robot_contacts": robot,
         "rule_violations": rules,
+        "timeouts": timeouts,
         "score": score,
     }
 
@@ -100,6 +105,13 @@ def summarize(directory):
             vals = [r[k] for r in runs if r[k] is not None]
             robots[name][k] = ({"p10": percentile(vals, 10), "median": percentile(vals, 50), "p90": percentile(vals, 90)}
                                if vals else None)
+        failures = {}
+        for r in runs:
+            for state, n in r["timeouts"].items():
+                f = failures.setdefault(state, {"total": 0, "runs": 0})
+                f["total"] += n
+                f["runs"] += 1
+        robots[name]["failures_by_state"] = dict(sorted(failures.items()))
         violations += sum(r["rule_violations"] for r in runs)
     return {"runs": len(run_ids), "robots": robots, "rule_violations": violations}
 
@@ -155,6 +167,14 @@ def html_report(summary, msgs):
             out.append(f"<tr><td>{e(LABELS[k])}</td><td>{_fmt(v and v['p10'])}</td><td>{_fmt(v and v['median'])}</td>"
                        f"<td>{_fmt(v and v['p90'])}</td></tr>")
         out.append("</table>")
+        fails = mets["failures_by_state"]
+        if fails:
+            out.append("<table><tr><th>Fehler (Timeout) je Zustand</th><th>Anzahl</th><th>Läufe betroffen</th></tr>")
+            for state, f in fails.items():
+                out.append(f"<tr><td>{e(state)}</td><td>{f['total']}</td><td>{f['runs']}</td></tr>")
+            out.append("</table>")
+        else:
+            out.append("<p>Keine Timeouts in den Läufen.</p>")
     out.append("<p>Punkte erscheinen, sobald der Scorer (SIM-10) im Log steht; bis dahin „–“.</p></body></html>")
     return "".join(out)
 

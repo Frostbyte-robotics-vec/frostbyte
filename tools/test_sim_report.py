@@ -28,6 +28,21 @@ def write_run(d, i, robot, rows):
         f.write("\n".join(rows) + "\n")
 
 
+class FailureTest(unittest.TestCase):
+    def test_timeouts_per_state(self):
+        with tempfile.TemporaryDirectory() as d:
+            write_run(d, 0, "stacker", [row(0.0, "stacker", event="TIMEOUT:GREIFEN"),
+                                        row(0.02, "stacker", event="TIMEOUT:GREIFEN;BLOCKED"),
+                                        row(0.04, "stacker", event="TIMEOUT:HEBEN")])
+            write_run(d, 1, "stacker", [row(0.0, "stacker", event="TIMEOUT:GREIFEN"), row(0.02, "stacker")])
+            write_run(d, 2, "stacker", [row(0.0, "stacker")])
+            m = sim_report.run_metrics(os.path.join(d, "run000_stacker.csv"))
+            self.assertEqual(m["timeouts"], {"GREIFEN": 2, "HEBEN": 1})
+            f = sim_report.summarize(d)["robots"]["stacker"]["failures_by_state"]
+            self.assertEqual(f, {"GREIFEN": {"total": 3, "runs": 2}, "HEBEN": {"total": 1, "runs": 1}})
+            self.assertIn("GREIFEN", sim_report.html_report(sim_report.summarize(d), []))
+
+
 class PercentileTest(unittest.TestCase):
     def test_interpolation(self):
         self.assertEqual(sim_report.percentile([1, 2, 3, 4, 5], 50), 3)
