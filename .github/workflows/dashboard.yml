@@ -23,6 +23,8 @@ jobs:
           cmake -S test -B build-test -DCMAKE_BUILD_TYPE=Release
           cmake --build build-test --target frostbyte_sim
           ./build-test/frostbyte_sim --demo --seed 1 --out site/viewer/demo
+          ./build-test/frostbyte_sim --demo --runs 100 --seed 1 --out out/sim
+          python3 tools/sim_report.py out/sim --html site/viewer/report.html
       - name: Viewer in die Seite legen
         run: |
           cp tools/viewer/index.html tools/viewer/logparse.js tools/viewer/robots.js site/viewer/
