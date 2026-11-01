@@ -24,12 +24,15 @@ Details im Plan: docs/plan.md (Ticket SIM-03). Regeln: CLAUDE.md.
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand: Modelle fertig und getestet (sim/sensor_models.hpp/.cpp, test/test_sim_sensor_models.cpp). Odometrie (Tracking/Encoder), IMU (Drift+Rauschen), GPS (Rauschen, Aussetzer, Güte~Geschwindigkeit), Rauschprofil skaliert alles. Noch nicht in run_match eingehängt: das braucht das Fahrmodell (SIM-02) für wahre Wege/Posen. Neuer Schlüssel gps.sigma_deg (Schätzung). Entscheidungen in ADR-010. Aussetzer-Test mit eigenem Wert 0,5 (1000 Proben).
+
+## Review-Punkte (KI, PR #11)
+1. erledigt: Test „GPS: Heading-Rauschen +-10 %“ (1000 Proben).
+2. erledigt: neues Ticket SIM-09 (Modelle in run_match einhängen).
+3. erledigt: main eingemergt (SIM-02, SIM-04); ADR-008-sensormodelle → ADR-010 (Nummer war doppelt).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
-
-## Review-Punkte (KI, PR #11)
-1. Test für gps.sigma_deg (1000 Proben, ±10 %) ergänzen.
-2. Einhängen der Sensormodelle in run_match einem Ticket zuweisen.
-3. Vor Merge auf main rebasen.
+2026-11-01 · DAVIDCOPCOP · Sensormodelle samt Tests, Notes-Eintrag
+2026-11-01 · arjanssen (KI) · main eingemergt, ADR → 010, sigma_deg-Test, Review-Punkte erledigt
+4. ADR-Nummer: ADR-008-sensormodelle kollidiert mit ADR-008-fahrmodell auf main; umbenennen (nächste freie: ADR-012).
