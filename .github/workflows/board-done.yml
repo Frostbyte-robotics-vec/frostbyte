@@ -1,4 +1,5 @@
 # Setzt beim Merge eines Pull Requests von ticket/<id> den Status des Tickets auf done.
+# Ausnahme: needs_hw bleibt needs_hw, bis der Hardware-Test bestanden ist (S-05, tools/board.py status_after_merge).
 name: board-done
 on:
   pull_request:
@@ -13,12 +14,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { ref: main }
-      - name: Ticket auf done setzen
+      - name: Ticket-Status nach dem Merge setzen
         run: |
           ID=$(echo "${{ github.event.pull_request.head.ref }}" | sed 's#ticket/##' | tr '[:lower:]' '[:upper:]')
-          python3 tools/board.py status "$ID" done
+          python3 tools/board.py merged "$ID"
           python3 tools/board.py validate
           git config user.name "frostbyte-board"
           git config user.email "board@users.noreply.github.com"
-          git commit -am "board: $ID done (PR #${{ github.event.pull_request.number }})" || exit 0
+          STATUS=$(sed -n 's/^status: *//p' "tasks/$ID.md" | head -1)
+          git commit -am "board: $ID $STATUS (PR #${{ github.event.pull_request.number }})" || exit 0
           git push
