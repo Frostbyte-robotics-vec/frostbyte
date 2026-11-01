@@ -13,14 +13,19 @@ constexpr std::uint32_t control_period_ms = 10;
 frostbyte::PhaseFlag g_phase;
 
 // Ein Steuer-Task fuer alle Phasen. Die Callbacks setzen nur g_phase, damit beim Uebergang
-// Autonomie -> Fahrer kein Regler neu startet. Taktung mit task_delay_until (kein driftender Takt).
+// Autonomie -> Fahrer kein Regler neu startet. Taktung mit task_delay_until (kein driftender Takt);
+// Jitter wird mit micros() gemessen. Nach einem Ueberzug wird das Raster uebersprungen statt nachgeholt.
 void control_task(void*) {
+	static frostbyte::ControlLoop loop(control_period_ms / 1000.0, pros::micros() / 1e6);
 	std::uint32_t wake_ms = pros::millis();
-	static frostbyte::ControlLoop loop(control_period_ms / 1000.0, wake_ms / 1000.0);
 	while (true) {
-		loop.begin(pros::millis() / 1000.0);
+		loop.begin(pros::micros() / 1e6);
 		// TODO: Sensoren lesen, Odometrie, Logik, Regler, Motoren schreiben (je nach g_phase.get()).
-		loop.end(pros::millis() / 1000.0);
+		// TODO(RuleGuard): in Phase Disabled alle Motoren auf Halt (Ticket mit Regelwaechter).
+		loop.end(pros::micros() / 1e6);
+		// Rasterzeit des Loops (micros) -> naechster Wecker in ms, task_delay_until addiert die Periode selbst.
+		const std::uint32_t next_ms = static_cast<std::uint32_t>(loop.next_wake_s() * 1000.0 + 0.5);
+		wake_ms = next_ms - control_period_ms;
 		pros::c::task_delay_until(&wake_ms, control_period_ms);
 	}
 }
