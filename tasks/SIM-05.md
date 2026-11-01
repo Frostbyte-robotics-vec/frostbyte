@@ -2,7 +2,7 @@
 id: SIM-05
 phase: "1b"
 titel: Kollisionen (Roboter, Feldelemente, Rand) und Regelprüfer (Scorer: SIM-10)
-status: in_progress
+status: review
 owner: matelechner01
 branch: ticket/sim-05
 depends: [SIM-04]
@@ -33,3 +33,4 @@ Offen: Scorer nach RSC3. Die Wertungsregeln (Punkte je Pin/Cup/Goal usw.) stehen
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-01 · matelechner01 (KI) · Kollisionen + Regelprüfer mit Tests; Scorer wartet auf Wertungsregeln
 2026-11-01 · matelechner01 (KI) · Review PR #15: SIM-05 ohne Scorer (SIM-10 angelegt), Test Mittelpunkt in Box
+2026-11-01 · arjanssen (KI) · Status review gesetzt
