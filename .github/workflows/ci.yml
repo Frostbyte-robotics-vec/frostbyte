@@ -1,0 +1,76 @@
+# Prüft jeden Pull Request und main: Laptop-Tests, beide Roboter bauen, Board-Validierung.
+# Merge-Sperre: in den GitHub-Einstellungen (Branch protection für main) die Prüfungen
+# "tests", "roboter (stacker)", "roboter (runner)" und "board" als erforderlich eintragen.
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Laptop-Tests bauen
+        run: |
+          cmake -S test -B build-test
+          cmake --build build-test
+      - name: Laptop-Tests ausführen
+        run: ctest --test-dir build-test --output-on-failure
+
+  # Demo-Seite (Viewer + Demo-Logs) wie im Pages-Workflow; als Artefakt "viewer-demo" herunterladbar (Ordner entpacken,
+  # im Ordner "python3 -m http.server" starten, http://localhost:8000/ öffnen). Kein Pflicht-Check.
+  viewer-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Simulation bauen und Demo-Logs erzeugen
+        run: |
+          cmake -S test -B build-test -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-test --target frostbyte_sim
+          ./build-test/frostbyte_sim --demo --seed 1 --out viewer-demo/demo
+          test -s viewer-demo/demo/run000_stacker.csv
+          test -s viewer-demo/demo/run000_runner.csv
+          cp tools/viewer/index.html tools/viewer/logparse.js tools/viewer/robots.js viewer-demo/
+          cp field/field.json viewer-demo/field.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: viewer-demo
+          path: viewer-demo
+
+  # Eigener Job statt Matrix, damit der Pflicht-Check "tests" seinen Namen behält.
+  # Apples libc++ hinkt GCC hinterher (z. B. from_chars für double erst ab libc++ 20).
+  # Bewusst macos-15 (Xcode 16, Apple clang 17) statt latest: so alt wie die Macs im Team.
+  tests-macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Laptop-Tests bauen
+        run: |
+          cmake -S test -B build-test
+          cmake --build build-test
+      - name: Laptop-Tests ausführen
+        run: ctest --test-dir build-test --output-on-failure
+
+  roboter:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        robot: [stacker, runner]
+    name: roboter (${{ matrix.robot }})
+    steps:
+      - uses: actions/checkout@v4
+      - name: ARM-Toolchain installieren
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+      - name: Roboter bauen
+        run: make ROBOT=${{ matrix.robot }}
+
+  board:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Board validieren
+        run: python3 tools/board.py validate
+      - name: Board-Werkzeug testen
+        run: python3 -m unittest discover -s tools -p "test_board.py"

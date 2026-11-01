@@ -67,7 +67,9 @@ Werkzeug: python3 tools/board.py (summary, next, show, claim, status, release, v
    Übergabe beginnt mit „pausiert – frei zur Übernahme“.
 7. Ticket fertig (/finish): Fertig-Kriterien prüfen, alle Tests + board.py validate grün, Verlauf-Zeile, Branch pushen,
    Pull Request öffnen (gh pr create, Vorlage .github/pull_request_template.md). Danach auf main:
-   board.py status <ID> review (Hardware-Tickets: needs_hw) und pushen. Auf done setzt es der GitHub-Workflow beim Merge.
+   board.py status <ID> review (Hardware-Tickets: needs_hw) und pushen. Auf done setzt es der GitHub-Workflow beim Merge
+   (board.py merged). Ausnahme needs_hw: bleibt beim Merge stehen; nach bestandenem Hardware-Test setzt ein Mensch auf main
+   board.py status <ID> done und hängt eine Verlauf-Zeile mit dem Testergebnis an.
 8. Nie: ein Ticket bearbeiten, das jemand anderes in_progress hat (außer Fall 2c); Code direkt auf main committen
    (auf main nur Änderungen in tasks/); Abhängigkeiten überspringen, ohne es in der Übergabe zu begründen.
 9. Neue Erkenntnis, die künftige Sitzungen brauchen (Entscheidung, Stolperfalle, Messwert)?

@@ -1,0 +1,7 @@
+* text=auto
+Makefile text eol=lf
+*.mk text eol=lf
+*.ld text eol=lf
+*.a binary
+*.bin binary
+*.elf binary

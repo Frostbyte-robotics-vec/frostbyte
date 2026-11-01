@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frostbyte Log-Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Stil wie reference/frostbyte-lift.html */
+:root{
+  --paper:#ECF0F3; --panel:#FFFFFF; --ink:#13202B; --muted:#566673; --line:#C7D1D8;
+  --accent:#1E6BAE; --accent-soft:#DCEAF6; --ok:#2F7D4F; --ok-soft:#DDF0E3; --warn:#A8591A; --warn-soft:#FBE9D9;
+  --bad:#B3261E; --bad-soft:#F9DEDC; --viewer:#DDE3E8;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root{
+  --paper:#0D141A; --panel:#141E26; --ink:#E2EAF0; --muted:#8FA0AD; --line:#26343F;
+  --accent:#71B4F0; --accent-soft:#16304A; --ok:#7BCB98; --ok-soft:#173326; --warn:#F0B37A; --warn-soft:#3A2614;
+  --bad:#F2B8B5; --bad-soft:#41191A; --viewer:#18232C; color-scheme:dark }}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;margin:0;padding:20px 16px 40px}
+.wrap{max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,5vw,42px);line-height:1;margin:4px 0 0}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:600 14px var(--f-display);letter-spacing:.05em;text-transform:uppercase;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer;white-space:nowrap}
+.btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.btn:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+select,input[type=number]{font:500 13px var(--f-mono);border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:6px 8px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:14px;align-items:start}
+@media (max-width:1000px){.main{grid-template-columns:minmax(0,1fr)}}
+.viewer{position:relative;background:var(--viewer);border:1px solid var(--line);border-radius:10px;overflow:hidden;height:min(70vh,680px);min-height:360px;touch-action:none}
+.viewer canvas{display:block;width:100%;height:100%;cursor:grab}
+.hint{position:absolute;left:12px;bottom:10px;font:12px var(--f-mono);color:var(--muted);pointer-events:none}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--muted);pointer-events:none}
+.overlay[hidden]{display:none}
+.stats{position:absolute;right:12px;top:10px;font:12px var(--f-mono);color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+.overlay b{display:block;font:600 22px var(--f-display);letter-spacing:.04em;text-transform:uppercase;color:var(--ink)}
+.fieldinfo{position:absolute;left:12px;top:10px;font:12px var(--f-mono);color:var(--muted);pointer-events:none}
+.time{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.time output{font:500 15px var(--f-mono);min-width:7.5em;font-variant-numeric:tabular-nums}
+.track{position:relative}
+.track input{width:100%;accent-color:var(--accent);margin:0}
+#evstrip{display:block;width:100%;height:10px;margin-top:2px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;min-width:0}
+.card h2{font-family:var(--f-display);font-weight:600;font-size:19px;letter-spacing:.03em;text-transform:uppercase;margin:0;padding:10px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card h2 small{font:12px var(--f-mono);text-transform:none;letter-spacing:0;color:var(--muted)}
+.side{display:flex;flex-direction:column;gap:14px}
+.logs{list-style:none;margin:0;padding:0}
+.logs li{padding:10px 14px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:center}
+.logs li:last-child{border-bottom:0}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block;flex:none}
+.fname{font:500 14px var(--f-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lmeta{grid-column:2/4;font:12px var(--f-mono);color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
+.lmeta input[type=number]{width:5.5em;padding:2px 6px}
+.warn{grid-column:1/4;font-size:12px;color:var(--warn);background:var(--warn-soft);border-radius:6px;padding:4px 8px}
+.x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
+.empty{padding:12px 14px;color:var(--muted);font-size:13px;margin:0}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th{font:11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:6px 10px;border-bottom:1px solid var(--line);white-space:nowrap;font-family:var(--f-mono)}
+td.n{text-align:right}
+.pill{display:inline-block;font:500 11px var(--f-mono);padding:2px 8px;border-radius:999px;white-space:nowrap;background:var(--accent-soft);color:var(--accent)}
+.pill.FEHLER{background:var(--bad-soft);color:var(--bad)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px;border-bottom:1px solid var(--line)}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer;user-select:none}
+.chip input{margin:0;accent-color:var(--accent)}
+.events{list-style:none;margin:0;padding:0;max-height:420px;overflow-y:auto;position:relative}
+.events li{display:grid;grid-template-columns:4.2em 12px minmax(0,1fr);gap:8px;align-items:center;padding:5px 14px;border-bottom:1px solid var(--line);cursor:pointer;font:12px var(--f-mono)}
+.events li:hover{background:var(--paper)}
+.events li.future{opacity:.45}
+.events li.cur{background:var(--accent-soft)}
+.events .k-TIMEOUT,.events .k-COLLISION,.events .k-RULE{color:var(--bad)}
+.events .k-BLOCKED{color:var(--warn)}
+.events .k-PLACED{color:var(--ok)}
+.evtext{overflow:hidden;text-overflow:ellipsis}
+.drop{position:fixed;inset:0;background:rgba(30,107,174,.18);border:4px dashed var(--accent);display:none;align-items:center;justify-content:center;font:700 34px var(--f-display);color:var(--accent);z-index:10;pointer-events:none}
+body.dragging .drop{display:flex}
+#selftest{font:13px var(--f-mono);padding:8px 12px;border-radius:8px}
+#selftest.ok{background:var(--ok-soft);color:var(--ok)}
+#selftest.bad{background:var(--bad-soft);color:var(--bad);white-space:pre-wrap}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div class="drop">CSV oder field.json ablegen</div>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Frostbyte · VEX U Override · Log-Format v1 (docs/log_format.md)</div>
+      <h1>Log-Viewer</h1>
+    </div>
+    <div class="bar">
+      <label class="btn primary" for="fileLogs">Logs laden</label>
+      <input class="sr" type="file" id="fileLogs" accept=".csv,.txt,text/csv" multiple>
+      <label class="btn" for="fileField">field.json laden</label>
+      <input class="sr" type="file" id="fileField" accept=".json,application/json">
+      <button class="btn" id="bTop" aria-pressed="false">Draufsicht</button>
+      <button class="btn" id="bFollow" aria-pressed="false">Folgen</button>
+      <button class="btn" id="bDetail" aria-pressed="false" title="Schrauben, Lager, Wellen, Elektronik und Kabel zeigen (langsamer)">Details</button>
+    </div>
+  </header>
+  <div id="selftest" hidden></div>
+
+  <div class="main">
+    <div class="side">
+      <div class="viewer" id="viewer">
+        <div class="overlay" id="empty"><div><b>Keine Logs geladen</b>CSV-Dateien hierher ziehen oder „Logs laden“.<br>Mehrere Logs werden über t_s übereinandergelegt.</div></div>
+        <div class="hint">Ziehen: drehen · Rechts ziehen: schieben · Mausrad: zoomen · Leertaste: Start/Pause · ← →: ±0,2 s</div>
+        <div class="fieldinfo" id="fieldinfo"></div>
+        <div class="stats" id="stats" hidden></div>
+      </div>
+      <div class="time">
+        <button class="btn" id="bPlay" aria-label="Abspielen">▶</button>
+        <output id="tOut">0,00 s</output>
+        <div class="track">
+          <input type="range" id="tIn" min="0" max="60" step="0.02" value="0" aria-label="Matchzeit">
+          <canvas id="evstrip" aria-hidden="true"></canvas>
+        </div>
+        <select id="speed" aria-label="Geschwindigkeit">
+          <option value="0.25">0,25×</option><option value="0.5">0,5×</option><option value="1" selected>1×</option>
+          <option value="2">2×</option><option value="4">4×</option><option value="8">8×</option>
+        </select>
+        <select id="poseSrc" aria-label="Posen-Quelle">
+          <option value="odom">Odometrie</option><option value="gps">GPS</option><option value="wahr">wahre Pose (Sim)</option>
+        </select>
+      </div>
+      <section class="card">
+        <h2>Zustand <small id="deltas"></small></h2>
+        <div class="tbl"><table>
+          <thead><tr><th></th><th>Roboter</th><th>Zyklus</th><th>Routenschritt</th><th class="n">Punkte</th><th>Cup/Pin</th>
+            <th class="n">x″</th><th class="n">y″</th><th class="n">h°</th><th class="n">Lift° ist/soll</th><th class="n">GPS±″</th><th class="n">Batt V</th><th class="n">CPU ms</th><th class="n">Temp °C</th></tr></thead>
+          <tbody id="state"></tbody>
+        </table></div>
+      </section>
+    </div>
+
+    <div class="side">
+      <section class="card">
+        <h2>Logs <small>je Roboter: erstes Log = Modell, weitere = Geist</small></h2>
+        <ul class="logs" id="logs"><li class="empty">–</li></ul>
+      </section>
+      <section class="card">
+        <h2>Ereignisse <small id="evcount"></small></h2>
+        <div class="chips" id="evfilter"></div>
+        <ul class="events" id="events"></ul>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="logparse.js"></script>
+<script src="robots.js"></script>
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+const DEG = Math.PI / 180;
+const LOG_COLORS = ['#1E6BAE', '#E0703A', '#2F7D4F', '#6A4FC8', '#B3261E', '#8A6D1C'];
+// Kleinteil-Ebenen aus robots.js: ~1600 Zeichenaufrufe je Stacker, deshalb nur mit „Details“
+const DETAIL_LAYERS = ['verbindung', 'elektronik', 'zukauf'];
+const EV_KINDS = ['PLACED', 'TIMEOUT', 'BLOCKED', 'COLLISION', 'RULE', 'andere'];
+const FIELD_HALF_IN = 72;   // Ersatz, solange keine field.json geladen ist (feld_in = 144)
+
+/* Feld → Szene. ANNAHME (offene Frage SIM-07, nicht in docs/log_format.md festgelegt):
+   +x_in zeigt von der roten zur blauen Station, +y_in 90° gegen den Uhrzeigersinn dazu (von oben gesehen),
+   h_deg = 0° entlang +x, positiv gegen den Uhrzeigersinn. Szene: y nach oben, Feld-x → Szene-x, Feld-y → Szene −z.
+   Modelle (robots.js) schauen nach −z, deshalb Drehung um (h − 90°). Nur hier ändern, falls die Konvention anders ist. */
+function placeOnField(obj, x, y, h){
+  obj.position.set(x, 0, -y);
+  obj.rotation.y = (h - 90) * DEG;
+}
+const fmt = (v, nd = 1) => (v === '' || v === undefined || Number.isNaN(v)) ? '–' : (+v).toFixed(nd).replace('.', ',');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'}[c]));
+
+/* ---------- Zustand ---------- */
+const S = { logs: [], t: 0, tMin: 0, tMax: 60, playing: false, speed: 1, src: 'odom', field: null, kinds: new Set(EV_KINDS),
+  events: [], follow: false, detail: false, dirty: true };
+
+/* ---------- 3D (optional: ohne three.js nur Tabellen) ---------- */
+const HAS3D = typeof THREE !== 'undefined' && THREE.OrbitControls;
+let renderer, scene, cam, controls, models, fieldGroup;
+const viewer = $('viewer');
+if (HAS3D) {
+  renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  viewer.prepend(renderer.domElement);
+  scene = new THREE.Scene();
+  cam = new THREE.PerspectiveCamera(34, 1, 1, 2000);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f94, 0.75));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+  sun.position.set(60, 140, 50); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, {left:-90, right:90, top:90, bottom:-90, near:10, far:400}); sun.shadow.bias = -0.0005;
+  scene.add(sun);
+  const fill = new THREE.DirectionalLight(0xdfe8ff, 0.35); fill.position.set(-80, 60, -60); scene.add(fill);
+  models = FBRobots(renderer);
+  controls = new THREE.OrbitControls(cam, renderer.domElement);
+  controls.enableDamping = true; controls.minDistance = 20; controls.maxDistance = 600; controls.maxPolarAngle = Math.PI / 2.05;
+  setView(false);
+  new ResizeObserver(resize).observe(viewer); resize();
+} else {
+  const o = $('empty'); o.innerHTML = '<div><b>3D nicht verfügbar</b>three.js r128 konnte nicht geladen werden (kein Internet?). Zeitregler, Zustand und Ereignisse funktionieren trotzdem.</div>';
+}
+function resize(){ const w = viewer.clientWidth, h = viewer.clientHeight; renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); S.dirty = true; }
+function setView(top){
+  $('bTop').setAttribute('aria-pressed', top);
+  if (!HAS3D) return;
+  if (top) { cam.position.set(0, 330, 0.01); } else { cam.position.set(0, 170, 190); }
+  controls.target.set(0, 0, 0); controls.update(); S.dirty = true;
+}
+
+/* ---------- Feld ---------- */
+function buildField(){
+  if (!HAS3D) return;
+  if (fieldGroup) scene.remove(fieldGroup);
+  fieldGroup = new THREE.Group(); scene.add(fieldGroup);
+  const F = S.field, half = F && F.feld_in ? F.feld_in / 2 : FIELD_HALF_IN;
+  const std = (c, extra) => new THREE.MeshStandardMaterial(Object.assign({color:c, roughness:.8, metalness:.05}, extra || {}));
+  const tex = models.tileTex.clone(); tex.needsUpdate = true; tex.repeat.set(half / 12, half / 12);
+  const mat = new THREE.Mesh(new THREE.PlaneGeometry(2 * half, 2 * half), std(0xffffff, {map:tex, roughness:.95}));
+  mat.rotation.x = -Math.PI / 2; mat.receiveShadow = true; fieldGroup.add(mat);
+  const wallM = std(0xb9c0c7, {transparent:true, opacity:.55});
+  [[0, half, 2 * half, .5], [0, -half, 2 * half, .5], [half, 0, .5, 2 * half], [-half, 0, .5, 2 * half]].forEach(([x, y, sx, sy]) => {
+    const w = new THREE.Mesh(new THREE.BoxGeometry(sx, 3, sy), wallM); w.position.set(x, 1.5, -y); fieldGroup.add(w);
+  });
+  // Stationsseiten (Annahme siehe placeOnField): rot bei −x, blau bei +x
+  [[-half - 1.5, 0xc0392b], [half + 1.5, 0x1e6bae]].forEach(([x, c]) => {
+    const s = new THREE.Mesh(new THREE.BoxGeometry(2, .4, 2 * half), std(c)); s.position.set(x, .2, 0); fieldGroup.add(s);
+  });
+  let missing = 0, shown = 0;
+  if (F) {
+    if (F.midfield && F.midfield.seite_in) {
+      const m = F.midfield, a = m.seite_in / 2, pts = [[-a, -a], [a, -a], [a, a], [-a, a], [-a, -a]].map(([u, v]) => {
+        const r = 45 * DEG; return new THREE.Vector3((m.mitte_x_in || 0) + u * Math.cos(r) - v * Math.sin(r), .15, -((m.mitte_y_in || 0) + u * Math.sin(r) + v * Math.cos(r)));
+      });
+      fieldGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:0xf2c14e})));
+    }
+    const goalColor = {alliance_red:0xc0392b, alliance_blue:0x1e6bae, neutral:0x9aa1a8, midfield:0xf2c14e};
+    const put = (o, x, y) => { o.position.x = x; o.position.z = -y; o.castShadow = true; fieldGroup.add(o); shown++; };
+    (F.goals || []).forEach(g => {
+      if (g.x_in == null || g.y_in == null) { missing++; return; }
+      const h = g.hoehe_in || 4, o = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, h, 24), std(goalColor[g.typ] || 0x888888));
+      o.position.y = h / 2; put(o, g.x_in, g.y_in);
+    });
+    (F.toggles || []).forEach(g => {
+      if (g.x_in == null || g.y_in == null) { missing++; return; }
+      const o = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), std(g.zielfarbe === 'red' ? 0xc0392b : 0x1e6bae)); o.position.y = 1.5; put(o, g.x_in, g.y_in);
+    });
+    (F.loader || []).forEach(g => {
+      if (g.x_in == null || g.y_in == null) { missing++; return; }
+      const o = new THREE.Mesh(new THREE.BoxGeometry(6, 10, 6), std(g.farbe === 'red' ? 0xc0392b : 0x1e6bae, {transparent:true, opacity:.6})); o.position.y = 5; put(o, g.x_in, g.y_in);
+    });
+    (F.posen || []).forEach(g => { if (g.x_in == null || g.y_in == null) missing++; });
+  }
+  $('fieldinfo').textContent = F
+    ? `Feld ${2 * half}″ · ${shown} Feldpunkte gezeigt` + (missing ? ` · ${missing} nicht vermessen (A-01)` : '')
+    : `Feld ${2 * half}″ · keine field.json geladen`;
+  S.dirty = true;
+}
+function loadField(text, name){
+  try { S.field = JSON.parse(text); } catch (e) { alert(name + ': kein gültiges JSON (' + e.message + ')'); return; }
+  buildField();
+}
+
+/* ---------- Logs ---------- */
+function addLog(text, name){
+  const log = FBLog.parseLog(text);
+  if (!Object.keys(log.robots).length) { alert(name + ': keine Datenzeilen.\n' + log.warnings.join('\n')); return; }
+  const idx = S.logs.length, color = LOG_COLORS[idx % LOG_COLORS.length];
+  const L = { name, log, color, offset: 0, visible: true, range: FBLog.timeRange(log), events: FBLog.events(log), tracks: {} };
+  Object.keys(log.robots).forEach(rn => { L.tracks[rn] = { tr: log.robots[rn], obj: null, trail: null, lastIdx: -1 }; });
+  S.logs.push(L);
+  rebuildScene();
+}
+function removeLog(L){
+  S.logs.splice(S.logs.indexOf(L), 1);
+  rebuildScene();
+}
+function rebuildScene(){
+  // Modelle und Spuren neu aufbauen (nur beim Laden/Entfernen/Umschalten; Abspielen ändert nur Posen)
+  if (HAS3D) scene.children.filter(o => o.userData.fbLog).forEach(o => scene.remove(o));
+  const seen = new Set();   // je Roboter: erstes Log = Modell, weitere = Geist
+  S.logs.forEach((L, li) => {
+    L.color = LOG_COLORS[li % LOG_COLORS.length];
+    Object.entries(L.tracks).forEach(([rn, k]) => {
+      k.lastIdx = -1;
+      if (!HAS3D) return;
+      k.ghost = seen.has(rn); seen.add(rn);
+      k.obj = makeModel(rn, k.ghost ? L.color : null);
+      scene.add(k.obj);
+      k.trail = makeTrail(k.tr, L.color, li, k.ghost);
+      scene.add(k.trail);
+    });
+  });
+  S.tMin = Math.min(0, ...S.logs.map(L => L.range[0] + L.offset));
+  S.tMax = Math.max(1, ...S.logs.map(L => L.range[1] + L.offset));
+  $('tIn').min = S.tMin; $('tIn').max = S.tMax;
+  $('empty').hidden = HAS3D && S.logs.length > 0;
+  collectEvents(); renderLogList(); renderStateRows(); drawStrip();
+  setTime(Math.min(Math.max(S.t, S.tMin), S.tMax));
+}
+/* Starre Teile eines Modells zusammenfassen (Tausende Zeichenaufrufe → wenige). Für jedes Mesh wird der höchste Vorfahr A
+   gesucht, relativ zu dem es sich bei drei Liftstellungen nicht bewegt; alle Meshes mit gleichem A, gleicher Ebene und gleichem
+   Material werden in A's Koordinaten zu einem Mesh verschmolzen. A = Wurzel heißt: unbeweglich. robots.js bleibt unverändert. */
+function bakeRigid(r){
+  const root = r.root, info = r.info, snaps = [];
+  [0, .5, 1].forEach(f => {
+    const th = info.thMin + f * (info.thMax - info.thMin); info.set(th * DEG, f);
+    root.updateMatrixWorld(true);
+    const m = new Map(); root.traverse(o => m.set(o, o.matrixWorld.clone())); snaps.push(m);
+  });
+  info.set(info.thMin * DEG, 0); root.updateMatrixWorld(true);   // Zustand = snaps[0]
+  const inv = snaps.map(m => { const c = new Map(); return o => c.get(o) || (c.set(o, m.get(o).clone().invert()), c.get(o)); });
+  const rel = (k, A, o) => inv[k](A).clone().multiply(snaps[k].get(o));
+  const same = (x, y) => x.elements.every((e, i) => Math.abs(e - y.elements[i]) < 1e-6);
+  const layerOf = o => { for (let p = o; p; p = p.parent) for (const k in r.layers) if (r.layers[k] === p) return k; return null; };
+  const meshes = []; root.traverse(o => { if (o.isMesh && o.visible) meshes.push(o); });
+  const buckets = new Map(), v = new THREE.Vector3(), nm = new THREE.Matrix3();
+  meshes.forEach(o => {
+    const layer = layerOf(o), geo = o.geometry;
+    if (!layer || !geo.attributes.position || !geo.attributes.normal) return;
+    const chain = []; for (let p = o.parent; p; p = p.parent) chain.unshift(p);   // Wurzel … Elternteil
+    let A = null, M = null;
+    for (const c of chain) {
+      const r0 = rel(0, c, o);
+      if (same(r0, rel(1, c, o)) && same(r0, rel(2, c, o))) { A = c; M = r0; break; }
+    }
+    if (!A) return;
+    const pos = geo.attributes.position, nor = geo.attributes.normal, uv = geo.attributes.uv, idx = geo.index;
+    const total = idx ? idx.count : pos.count;
+    const groups = Array.isArray(o.material) ? (geo.groups.length ? geo.groups : [{start:0, count:total, materialIndex:0}]) : [{start:0, count:total, materialIndex:-1}];
+    nm.getNormalMatrix(M);
+    groups.forEach(gr => {
+      const mat = gr.materialIndex < 0 ? o.material : o.material[gr.materialIndex];
+      if (!mat) return;
+      const key = A.uuid + '|' + layer + '|' + mat.uuid + '|' + o.castShadow;
+      let b = buckets.get(key); if (!b) buckets.set(key, b = {A, layer, mat, cast:o.castShadow, p:[], n:[], u:[]});
+      const end = Math.min(gr.start + gr.count, total);
+      for (let j = gr.start; j < end; j++) {
+        const i = idx ? idx.getX(j) : j;
+        v.fromBufferAttribute(pos, i).applyMatrix4(M); b.p.push(v.x, v.y, v.z);
+        v.fromBufferAttribute(nor, i).applyMatrix3(nm).normalize(); b.n.push(v.x, v.y, v.z);
+        if (uv) b.u.push(uv.getX(i), uv.getY(i)); else b.u.push(0, 0);
+      }
+    });
+    o.parent.remove(o);
+  });
+  buckets.forEach(b => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(b.p, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(b.n, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(b.u, 2));
+    const m = new THREE.Mesh(g, b.mat); m.castShadow = b.cast; m.receiveShadow = true;
+    if (b.A === root) r.layers[b.layer].add(m);   // Ebenen-Gruppen liegen ohne Versatz in der Wurzel
+    else { b.A.add(m); if (DETAIL_LAYERS.includes(b.layer)) { m.userData.fbDetail = true; m.visible = S.detail; } }
+  });
+  return r;
+}
+const ghostCache = {};
+function makeModel(rn, ghostColor){
+  let r;
+  if (rn === 'stacker') r = bakeRigid(models.stacker());
+  else if (rn === 'runner') r = bakeRigid(models.runner());
+  const g = new THREE.Group(); g.userData.fbLog = true;
+  if (r) {
+    g.add(r.root); g.userData.info = r.info;
+    DETAIL_LAYERS.forEach(k => { const l = r.layers[k]; if (l) { l.userData.fbDetail = true; l.visible = S.detail; } });
+  }
+  else { const b = new THREE.Mesh(new THREE.BoxGeometry(18, 10, 18), new THREE.MeshStandardMaterial({color:0x888888})); b.position.y = 5; g.add(b); }
+  if (ghostColor) {
+    const m = ghostCache[ghostColor] || (ghostCache[ghostColor] = new THREE.MeshStandardMaterial({color:ghostColor, transparent:true, opacity:.32, depthWrite:false, roughness:.6}));
+    g.traverse(o => { if (o.isMesh) { o.material = m; o.castShadow = false; o.receiveShadow = false; } });
+  }
+  return g;
+}
+function makeTrail(tr, color, li, ghost){
+  const n = tr.n, pos = new Float32Array(n * 3);
+  const c = FBLog.POSE[S.src];
+  let lx = NaN, ly = NaN;
+  for (let i = 0; i < n && Number.isNaN(lx); i++) {   // Anfang ohne Werte: mit erstem gültigen Punkt füllen
+    if (!Number.isNaN(tr.num[c[0]][i]) && !Number.isNaN(tr.num[c[1]][i])) { lx = tr.num[c[0]][i]; ly = tr.num[c[1]][i]; }
+  }
+  for (let i = 0; i < n; i++) {
+    let x = tr.num[c[0]][i], y = tr.num[c[1]][i];
+    if (Number.isNaN(x) || Number.isNaN(y)) { x = lx; y = ly; }   // Lücke (z. B. GPS): letzten Punkt halten
+    lx = x; ly = y;
+    pos[i * 3] = Number.isNaN(x) ? 0 : x; pos[i * 3 + 1] = .3 + li * .08; pos[i * 3 + 2] = Number.isNaN(y) ? 0 : -y;
+  }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setDrawRange(0, 0);
+  const line = new THREE.Line(geo, new THREE.LineBasicMaterial({color, transparent:ghost, opacity:ghost ? .8 : 1}));
+  line.userData.fbLog = true; line.frustumCulled = false;
+  return line;
+}
+function collectEvents(){
+  S.events = [];
+  S.logs.forEach((L, li) => L.events.forEach(e => S.events.push(Object.assign({}, e, {li, tt: e.t + L.offset}))));
+  S.events.sort((a, b) => a.tt - b.tt || a.li - b.li);
+  renderEvents();
+}
+
+/* ---------- Zeit ---------- */
+function setTime(t){
+  S.t = Math.min(Math.max(t, S.tMin), S.tMax);
+  $('tIn').value = S.t;
+  S.dirty = true;
+}
+function kindOf(e){ return EV_KINDS.includes(e.kind) ? e.kind : 'andere'; }
+function update(){
+  $('tOut').textContent = fmt(S.t, 2) + ' s';
+  S.logs.forEach((L, li) => {
+    const t = S.t - L.offset;
+    Object.entries(L.tracks).forEach(([rn, k]) => {
+      const tr = k.tr, i = FBLog.indexAt(tr, t);
+      if (HAS3D) {
+        k.obj.visible = L.visible; k.trail.visible = L.visible;
+        let p = FBLog.pose(tr, t, S.src);
+        if (Number.isNaN(p.x) || Number.isNaN(p.y)) { k.obj.visible = false; }
+        else placeOnField(k.obj, p.x, p.y, Number.isNaN(p.h) ? 0 : p.h);
+        const info = k.obj.userData.info;
+        if (info) {
+          let th = FBLog.sample(tr, 'lift_deg', t); if (Number.isNaN(th)) th = info.thMin;
+          th = Math.min(info.thMax, Math.max(info.thMin, th));
+          info.set(th * DEG, (th - info.thMin) / (info.thMax - info.thMin));
+        }
+        if (i !== k.lastIdx) { k.trail.geometry.setDrawRange(0, i + 1); k.lastIdx = i; }
+      }
+      const row = k.row;
+      if (row) {
+        const v = c => FBLog.sample(tr, c, t), p = FBLog.pose(tr, t, S.src), cyc = v('cycle');
+        row.cells[2].innerHTML = cyc ? `<span class="pill ${esc(cyc)}">${esc(cyc)}</span>` : '–';
+        row.cells[3].textContent = v('route_step') || '–';
+        row.cells[4].textContent = fmt(v('score'), 0);
+        row.cells[5].textContent = `${v('has_cup') ? 'Cup' : '·'} / ${v('has_pin') ? (v('pin_yellow_up') ? 'Pin↑' : 'Pin') : '·'}`;
+        row.cells[6].textContent = fmt(p.x); row.cells[7].textContent = fmt(p.y); row.cells[8].textContent = fmt(p.h, 0);
+        row.cells[9].textContent = fmt(v('lift_deg'), 0) + ' / ' + fmt(v('lift_set_deg'), 0);
+        row.cells[10].textContent = fmt(v('g_err_in')); row.cells[11].textContent = fmt(v('batt_v'), 2);
+        row.cells[12].textContent = fmt(v('cpu_ms')); row.cells[13].textContent = fmt(v('temp_max_c'));
+        row.style.opacity = L.visible ? 1 : .4;
+      }
+    });
+  });
+  // Abstand gleicher Roboter zwischen Logs (z. B. Simulation ↔ Roboter)
+  const d = [];
+  const names = new Set(); S.logs.forEach(L => Object.keys(L.tracks).forEach(n => names.add(n)));
+  names.forEach(rn => {
+    const ls = S.logs.filter(L => L.tracks[rn]);
+    for (let j = 1; j < ls.length; j++) {
+      const a = FBLog.pose(ls[0].tracks[rn].tr, S.t - ls[0].offset, S.src), b = FBLog.pose(ls[j].tracks[rn].tr, S.t - ls[j].offset, S.src);
+      d.push(`Δ ${rn} Log 1↔${S.logs.indexOf(ls[j]) + 1}: ${fmt(Math.hypot(a.x - b.x, a.y - b.y))}″`);
+    }
+  });
+  $('deltas').textContent = d.join(' · ');
+  if (S.follow && HAS3D) {
+    const k = S.logs.length && Object.values(S.logs[0].tracks)[0];
+    if (k && k.obj.visible) { const dp = k.obj.position.clone().sub(controls.target); controls.target.add(dp); cam.position.add(dp); }
+  }
+  markEvents();
+}
+
+/* ---------- Listen ---------- */
+function renderLogList(){
+  const ul = $('logs');
+  if (!S.logs.length) { ul.innerHTML = '<li class="empty">Noch keine Logs. Testlogs: python3 tools/viewer/make_test_logs.py</li>'; return; }
+  ul.innerHTML = '';
+  S.logs.forEach((L, li) => {
+    const m = L.log.meta, li_ = document.createElement('li');
+    const robots = Object.values(L.tracks).map(k => `${k.tr.name} (${k.tr.n})`).join(', ');
+    li_.innerHTML = `<span class="sw" style="background:${L.color}"></span><span class="fname" title="${esc(L.name)}">${li + 1} · ${esc(L.name)}</span>` +
+      `<button class="x" title="Entfernen" aria-label="${esc(L.name)} entfernen">×</button>` +
+      `<span class="lmeta"><label><input type="checkbox" ${L.visible ? 'checked' : ''}> zeigen</label>` +
+      `<span>${esc(m.source || '?')} · seed ${esc(m.seed || '–')} · ${esc(m.build || '–')}</span><span>${esc(robots)}</span>` +
+      `<label>Versatz <input type="number" step="0.02" value="${L.offset}"> s</label></span>` +
+      L.log.warnings.slice(0, 5).map(w => `<span class="warn">${esc(w)}</span>`).join('') +
+      (L.log.warnings.length > 5 ? `<span class="warn">… ${L.log.warnings.length - 5} weitere Warnungen</span>` : '');
+    li_.querySelector('.x').onclick = () => removeLog(L);
+    li_.querySelector('input[type=checkbox]').onchange = e => { L.visible = e.target.checked; S.dirty = true; };
+    li_.querySelector('input[type=number]').onchange = e => { L.offset = +e.target.value || 0; rebuildScene(); };
+    ul.appendChild(li_);
+  });
+}
+function renderStateRows(){
+  const tb = $('state'); tb.innerHTML = '';
+  S.logs.forEach((L, li) => Object.entries(L.tracks).forEach(([rn, k]) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><span class="sw" style="background:${L.color}" title="Log ${li + 1}"></span></td><td>${esc(rn)}</td>` + '<td></td><td></td>' +
+      '<td class="n"></td><td></td>' + '<td class="n"></td>'.repeat(8);
+    tb.appendChild(tr); k.row = tr;
+  }));
+}
+function renderFilter(){
+  const box = $('evfilter'); box.innerHTML = '';
+  EV_KINDS.forEach(kd => {
+    const n = S.events.filter(e => kindOf(e) === kd).length;
+    const l = document.createElement('label'); l.className = 'chip';
+    l.innerHTML = `<input type="checkbox" ${S.kinds.has(kd) ? 'checked' : ''}><span class="k-${kd}">${kd}</span> ${n}`;
+    l.querySelector('input').onchange = e => { e.target.checked ? S.kinds.add(kd) : S.kinds.delete(kd); renderEvents(); drawStrip(); };
+    box.appendChild(l);
+  });
+}
+function renderEvents(){
+  renderFilter();
+  const ul = $('events'); ul.innerHTML = '';
+  const shown = S.events.filter(e => S.kinds.has(kindOf(e)));
+  $('evcount').textContent = `${shown.length} von ${S.events.length}`;
+  const frag = document.createDocumentFragment();
+  shown.forEach(e => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${fmt(e.tt, 2)}</span><span class="sw" style="background:${S.logs[e.li].color}"></span><span class="evtext"><span class="k-${kindOf(e)}">${esc(e.text)}</span> · ${esc(e.robot)}</span>`;
+    li.title = `Log ${e.li + 1} · ${e.robot} · t = ${fmt(e.tt, 2)} s`;
+    li.onclick = () => { S.playing = false; syncPlay(); setTime(e.tt); };
+    e.el = li; frag.appendChild(li);
+  });
+  ul.appendChild(frag);
+  S.shownEvents = shown; S.curEv = null;
+  markEvents(true);
+}
+function markEvents(force){
+  const ev = S.shownEvents || [];
+  // letztes Ereignis mit tt <= t (binäre Suche)
+  let lo = 0, hi = ev.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (ev[m].tt <= S.t + 1e-9) lo = m + 1; else hi = m; }
+  const cur = lo - 1;
+  if (!force && cur === S.curEv) return;
+  ev.forEach((e, i) => { e.el.classList.toggle('future', i > cur); e.el.classList.toggle('cur', i === cur); });
+  S.curEv = cur;
+  if (cur >= 0) { const el = ev[cur].el, ul = $('events'); if (el.offsetTop < ul.scrollTop || el.offsetTop > ul.scrollTop + ul.clientHeight - 30) ul.scrollTop = el.offsetTop - ul.clientHeight / 2; }
+}
+function drawStrip(){
+  const c = $('evstrip'), w = c.clientWidth || 600, dpr = window.devicePixelRatio || 1;
+  c.width = w * dpr; c.height = 10 * dpr;
+  const g = c.getContext('2d'); g.scale(dpr, dpr); g.clearRect(0, 0, w, 10);
+  const col = {PLACED:'#2F7D4F', TIMEOUT:'#B3261E', COLLISION:'#B3261E', RULE:'#B3261E', BLOCKED:'#A8591A', andere:'#566673'};
+  S.events.filter(e => S.kinds.has(kindOf(e))).forEach(e => {
+    const x = (e.tt - S.tMin) / ((S.tMax - S.tMin) || 1) * w;
+    g.fillStyle = col[kindOf(e)]; g.fillRect(Math.round(x) - 1, 0, 2, 10);
+  });
+}
+
+/* ---------- Bedienung ---------- */
+function syncPlay(){ $('bPlay').textContent = S.playing ? '❚❚' : '▶'; $('bPlay').setAttribute('aria-label', S.playing ? 'Pause' : 'Abspielen'); }
+$('bPlay').onclick = () => { if (!S.playing && S.t >= S.tMax) setTime(S.tMin); S.playing = !S.playing; syncPlay(); };
+$('tIn').addEventListener('input', () => setTime(+$('tIn').value));
+$('speed').onchange = e => { S.speed = +e.target.value; };
+$('poseSrc').onchange = e => { S.src = e.target.value; rebuildScene(); };
+$('bTop').onclick = () => setView($('bTop').getAttribute('aria-pressed') !== 'true');
+$('bDetail').onclick = () => {
+  S.detail = !S.detail; $('bDetail').setAttribute('aria-pressed', S.detail);
+  if (HAS3D) scene.traverse(o => { if (o.userData.fbDetail) o.visible = S.detail; });
+  S.dirty = true;
+};
+$('bFollow').onclick = () => { S.follow = !S.follow; $('bFollow').setAttribute('aria-pressed', S.follow); };
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type !== 'range' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') { e.preventDefault(); $('bPlay').click(); }
+  else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') { e.preventDefault(); setTime(S.t + (e.code === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 2 : .2)); }
+});
+window.addEventListener('resize', drawStrip);
+function readFiles(files){
+  // Alle lesen, dann sortiert hinzufügen: Reihenfolge (erstes Log = Modell) hängt nicht von der Lesedauer ab
+  const list = Array.from(files).sort((a, b) => a.name.localeCompare(b.name));
+  Promise.all(list.map(f => new Promise((ok, bad) => {
+    const r = new FileReader(); r.onload = () => ok([f.name, r.result]); r.onerror = () => bad(f.name); r.readAsText(f);
+  }))).then(res => res.forEach(([name, text]) => (/\.json$/i.test(name) ? loadField : addLog)(text, name)))
+    .catch(name => alert(name + ': konnte nicht gelesen werden'));
+}
+$('fileLogs').onchange = e => { readFiles(e.target.files); e.target.value = ''; };
+$('fileField').onchange = e => { readFiles(e.target.files); e.target.value = ''; };
+let dragDepth = 0;
+window.addEventListener('dragenter', e => { e.preventDefault(); dragDepth++; document.body.classList.add('dragging'); });
+window.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove('dragging'); } });
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; document.body.classList.remove('dragging'); readFiles(e.dataTransfer.files); });
+
+/* ---------- Start ---------- */
+buildField();
+renderLogList();
+// Über http (nicht file://) gehen auch URL-Parameter: ?log=a.csv&log=b.csv&field=../../field/field.json&t=12
+const q = new URLSearchParams(location.search);
+const fetchText = u => fetch(u).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); });
+if (location.protocol !== 'file:') {
+  // Lokal liegt das Feld zwei Ordner höher, auf der Veröffentlichung (Pages) neben dem Viewer.
+  fetchText(q.get('field') || '../../field/field.json').catch(() => fetchText('field.json')).then(t => loadField(t, 'field.json')).catch(() => {});
+  // Ohne ?log=… lädt die Veröffentlichung die Demo (demo/run000_*.csv, falls vorhanden).
+  const logUrls = q.getAll('log').length ? q.getAll('log') : (q.has('nodemo') ? [] : ['demo/run000_stacker.csv', 'demo/run000_runner.csv']);
+  Promise.all(logUrls.map(u => fetchText(u).then(t => [u, t]))).then(list => {
+    list.forEach(([u, t]) => addLog(t, u.split('/').pop()));
+    if (q.has('t')) setTime(+q.get('t'));
+    document.body.dataset.ready = '1';
+  }).catch(e => { document.body.dataset.ready = q.getAll('log').length ? 'fehler ' + e.message : '1'; });
+} else document.body.dataset.ready = '1';
+if (q.has('selftest')) {
+  const s = document.createElement('script'); s.src = 'logparse_test.js';
+  s.onload = () => {
+    const r = runLogparseTests(FBLog), el = $('selftest');
+    el.hidden = false; el.className = r.fail ? 'bad' : 'ok';
+    el.textContent = `Selbsttest logparse: ${r.ok} ok, ${r.fail} Fehler` + (r.msgs.length ? '\n' + r.msgs.join('\n') : '');
+  };
+  document.head.appendChild(s);
+}
+// ?stats: Bilder/s und Zeichenaufrufe, um „läuft flüssig“ am eigenen Rechner zu prüfen
+const stats = q.has('stats') && HAS3D ? { el: $('stats'), frames: 0, t0: performance.now() } : null;
+if (stats) stats.el.hidden = false;
+let last = performance.now();
+(function loop(now){
+  const dt = Math.min(.1, (now - last) / 1000); last = now;
+  if (S.playing) { setTime(S.t + dt * S.speed); if (S.t >= S.tMax) { S.playing = false; syncPlay(); } }
+  if (S.dirty) { update(); S.dirty = false; }
+  if (HAS3D) { controls.update(); renderer.render(scene, cam); }
+  if (stats && ++stats.frames && now - stats.t0 >= 1000) {
+    const r = renderer.info.render, fps = stats.frames * 1000 / (now - stats.t0);
+    stats.el.textContent = `${fps.toFixed(0)} B/s · ${r.calls} Aufrufe · ${(r.triangles / 1000).toFixed(0)}k Dreiecke`;
+    document.body.dataset.stats = `${fps.toFixed(1)}|${r.calls}|${r.triangles}`;
+    stats.frames = 0; stats.t0 = now;
+  }
+  requestAnimationFrame(loop);
+})(last);
+window.FBViewer = { S, setTime, addLog, loadField, renderer, scene };
+})();
+</script>
+</body>
+</html>
