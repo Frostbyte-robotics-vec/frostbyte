@@ -7,12 +7,8 @@ namespace frostbyte {
 
 inline constexpr double pi = 3.14159265358979323846;
 
-constexpr double deg_to_rad(double deg) {
-    return deg * pi / 180.0;
-}
-constexpr double rad_to_deg(double rad) {
-    return rad * 180.0 / pi;
-}
+constexpr double deg_to_rad(double deg) { return deg * pi / 180.0; }
+constexpr double rad_to_deg(double rad) { return rad * 180.0 / pi; }
 
 // Winkel in Grad nach (-180, 180]
 inline double wrap_deg(double deg) {

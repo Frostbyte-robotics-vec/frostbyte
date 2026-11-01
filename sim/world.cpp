@@ -53,7 +53,8 @@ public:
         char buf[256];
         if (logfmt::format_header(buf, sizeof buf, robot.name.c_str(), "sim", static_cast<std::int64_t>(seed),
                                   build.c_str()) >= static_cast<int>(sizeof buf))
-            throw std::runtime_error("Log-Kopfzeile länger als " + std::to_string(sizeof buf) + " Byte (build zu lang?)");
+            throw std::runtime_error("Log-Kopfzeile länger als " + std::to_string(sizeof buf) +
+                                     " Byte (build zu lang?)");
         out_ << buf << '\n' << logfmt::columns << '\n';
     }
 

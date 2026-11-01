@@ -15,4 +15,4 @@ Einheitlicher Stil ohne Diskussion im Review; feste Version, damit lokal und CI 
 Wer C++ committet, formatiert vorher. Lokal immer `pip install clang-format==18.1.8` verwenden; weicht die Version ab, gilt die CI-Version.
 
 ## Nachtrag (1. Nov 2026)
-Spaltenlimit 120 statt 100, weil der Code aus den Sim-Tickets so geschrieben ist. Der Bestand ist noch nicht ganz konform (Kommentar-Ausrichtung, src/main.cpp mit Tabs): einmaliges `python3 tools/format.py` über das Repo, sobald die offenen Sim-PRs gemergt sind (Konflikte vermeiden).
+Spaltenlimit 120 statt 100, weil der Code aus den Sim-Tickets so geschrieben ist. Der Bestand wurde in S-04 einmalig mit `python3 tools/format.py` umformatiert (nur Whitespace/Umbrüche, Tests grün).

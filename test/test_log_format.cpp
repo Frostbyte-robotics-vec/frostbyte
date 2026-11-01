@@ -7,9 +7,10 @@
 using namespace frostbyte;
 
 TEST_CASE("Log v1: Spaltenzeile exakt wie docs/log_format.md") {
-    CHECK(std::string(logfmt::columns) ==
-          "t_s,robot,x_in,y_in,h_deg,gx_in,gy_in,gh_deg,g_err_in,tx_in,ty_in,th_deg,lift_deg,arm_deg,claw_in,"
-          "lift_set_deg,arm_set_deg,cycle,route_step,has_cup,has_pin,pin_yellow_up,score,cpu_ms,batt_v,temp_max_c,event");
+    CHECK(
+        std::string(logfmt::columns) ==
+        "t_s,robot,x_in,y_in,h_deg,gx_in,gy_in,gh_deg,g_err_in,tx_in,ty_in,th_deg,lift_deg,arm_deg,claw_in,"
+        "lift_set_deg,arm_set_deg,cycle,route_step,has_cup,has_pin,pin_yellow_up,score,cpu_ms,batt_v,temp_max_c,event");
 }
 
 TEST_CASE("Log v1: Kopfzeile, Seed fehlt -> Strich") {

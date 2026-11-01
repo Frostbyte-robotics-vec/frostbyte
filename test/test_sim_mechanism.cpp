@@ -124,9 +124,9 @@ TEST_CASE("Mechanismen: sim_params.json lädt (nur Struktur), Arm nur beim Stack
 }
 
 TEST_CASE("Mechanismen: unplausible Grenzen werden abgelehnt") {
-    const Json bad = parse_json(
-        R"({"roboter":{"x":{"mechanismen":{"lift":{"min_deg":10,"max_deg":0,"max_deg_s":1,"max_deg_s2":1},)"
-        R"("claw":{"offen_in":1,"pin_in":0.5,"max_in_s":1}}}}})");
+    const Json bad =
+        parse_json(R"({"roboter":{"x":{"mechanismen":{"lift":{"min_deg":10,"max_deg":0,"max_deg_s":1,"max_deg_s2":1},)"
+                   R"("claw":{"offen_in":1,"pin_in":0.5,"max_in_s":1}}}}})");
     CHECK_THROWS(load_mechanism_params(bad, "x"));
 }
 
@@ -277,9 +277,9 @@ TEST_CASE("Objekte: gleicher Seed = gleiche Folge, anderer Seed = andere") {
 }
 
 TEST_CASE("Objekte: ungültige Wahrscheinlichkeit wird abgelehnt") {
-    const Json bad = parse_json(
-        R"({"ereignisse":{"loader_einheit":{"dauer_s":1,"sigma_s":0,"fehlschlag":1.5},)"
-        R"("boden_einheit":{"dauer_s":1,"sigma_s":0,"fehlschlag":0},"pin_gelb_oben":{"loader":1,"boden":1},)"
-        R"("greifer_fasst":{"erfolg":1},"setzen":{"erfolg_ebene0":1,"abzug_pro_ebene":0}}})");
+    const Json bad =
+        parse_json(R"({"ereignisse":{"loader_einheit":{"dauer_s":1,"sigma_s":0,"fehlschlag":1.5},)"
+                   R"("boden_einheit":{"dauer_s":1,"sigma_s":0,"fehlschlag":0},"pin_gelb_oben":{"loader":1,"boden":1},)"
+                   R"("greifer_fasst":{"erfolg":1},"setzen":{"erfolg_ebene0":1,"abzug_pro_ebene":0}}})");
     CHECK_THROWS(load_event_params(bad));
 }

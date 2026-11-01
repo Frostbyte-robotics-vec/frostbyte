@@ -74,8 +74,7 @@ double Joint::time_to_reach(double target) const {
     return limit * dt;
 }
 
-Claw::Claw(const ClawParams& p)
-    : p_(p), joint_(JointParams{0.0, p.open_in, p.max_in_s, 0.0}, p.open_in) {}
+Claw::Claw(const ClawParams& p) : p_(p), joint_(JointParams{0.0, p.open_in, p.max_in_s, 0.0}, p.open_in) {}
 
 void Claw::command_open() { joint_.set_target(p_.open_in); }
 

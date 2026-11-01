@@ -41,11 +41,13 @@ public:
     explicit CycleStats(std::uint32_t period_us) : period_us_(period_us) {}
 
     void record_jitter_us(std::uint32_t jitter_us) {
-        if (jitter_us > jitter_max_us_) jitter_max_us_ = jitter_us;
+        if (jitter_us > jitter_max_us_)
+            jitter_max_us_ = jitter_us;
     }
 
     void record_work_us(std::uint32_t work_us) {
-        if (work_us > work_max_us_) work_max_us_ = work_us;
+        if (work_us > work_max_us_)
+            work_max_us_ = work_us;
         if (work_us > period_us_) {
             ++overruns_;
             ++consecutive_;
