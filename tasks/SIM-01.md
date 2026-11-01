@@ -2,7 +2,7 @@
 id: SIM-01
 phase: "1b"
 titel: Welt-Grundgerüst: 1-ms-Schritt, Steuerung alle 10 ms, Seed, field.json laden, CLI frostbyte_sim, CSV nach docs/log_format.md
-status: review
+status: done
 owner: DAVIDCOPCOP
 branch: ticket/sim-01
 depends: [F-01, F-02]
