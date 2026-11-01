@@ -48,89 +48,95 @@ TEST_CASE("Fahrkurve: Totzone, Exponent, Vorzeichen") {
 TEST_CASE("Arcade-Mischung: geradeaus, Drehen, Normieren") {
     const auto c = test_config();
     DriveSubsystem d(c, 0.0);
+    DriveOutput out;
     d.request(arcade(1.0, 0.0), 0.0);
-    d.update(0.0);
-    CHECK(d.output().left_v == doctest::Approx(12.0));
-    CHECK(d.output().right_v == doctest::Approx(12.0));
+    out = d.update(0.0);
+    CHECK(out.left_v == doctest::Approx(12.0));
+    CHECK(out.right_v == doctest::Approx(12.0));
     CHECK(d.state() == DriveState::driving);
 
     // Drehen auf der Stelle: links vor, rechts zurück (positive Drehung = gegen den Uhrzeigersinn: rechts vor).
     d.request(arcade(0.0, 1.0), 0.01);
-    d.update(0.01);
-    CHECK(d.output().left_v == doctest::Approx(-12.0));
-    CHECK(d.output().right_v == doctest::Approx(12.0));
+    out = d.update(0.01);
+    CHECK(out.left_v == doctest::Approx(-12.0));
+    CHECK(out.right_v == doctest::Approx(12.0));
 
     // Vorwärts 1 + Drehen 1 würde 2 ergeben: wird auf 1 normiert, das Verhältnis bleibt.
     d.request(arcade(1.0, 1.0), 0.02);
-    d.update(0.02);
-    CHECK(d.output().left_v == doctest::Approx(0.0).epsilon(1e-9));
-    CHECK(d.output().right_v == doctest::Approx(12.0));
+    out = d.update(0.02);
+    CHECK(out.left_v == doctest::Approx(0.0).epsilon(1e-9));
+    CHECK(out.right_v == doctest::Approx(12.0));
 }
 
 TEST_CASE("Langsam-Modus und Höchstgeschwindigkeit") {
     auto c = test_config();
     c.max_speed = 0.8;
     DriveSubsystem d(c, 0.0);
+    DriveOutput out;
     d.request(arcade(1.0, 0.0), 0.0);
-    d.update(0.0);
-    CHECK(d.output().left_v == doctest::Approx(12.0 * 0.8));
+    out = d.update(0.0);
+    CHECK(out.left_v == doctest::Approx(12.0 * 0.8));
     d.request(arcade(1.0, 0.0, true), 0.01);
-    d.update(0.01);
-    CHECK(d.output().left_v == doctest::Approx(12.0 * 0.8 * 0.4));
+    out = d.update(0.01);
+    CHECK(out.left_v == doctest::Approx(12.0 * 0.8 * 0.4));
 }
 
 TEST_CASE("Totzone: kleine Eingaben fahren nicht") {
     DriveSubsystem d(test_config(), 0.0);
+    DriveOutput out;
     d.request(arcade(0.05, -0.08), 0.0);
-    d.update(0.0);
-    CHECK(d.output().left_v == 0.0);
-    CHECK(d.output().right_v == 0.0);
+    out = d.update(0.0);
+    CHECK(out.left_v == 0.0);
+    CHECK(out.right_v == 0.0);
 }
 
 TEST_CASE("Timeout: ohne neuen Befehl hält der Antrieb an") {
     DriveSubsystem d(test_config(), 0.0);
+    DriveOutput out;
     d.request(arcade(1.0, 0.0), 1.0);
-    d.update(1.1);
+    out = d.update(1.1);
     CHECK(d.state() == DriveState::driving);
-    CHECK(d.output().left_v > 0.0);
-    d.update(1.25);
+    CHECK(out.left_v > 0.0);
+    out = d.update(1.25);
     CHECK(d.state() == DriveState::idle);
-    CHECK(d.output().left_v == 0.0);
-    CHECK(d.output().right_v == 0.0);
-    CHECK_FALSE(d.output().hold);
+    CHECK(out.left_v == 0.0);
+    CHECK(out.right_v == 0.0);
+    CHECK_FALSE(out.hold);
 }
 
 TEST_CASE("HOLD: Spannung 0 mit Bremse, eigenes Timeout, Arcade löst ihn ab") {
     DriveSubsystem d(test_config(), 0.0);
+    DriveOutput out;
     DriveRequest h;
     h.mode = DriveMode::hold;
     d.request(h, 0.0);
-    d.update(0.0);
+    out = d.update(0.0);
     CHECK(d.state() == DriveState::holding);
-    CHECK(d.output().hold);
-    CHECK(d.output().left_v == 0.0);
-    d.update(0.5);  // länger als timeout_s, aber kürzer als hold_timeout_s
+    CHECK(out.hold);
+    CHECK(out.left_v == 0.0);
+    out = d.update(0.5);  // länger als timeout_s, aber kürzer als hold_timeout_s
     CHECK(d.state() == DriveState::holding);
     d.request(arcade(1.0, 0.0), 0.6);  // manuelle Eingabe übernimmt sofort
-    d.update(0.6);
+    out = d.update(0.6);
     CHECK(d.state() == DriveState::driving);
-    CHECK_FALSE(d.output().hold);
+    CHECK_FALSE(out.hold);
 
     d.request(h, 1.0);
-    d.update(2.0);
+    out = d.update(2.0);
     CHECK(d.state() == DriveState::idle);
 }
 
 TEST_CASE("Stop-Befehl: sofort Halt, ohne Bremse") {
     DriveSubsystem d(test_config(), 0.0);
+    DriveOutput out;
     d.request(arcade(1.0, 0.0), 0.0);
-    d.update(0.0);
+    out = d.update(0.0);
     DriveRequest s;
     s.mode = DriveMode::stop;
     d.request(s, 0.01);
-    d.update(0.01);
+    out = d.update(0.01);
     CHECK(d.state() == DriveState::idle);
-    CHECK(d.output().left_v == 0.0);
+    CHECK(out.left_v == 0.0);
 }
 
 TEST_CASE("Sim fährt ein Quadrat und kommt am Start an") {
@@ -150,13 +156,14 @@ TEST_CASE("Sim fährt ein Quadrat und kommt am Start an") {
     cfg.deadband = 0.0;
     cfg.exponent = 1.0;
     DriveSubsystem d(cfg, 0.0);
+    DriveOutput out;
 
     constexpr double dt = 0.001;
     double t = 0.0;
     auto step = [&](double forward, double turn) {
         d.request(arcade(forward, turn), t);
-        d.update(t);
-        model.step(dt, d.output().left_v, d.output().right_v);
+        const DriveOutput out = d.update(t);
+        model.step(dt, out.left_v, out.right_v);
         t += dt;
     };
     auto dist = [&](const Pose& a) { return std::hypot(a.x_in - 0.0, a.y_in - 0.0); };

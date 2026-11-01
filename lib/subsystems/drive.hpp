@@ -6,8 +6,8 @@
 #include "core/state_machine.hpp"
 
 // Schicht 3: Antrieb (D-01). Arcade-Fahren mit Fahrkurve (Totzone, Exponent), Höchstgeschwindigkeit, Langsam-Modus und
-// HOLD. Nur request(), state(), update() wie jedes Subsystem; die Ausgabe (Spannung links/rechts, Bremse) holt die
-// aufrufende Schicht mit output() und gibt sie an hal::Motor weiter. Jeder Befehl hat ein Timeout: ohne neuen Befehl
+// HOLD. Nur request(), state(), update() wie jedes Subsystem; update() liefert die Ausgabe (Spannung links/rechts,
+// Bremse), die die aufrufende Schicht an hal::Motor weitergibt (ADR-011). Jeder Befehl hat ein Timeout: ohne neuen Befehl
 // steht der Antrieb (Zustand idle). Eingaben -1..1, Spannung in Volt, Zeit in Sekunden.
 // Vorzeichen: positive Drehung (turn > 0) dreht gegen den Uhrzeigersinn (Blickrichtung wächst), die rechte Seite fährt schneller.
 namespace frostbyte {
@@ -70,9 +70,7 @@ public:
     }
 
     DriveState state() const { return sm_.state(); }
-    const DriveOutput& output() const { return out_; }
-
-    void update(double now_s) {
+    DriveOutput update(double now_s) {
         sm_.update(now_s);
         out_ = DriveOutput{};
         switch (sm_.state()) {
@@ -85,6 +83,7 @@ public:
                 mix(req_);
                 break;
         }
+        return out_;
     }
 
 private:
