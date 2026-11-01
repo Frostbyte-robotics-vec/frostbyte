@@ -32,6 +32,10 @@ Stats stats_of(const std::vector<double>& v) {
 
 constexpr int samples = 1000;
 
+// Echte relative Toleranz. doctest::Approx(x).epsilon(e) rechnet e * (1 + max(|ist|, |soll|)) und ist bei kleinen
+// Werten fast absolut, also viel lockerer als e.
+bool within_rel(double actual, double expected, double rel) { return std::fabs(actual - expected) <= rel * expected; }
+
 }  // namespace
 
 TEST_CASE("Sensorparameter: Tracking beim Stacker, Encoder beim Runner, Profil skaliert") {
@@ -56,7 +60,7 @@ TEST_CASE("Gauss: Mittel 0, Sigma 1 (+-10 %) in 1000 Proben") {
         v.push_back(gauss(rng));
     const Stats s = stats_of(v);
     CHECK(std::fabs(s.mean) < 0.1);
-    CHECK(s.sigma == doctest::Approx(1.0).epsilon(0.10));
+    CHECK(within_rel(s.sigma, 1.0, 0.10));
 }
 
 TEST_CASE("Odometrie: Rauschen je Takt +-10 % der Vorgabe, Skalierungsfehler genau wie vorgegeben") {
@@ -73,7 +77,7 @@ TEST_CASE("Odometrie: Rauschen je Takt +-10 % der Vorgabe, Skalierungsfehler gen
         last = m.measured_in();
     }
     const Stats s = stats_of(delta);
-    CHECK(s.sigma == doctest::Approx(0.1).epsilon(0.10));
+    CHECK(within_rel(s.sigma, 0.1, 0.10));
     CHECK(std::fabs(s.mean) < 0.02);
 }
 
@@ -106,8 +110,8 @@ TEST_CASE("IMU: Rauschen +-10 % der Vorgabe") {
     for (int i = 0; i < samples; ++i)
         err.push_back(m.measure_deg(30.0, 0.0));  // t = 0: noch keine Drift
     const Stats s = stats_of(err);
-    CHECK(s.sigma == doctest::Approx(0.2).epsilon(0.10));
-    CHECK(s.mean == doctest::Approx(30.0).epsilon(0.01));
+    CHECK(within_rel(s.sigma, 0.2, 0.10));
+    CHECK(within_rel(s.mean, 30.0, 0.01));
 }
 
 TEST_CASE("IMU: Drift pro Minute genau wie vorgegeben, linear in der Zeit") {
@@ -139,7 +143,7 @@ TEST_CASE("GPS: Positionsrauschen im Stand +-10 % der Vorgabe") {
         if (g.valid)
             ex.push_back(g.x_in - 10.0);
     }
-    CHECK(stats_of(ex).sigma == doctest::Approx(1.0).epsilon(0.10));
+    CHECK(within_rel(stats_of(ex).sigma, 1.0, 0.10));
 }
 
 TEST_CASE("GPS: Güte sinkt mit der Fahrgeschwindigkeit, Rauschen folgt der gemeldeten Güte") {
@@ -158,7 +162,7 @@ TEST_CASE("GPS: Güte sinkt mit der Fahrgeschwindigkeit, Rauschen folgt der geme
             ex.push_back(g.x_in);
         }
     }
-    CHECK(stats_of(ex).sigma == doctest::Approx(2.0).epsilon(0.10));
+    CHECK(within_rel(stats_of(ex).sigma, 2.0, 0.10));
 }
 
 TEST_CASE("GPS: Aussetzeranteil +-10 % der Vorgabe in 1000 Proben") {
@@ -170,7 +174,7 @@ TEST_CASE("GPS: Aussetzeranteil +-10 % der Vorgabe in 1000 Proben") {
     int invalid = 0;
     for (int i = 0; i < samples; ++i)
         invalid += m.measure(0, 0, 0, 0).valid ? 0 : 1;
-    CHECK(static_cast<double>(invalid) / samples == doctest::Approx(0.5).epsilon(0.10));
+    CHECK(within_rel(static_cast<double>(invalid) / samples, 0.5, 0.10));
 }
 
 TEST_CASE("GPS: Aussetzer verschiebt die übrigen Messungen nicht") {
