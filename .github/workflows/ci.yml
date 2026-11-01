@@ -30,7 +30,7 @@ jobs:
       - name: ARM-Toolchain installieren
         run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
       - name: Roboter bauen
-        run: make ROBOT=${{ matrix.robot }} -j"$(nproc)"
+        run: make ROBOT=${{ matrix.robot }}
 
   board:
     runs-on: ubuntu-latest
