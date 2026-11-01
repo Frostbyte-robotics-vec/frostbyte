@@ -8,5 +8,6 @@ Status: angenommen (1. Nov 2026), Ticket S-02
 - C++20, `-Wall -Wextra -Wpedantic`. In `lib/` und `hal/sim/` keine PROS-Header.
 
 ## Folgen
-- Windows: `-G Ninja` (oder `-G "MinGW Makefiles"`) angeben, sonst sucht CMake Visual Studio: `cmake -S test -B build-test -G Ninja`.
+- Windows: CMake wählt ohne `-G` Visual Studio; dann ist `ctest -C Debug` nötig. Mit `cmake -S test -B build-test -G Ninja` gilt die Zeile aus CLAUDE.md unverändert.
+- Getestet im frischen Klon, auch mit eigenen `.cpp` in `lib/` und `hal/sim/` (STATIC-Zweig baut und linkt).
 - Fremdcode unter `test/third_party/` darf nicht formatiert werden (`tools/format.py` überspringt `third_party`).
