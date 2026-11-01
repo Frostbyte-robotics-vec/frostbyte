@@ -5,7 +5,7 @@ titel: Monte-Carlo-Lauf, summary.json, tools/sim_report.py (HTML), Abnahmeregeln
 status: todo
 owner:
 branch:
-depends: [SIM-02, SIM-03, SIM-05]
+depends: [SIM-02, SIM-03, SIM-05, SIM-09]
 hw: nein
 ---
 
