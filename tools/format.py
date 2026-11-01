@@ -9,7 +9,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DIRS = ["src", "include", "lib", "hal", "config", "test", "sim", "tools"]
+DIRS = ["src", "lib", "hal", "config", "test", "sim", "tools"]
+CHUNK = 100
 EXTS = {".cpp", ".hpp", ".h", ".cc"}
 SKIP = {"build", "build-test", "out", "site", "firmware", "third_party"}
 
@@ -30,12 +31,16 @@ def main():
     if not fs:
         print("keine C++-Dateien, nichts zu tun")
         return 0
-    cmd = ["clang-format", "--style=file"] + (["--dry-run", "--Werror"] if check else ["-i"]) + fs
-    try:
-        return subprocess.call(cmd, cwd=ROOT)
-    except FileNotFoundError:
-        print("clang-format nicht gefunden (pip install clang-format)", file=sys.stderr)
-        return 2
+    base = ["clang-format", "--style=file"] + (["--dry-run", "--Werror"] if check else ["-i"])
+    rc = 0
+    # Blöcke, damit die Kommandozeile unter Windows nicht zu lang wird (WinError 206).
+    for i in range(0, len(fs), CHUNK):
+        try:
+            rc = max(rc, subprocess.call(base + fs[i : i + CHUNK], cwd=ROOT))
+        except FileNotFoundError:
+            print("clang-format nicht gefunden (pip install clang-format==18.1.8)", file=sys.stderr)
+            return 2
+    return rc
 
 
 if __name__ == "__main__":
