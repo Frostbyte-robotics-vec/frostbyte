@@ -2,6 +2,7 @@
 
 Kurze Einträge, neueste oben: Datum · Ticket · Erkenntnis. Jede KI-Sitzung liest diese Datei beim Start eines Tickets mit.
 
+2026-11-01 · SIM-04 · doctest::Approx(x).epsilon(e) rechnet e * (1 + max(|ist|, |soll|)), ist bei kleinen Werten also fast absolut und viel lockerer als e. Für Toleranzen "±10 %" oder "±2 Prozentpunkte" einen expliziten Vergleich schreiben (test_sim_sensor_models.cpp: within_rel, test_sim_mechanism.cpp: within_rel/rate_near). Bei N = 1000 Versuchen und ±2 pp die Testquoten so wählen, dass die Toleranz mindestens 3 Sigma ist (Quote höchstens etwa 5 %).
 2026-11-01 · SIM-07 · Viewer (tools/viewer/index.html) läuft per Doppelklick (file://): dort geht fetch nicht, Logs und field.json über Dateiauswahl/Drag-and-drop. Über `python3 -m http.server` aus dem Repo-Wurzelordner gehen auch URL-Parameter `?log=../../out/sim/x.csv&log=…&t=12&selftest`.
 2026-11-01 · SIM-07 · JS ohne node testen: `osascript -l JavaScript datei.js` (JavaScriptCore, macOS). tools/viewer/test_logparse.py nutzt das; Browser-Selbsttest: index.html?selftest. Bild prüfen: Chrome headless `--screenshot` mit `--use-angle=swiftshader --enable-unsafe-swiftshader`.
 2026-11-01 · SIM-07 · Heading-Konvention ist nicht festgelegt (log_format.md sagt nur „0° = rote → blaue Station“). Viewer nimmt an: +x = rot→blau, gegen den Uhrzeigersinn positiv; steht an einer Stelle (placeOnField in index.html).

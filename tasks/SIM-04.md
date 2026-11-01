@@ -24,7 +24,9 @@ Details im Plan: docs/plan.md (Ticket SIM-04). Regeln: CLAUDE.md.
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand: Gelenke (Lift/Arm/Greifer) und Objektereignisse samt Zyklus fertig und getestet (sim/mechanism.*, sim/objects.*, test/test_sim_mechanism.cpp, ADR-009). Nicht in run_match eingehängt (braucht Route/Fahrmodell).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
+2026-11-01 · DAVIDCOPCOP · Gelenke, Objektereignisse, Zyklus, ADR-009
+2026-11-01 · DAVIDCOPCOP · Review-Fixes: echte Toleranzen statt Approx.epsilon, diskrete Bremskurve
