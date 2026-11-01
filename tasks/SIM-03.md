@@ -24,7 +24,8 @@ Details im Plan: docs/plan.md (Ticket SIM-03). Regeln: CLAUDE.md.
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand: Modelle fertig und getestet (sim/sensor_models.hpp/.cpp, test/test_sim_sensor_models.cpp). Odometrie (Tracking/Encoder), IMU (Drift+Rauschen), GPS (Rauschen, Aussetzer, Güte~Geschwindigkeit), Rauschprofil skaliert alles. Noch nicht in run_match eingehängt: das braucht das Fahrmodell (SIM-02) für wahre Wege/Posen. Neuer Schlüssel gps.sigma_deg (Schätzung). Aussetzer-Test nutzt 20000 statt 1000 Proben (siehe docs/notes.md).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
+2026-11-01 · DAVIDCOPCOP · Sensormodelle samt Tests, Notes-Eintrag

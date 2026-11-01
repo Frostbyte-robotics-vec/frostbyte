@@ -2,6 +2,7 @@
 
 Kurze Einträge, neueste oben: Datum · Ticket · Erkenntnis. Jede KI-Sitzung liest diese Datei beim Start eines Tickets mit.
 
+2026-11-01 · SIM-03 · Sensormodelle (sim/sensor_models.*): Zufall nur über Rng; gauss() = Summe von 12 Gleichverteilten minus 6 (bit-gleich auf jeder Plattform, Box-Muller wäre es nicht). Skalierungsfehler und IMU-Drift haben feste Größe mit Vorzeichen je Lauf; ein Aussetzeranteil von 2 % braucht zum Testen ~20000 Proben, 1000 reichen statistisch nicht für ±10 %. Neuer Schlüssel gps.sigma_deg in sim_params.json (Schätzung). Güte-Formel (error = sigma_in * (1 + guete_verlust * |v|)) ist eine Annahme, SIM-08 ersetzt sie nach echten Logs.
 2026-11-01 · SIM-07 · Viewer (tools/viewer/index.html) läuft per Doppelklick (file://): dort geht fetch nicht, Logs und field.json über Dateiauswahl/Drag-and-drop. Über `python3 -m http.server` aus dem Repo-Wurzelordner gehen auch URL-Parameter `?log=../../out/sim/x.csv&log=…&t=12&selftest`.
 2026-11-01 · SIM-07 · JS ohne node testen: `osascript -l JavaScript datei.js` (JavaScriptCore, macOS). tools/viewer/test_logparse.py nutzt das; Browser-Selbsttest: index.html?selftest. Bild prüfen: Chrome headless `--screenshot` mit `--use-angle=swiftshader --enable-unsafe-swiftshader`.
 2026-11-01 · SIM-07 · Heading-Konvention ist nicht festgelegt (log_format.md sagt nur „0° = rote → blaue Station“). Viewer nimmt an: +x = rot→blau, gegen den Uhrzeigersinn positiv; steht an einer Stelle (placeOnField in index.html).
