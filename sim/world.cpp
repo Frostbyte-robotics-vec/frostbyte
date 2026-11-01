@@ -184,6 +184,8 @@ SimConfig load_config(const std::string& params_path, const std::string& field_p
 }
 
 std::vector<std::string> load_route(const std::string& path) {
+    if (path.empty())
+        return {};  // keine Route (z. B. frostbyte_sim --demo)
     std::ifstream in(path, std::ios::binary);
     if (!in)
         throw std::runtime_error("Route nicht lesbar: " + path);

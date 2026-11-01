@@ -1,6 +1,7 @@
 // frostbyte_sim: Kommandozeile der Simulation.
 //   frostbyte_sim --stacker <route> --runner <route> [--runs N] [--seed S] [--out DIR]
-//                 [--params sim/sim_params.json] [--field field/field.json]
+//                 [--params sim/sim_params.json] [--field field/field.json] [--noise none|realistic|harsh]
+//   frostbyte_sim --demo [--runs N] [--seed S] [--out DIR] [--noise ...]   Demo ohne Routen (Platzhalter-Posen, build=demo)
 // Schreibt je Lauf i: DIR/run<NNN>_stacker.csv und DIR/run<NNN>_runner.csv, Seed = S + i.
 
 #include <cstdint>
@@ -11,6 +12,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "sim/demo.hpp"
 #include "sim/world.hpp"
 
 #ifndef FB_BUILD
@@ -30,9 +32,15 @@ int usage() {
 
 int main(int argc, char** argv) {
     std::string stacker, runner, out = "out/sim", params = "sim/sim_params.json", field = "field/field.json";
+    std::string noise = "realistic";
+    bool demo = false;
     long long runs = 1, seed = 1;
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
+        if (a == "--demo") {
+            demo = true;
+            continue;
+        }
         if (i + 1 >= argc)
             return usage();
         const std::string v = argv[++i];
@@ -46,6 +54,8 @@ int main(int argc, char** argv) {
             params = v;
         else if (a == "--field")
             field = v;
+        else if (a == "--noise")
+            noise = v;
         else if (a == "--runs" || a == "--seed") {
             std::size_t used = 0;
             long long n = 0;
@@ -60,15 +70,17 @@ int main(int argc, char** argv) {
         } else
             return usage();
     }
-    if (stacker.empty() || runner.empty() || runs < 1 || seed < 0)
+    if ((!demo && (stacker.empty() || runner.empty())) || runs < 1 || seed < 0)
         return usage();
 
     try {
-        frostbyte::sim::SimConfig cfg = frostbyte::sim::load_config(params, field, stacker, runner);
+        frostbyte::sim::SimConfig cfg = frostbyte::sim::load_config(params, field, stacker, runner, noise);
         cfg.build = FB_BUILD;
-        if (!cfg.stacker.start)
+        if (demo)
+            frostbyte::sim::apply_demo(cfg);
+        if (!demo && !cfg.stacker.start)
             std::fprintf(stderr, "Hinweis: START_STACKER in field.json ist null (A-01) - Pose bleibt leer.\n");
-        if (!cfg.runner.start)
+        if (!demo && !cfg.runner.start)
             std::fprintf(stderr, "Hinweis: START_RUNNER in field.json ist null (A-01) - Pose bleibt leer.\n");
         std::filesystem::create_directories(out);
         for (long long i = 0; i < runs; ++i) {
