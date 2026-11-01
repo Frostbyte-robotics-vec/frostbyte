@@ -26,5 +26,7 @@ Details im Plan: docs/plan.md (Ticket SIM-06). Regeln: CLAUDE.md.
 ## Übergabe
 (aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
 
+Review PR #21 (KI, arjanssen): „Fehler pro Zustand“ fehlt im Bericht (tools/sim_report.py); Fertig-Kriterium ergänzen oder mit Mensch anpassen.
+
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
