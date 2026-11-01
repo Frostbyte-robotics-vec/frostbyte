@@ -24,7 +24,9 @@ Details im Plan: docs/plan.md (Ticket SIM-05). Regeln: CLAUDE.md.
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand: Kollisionen (sim/collision.*: Box-Box per SAT, Box-Kreis, Feldrand) und Regelprüfer (sim/rules.*: SG2, SG3, SG6, Motoren-Halt) mit Tests geschrieben, aber NICHT lokal gebaut (Toolchain fehlt) – CI entscheidet.
+Offen: Scorer nach RSC3. Die Wertungsregeln (Punkte je Pin/Cup/Goal usw.) stehen nirgends im Repo; ohne Regeltext nicht raten. Frage an den Menschen: Regeltext/Tabelle der Wertung bereitstellen (docs/rules_scoring.md) und die 5 Handrechnungen liefern. Danach sim/scorer.* mit Tests. Einhängen von Kollision/Regelprüfer in run_match gehört in ein eigenes Ticket (noch anzulegen).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
+2026-11-01 · matelechner01 (KI) · Kollisionen + Regelprüfer mit Tests; Scorer wartet auf Wertungsregeln
