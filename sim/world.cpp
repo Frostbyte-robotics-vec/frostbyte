@@ -47,12 +47,12 @@ public:
     RobotLog(const RobotSetup& robot, std::uint64_t seed, const std::string& build, std::ostream& out)
         : robot_(robot), out_(out) {
         char buf[256];
-        log::format_header(buf, sizeof buf, robot.name.c_str(), "sim", static_cast<std::int64_t>(seed), build.c_str());
-        out_ << buf << '\n' << log::columns << '\n';
+        logfmt::format_header(buf, sizeof buf, robot.name.c_str(), "sim", static_cast<std::int64_t>(seed), build.c_str());
+        out_ << buf << '\n' << logfmt::columns << '\n';
     }
 
     void row(int t_ms) {
-        log::Row r;
+        logfmt::Row r;
         r.t_s = t_ms / 1000.0;
         r.robot = robot_.name.c_str();
         if (robot_.start) {
@@ -62,7 +62,7 @@ public:
             r.th_deg = robot_.start->h_deg;
         }
         char buf[512];
-        log::format_row(buf, sizeof buf, r);
+        logfmt::format_row(buf, sizeof buf, r);
         out_ << buf << '\n';
     }
 

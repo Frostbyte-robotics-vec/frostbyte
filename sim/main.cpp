@@ -46,11 +46,18 @@ int main(int argc, char** argv) {
             params = v;
         else if (a == "--field")
             field = v;
-        else if (a == "--runs")
-            runs = std::stoll(v);
-        else if (a == "--seed")
-            seed = std::stoll(v);
-        else
+        else if (a == "--runs" || a == "--seed") {
+            std::size_t used = 0;
+            long long n = 0;
+            try {
+                n = std::stoll(v, &used);
+            } catch (const std::exception&) {
+                return usage();
+            }
+            if (used != v.size())
+                return usage();
+            (a == "--runs" ? runs : seed) = n;
+        } else
             return usage();
     }
     if (stacker.empty() || runner.empty() || runs < 1 || seed < 0)
@@ -69,8 +76,9 @@ int main(int argc, char** argv) {
             char name[32];
             std::snprintf(name, sizeof name, "run%03lld_", i);
             // binär: '\n' auch unter Windows, damit die Dateien überall byte-gleich sind
-            std::ofstream s(out + "/" + name + "stacker.csv", std::ios::binary);
-            std::ofstream r(out + "/" + name + "runner.csv", std::ios::binary);
+            const std::filesystem::path dir(out);
+            std::ofstream s(dir / (std::string(name) + "stacker.csv"), std::ios::binary);
+            std::ofstream r(dir / (std::string(name) + "runner.csv"), std::ios::binary);
             if (!s || !r)
                 throw std::runtime_error("Ausgabe nicht schreibbar: " + out);
             frostbyte::sim::run_match(cfg, run_seed, s, r);

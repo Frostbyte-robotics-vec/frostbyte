@@ -9,7 +9,7 @@
 // Log-Format v1 (docs/log_format.md). Roboter (Logger-Task) und Simulation formatieren beide hier,
 // damit die Dateien identisch sind. Kein new: geschrieben wird in einen Puffer des Aufrufers.
 // Spalten nie umbenennen oder umsortieren ohne neue Versionsnummer.
-namespace frostbyte::log {
+namespace frostbyte::logfmt {
 
 constexpr int version = 1;
 constexpr std::int64_t no_seed = -1;
@@ -136,4 +136,4 @@ inline int format_row(char* buf, std::size_t n, const Row& r) {
     return w.length();
 }
 
-}  // namespace frostbyte::log
+}  // namespace frostbyte::logfmt

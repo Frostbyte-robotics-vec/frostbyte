@@ -33,3 +33,4 @@ Am echten Roboter: nichts (reines Laptop-Ticket); F-05 soll lib/core/log_format.
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-01 · DAVIDCOPCOP · Sim-Grundgerüst, JSON-Leser, Log-v1-Schreiber, CLI, ADR-007 · Branch ticket/sim-01
+2026-11-01 · DAVIDCOPCOP · Advisor-Review: Namespace logfmt, ARM-Kompilierprüfung, CLI-Fehlerbehandlung · Branch ticket/sim-01
