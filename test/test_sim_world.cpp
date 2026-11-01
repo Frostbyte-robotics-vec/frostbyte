@@ -1,5 +1,6 @@
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "doctest/doctest.h"
 #include "sim/world.hpp"
@@ -48,6 +49,25 @@ TEST_CASE("Welt: leere Route läuft 60 s durch, Zeilen- und Taktzahl exakt") {
     CHECK(count_lines(s.str()) == 2 + 3001);
     CHECK(count_lines(r.str()) == 2 + 3001);
     CHECK(s.str().rfind("60.000,stacker,", std::string::npos) != std::string::npos);
+}
+
+TEST_CASE("Welt: mit Startpose laeuft das Fahrmodell, ohne Regler (0 V) bleibt die wahre Pose am Start") {
+    SimConfig cfg = min_config();
+    std::ostringstream s, r;
+    run_match(cfg, 1, s, r);
+    const std::string out = s.str();
+    const std::string last = out.substr(out.rfind('\n', out.size() - 2) + 1);
+    std::vector<std::string> cells;
+    std::istringstream row(last.substr(0, last.size() - 1));
+    for (std::string c; std::getline(row, c, ',');)
+        cells.push_back(c);
+    // tx_in, ty_in, th_deg sind die Spalten 10-12 (logfmt::columns); Startpose aus field_min.json.
+    REQUIRE(cells.size() >= 12);
+    CHECK(cells[0] == "60.000");
+    CHECK(cells[9] == "-60.000");
+    CHECK(cells[10] == "12.500");
+    CHECK(cells[11] == "90.000");
+    CHECK(r.str().find(",-60.000,") == std::string::npos);  // Runner ohne Startpose: Zellen leer
 }
 
 TEST_CASE("Welt: Kopfzeile und erste Zeile nach Log v1") {

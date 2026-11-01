@@ -21,6 +21,7 @@ DriveParams test_params() {
     p.kA_V_per_in_s2 = 0.04;
     p.spurbreite_in = 12.0;
     p.mu = 1.0;
+    p.motor_max_V = 12.0;
     p.akku_V = 12.6;
     p.g_in_s2 = 386.1;
     return p;
@@ -120,6 +121,17 @@ TEST_CASE("Fahrmodell: Fahrt entlang des Headings, 0 Grad = +x, gegen den Uhrzei
     CHECK(d.pose().h_deg > 10.0);
 }
 
+TEST_CASE("Fahrmodell: Heading immer in (-180, 180], schon vor dem ersten Schritt") {
+    const DriveParams p = test_params();
+    CHECK(DriveModel(p, Pose{0.0, 0.0, 270.0}).pose().h_deg == doctest::Approx(-90.0));
+    CHECK(DriveModel(p, Pose{0.0, 0.0, -180.0}).pose().h_deg == doctest::Approx(180.0));
+    CHECK(DriveModel(p, Pose{0.0, 0.0, 720.0 + 45.0}).pose().h_deg == doctest::Approx(45.0));
+    DriveModel m(p, Pose{0.0, 0.0, 170.0});
+    run(m, 1.0, -8.0, 8.0);  // dreht ueber 180 hinaus
+    CHECK(m.pose().h_deg > -180.0);
+    CHECK(m.pose().h_deg <= 180.0);
+}
+
 TEST_CASE("Fahrmodell: Punktdrehung aendert nur das Heading, Drehrate = (vR - vL) / Spurbreite") {
     const DriveParams p = test_params();
     DriveModel m(p, Pose{10.0, 20.0, 0.0});
@@ -184,9 +196,11 @@ TEST_CASE("Fahrmodell: Akkuspannung unter 12 V begrenzt Befehl und Endtempo") {
     DriveModel m(p, Pose{});
     run(m, 2.0, 12.0, 12.0);
     CHECK(m.links_in_s() == doctest::Approx((10.0 - p.kS_V) / p.kV_V_per_in_s).epsilon(0.01));
-    DriveModel voll(test_params(), Pose{});
-    run(voll, 2.0, 15.0, 15.0);  // Motor kann hoechstens 12 V, auch bei vollem Akku
-    CHECK(voll.links_in_s() == doctest::Approx((12.0 - p.kS_V) / p.kV_V_per_in_s).epsilon(0.01));
+    DriveParams voll = test_params();
+    voll.motor_max_V = 11.0;  // Motor begrenzt, auch wenn der Akku mehr hergibt
+    DriveModel mv(voll, Pose{});
+    run(mv, 2.0, 15.0, 15.0);
+    CHECK(mv.links_in_s() == doctest::Approx((voll.motor_max_V - voll.kS_V) / voll.kV_V_per_in_s).epsilon(0.01));
 }
 
 TEST_CASE("Fahrmodell: Parameter aus sim_params, fehlende Werte werden gemeldet") {
@@ -197,6 +211,7 @@ TEST_CASE("Fahrmodell: Parameter aus sim_params, fehlende Werte werden gemeldet"
     CHECK(s.kA_V_per_in_s2 == 0.04);
     CHECK(s.spurbreite_in == 12.0);
     CHECK(s.mu == 1.0);
+    CHECK(s.motor_max_V == 11.5);
     CHECK(s.akku_V == 12.6);
     CHECK(s.g_in_s2 == 386.1);
     CHECK(load_drive_params(params, "runner").spurbreite_in == 10.0);

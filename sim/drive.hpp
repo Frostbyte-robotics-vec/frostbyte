@@ -5,7 +5,8 @@
 #include "sim/json.hpp"
 
 // Fahrmodell der Simulation (SIM-02, ADR-008): Differentialantrieb, jede Seite mit der Kennlinie
-// V = kS*sgn(v) + kV*v + kA*a am Rad (in/s), Schlupf als Beschleunigungsgrenze mu*g, Akku als Spannungsgrenze.
+// V = kS*sgn(v) + kV*v + kA*a am Rad (in/s), Schlupf als Beschleunigungsgrenze mu*g, Akku und Motor als
+// Spannungsgrenze.
 // Pose: Ursprung Feldmitte, 0 Grad = +x (rote -> blaue Station), Heading gegen den Uhrzeigersinn positiv.
 namespace frostbyte::sim {
 
@@ -21,6 +22,7 @@ struct DriveParams {
     double kA_V_per_in_s2 = 0.0;
     double spurbreite_in = 0.0;
     double mu = 0.0;
+    double motor_max_V = 0.0;  // hoechste Motorspannung, auch bei vollem Akku
     double akku_V = 0.0;
     double g_in_s2 = 0.0;
 };
@@ -31,12 +33,9 @@ DriveParams load_drive_params(const Json& params, const std::string& robot);
 
 class DriveModel {
 public:
-    // Motoren am V5 koennen hoechstens 12 V, auch bei vollem Akku.
-    static constexpr double motor_max_V = 12.0;
-
     DriveModel(const DriveParams& p, const Pose& start);
 
-    // Zeit um dt_s weiterschalten. Die Spannungen werden auf +-min(12 V, akku_V) begrenzt.
+    // Zeit um dt_s weiterschalten. Die Spannungen werden auf +-min(motor_max_V, akku_V) begrenzt.
     void step(double dt_s, double links_V, double rechts_V);
 
     // Wahre Pose; h_deg in (-180, 180].
@@ -60,7 +59,7 @@ private:
     DriveParams p_;
     double x_in_;
     double y_in_;
-    double h_rad_;
+    double h_deg_;  // immer in (-180, 180]
     Side links_;
     Side rechts_;
 };

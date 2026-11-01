@@ -9,7 +9,7 @@
   },
   "roboter": {
     "stacker": {
-      "antrieb": { "kS_V": 0.6, "kV_V_per_in_s": 0.205, "kA_V_per_in_s2": 0.05, "spurbreite_in": 14.0, "mu": 0.9, "quelle": "schaetzung (200 U/min Kassette, 84T->60T, 4-Zoll-Rad)" },
+      "antrieb": { "kS_V": 0.6, "kV_V_per_in_s": 0.205, "kA_V_per_in_s2": 0.05, "spurbreite_in": 14.0, "mu": 0.9, "motor_max_V": 12.0, "quelle": "schaetzung (motor_max_V: V5-Motor regelt auf hoechstens 12 V; 200 U/min Kassette, 84T->60T, 4-Zoll-Rad)" },
       "akku": { "spannung_V": 12.8, "quelle": "schaetzung (V5-Akku nominal 12,8 V; Motoren begrenzen ohnehin auf 12 V)" },
       "masse_lb": 16.0,
       "umriss_in": { "laenge": 17.5, "breite": 17.5 },
@@ -25,7 +25,7 @@
       }
     },
     "runner": {
-      "antrieb": { "kS_V": 0.6, "kV_V_per_in_s": 0.205, "kA_V_per_in_s2": 0.035, "spurbreite_in": 11.5, "mu": 0.9, "quelle": "schaetzung" },
+      "antrieb": { "kS_V": 0.6, "kV_V_per_in_s": 0.205, "kA_V_per_in_s2": 0.035, "spurbreite_in": 11.5, "mu": 0.9, "motor_max_V": 12.0, "quelle": "schaetzung" },
       "akku": { "spannung_V": 12.8, "quelle": "schaetzung (V5-Akku nominal 12,8 V; Motoren begrenzen ohnehin auf 12 V)" },
       "masse_lb": 10.0,
       "umriss_in": { "laenge": 14.84, "breite": 14.7 },
