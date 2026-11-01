@@ -18,6 +18,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Seite erzeugen
         run: python3 tools/board.py export site
+      - name: Simulation bauen und Demo-Logs erzeugen
+        run: |
+          cmake -S test -B build-test -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-test --target frostbyte_sim
+          ./build-test/frostbyte_sim --demo --seed 1 --out site/viewer/demo
+      - name: Viewer in die Seite legen
+        run: |
+          cp tools/viewer/index.html tools/viewer/logparse.js tools/viewer/robots.js site/viewer/
+          cp field/field.json site/viewer/field.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

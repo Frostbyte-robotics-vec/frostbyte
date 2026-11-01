@@ -1,0 +1,9 @@
+{
+  "_hinweis": "Testfeld mit zwei Startposen, einander zugewandt – unabhängig von Platzhaltern in field/field.json.",
+  "version": 1,
+  "feld_in": 144,
+  "posen": [
+    { "id": "START_STACKER", "x_in": -20.0, "y_in": 0.0, "h_deg": 0 },
+    { "id": "START_RUNNER", "x_in": 20.0, "y_in": 0.0, "h_deg": 180 }
+  ]
+}

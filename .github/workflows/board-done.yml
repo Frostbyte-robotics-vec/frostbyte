@@ -1,3 +1,5 @@
+# Push mit BOARD_TOKEN (fine-grained PAT des Repo-Admins, Contents: read/write): Admin-Ausnahme im Ruleset gilt, und der Push löst
+# weitere Workflows aus (Website). Läuft der Token ab, Secret BOARD_TOKEN erneuern; am Workflow ändert sich nichts.
 # Setzt beim Merge eines Pull Requests von ticket/<id> den Status des Tickets auf done.
 # Ausnahme: needs_hw bleibt needs_hw, bis der Hardware-Test bestanden ist (S-05, tools/board.py status_after_merge).
 name: board-done
@@ -13,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { ref: main }
+        with: { ref: main, token: "${{ secrets.BOARD_TOKEN }}" }
       - name: Ticket-Status nach dem Merge setzen
         run: |
           ID=$(echo "${{ github.event.pull_request.head.ref }}" | sed 's#ticket/##' | tr '[:lower:]' '[:upper:]')

@@ -71,7 +71,9 @@ TEST_CASE("Welt: mit Startpose laeuft das Fahrmodell, ohne Regler (0 V) bleibt d
 }
 
 TEST_CASE("Welt: Kopfzeile und erste Zeile nach Log v1") {
-    SimConfig cfg = min_config();
+    // Profil none: Schätzpose und GPS sind exakt die Wahrheit (Sensoren: SIM-03/SIM-09).
+    SimConfig cfg = load_config(fixtures + "/sim_params_min.json", fixtures + "/field_min.json", fixtures + "/empty.route",
+                                fixtures + "/empty.route", "none");
     cfg.build = "abc123";
     std::ostringstream s, r;
     run_match(cfg, 42, s, r);
@@ -82,7 +84,7 @@ TEST_CASE("Welt: Kopfzeile und erste Zeile nach Log v1") {
     std::getline(in, first);
     CHECK(head == "# frostbyte-log v1 robot=stacker source=sim seed=42 build=abc123");
     CHECK(cols.rfind("t_s,robot,", 0) == 0);
-    CHECK(first == "0.000,stacker,,,,,,,,-60.000,12.500,90.000,,,,,,,,,,,,,,,");
+    CHECK(first == "0.000,stacker,-60.000,12.500,90.000,-60.000,12.500,90.000,0.000,-60.000,12.500,90.000,,,,,,,,,,,,,,,");
     std::istringstream rin(r.str());
     std::getline(rin, head);
     std::getline(rin, cols);
