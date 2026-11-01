@@ -29,3 +29,4 @@ Stand: Gelenke (Lift/Arm/Greifer) und Objektereignisse samt Zyklus fertig und ge
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-01 · DAVIDCOPCOP · Gelenke, Objektereignisse, Zyklus, ADR-009
+2026-11-01 · DAVIDCOPCOP · Review-Fixes: echte Toleranzen statt Approx.epsilon, diskrete Bremskurve

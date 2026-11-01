@@ -35,8 +35,11 @@ void Joint::step(double dt_s) {
     const double dir = err > 0.0 ? 1.0 : -1.0;
     // Gewünschte Geschwindigkeit: so schnell wie erlaubt, aber mit Bremsweg bis zum Ziel.
     double v_des = p_.max_vel;
-    if (p_.max_acc > 0.0)
-        v_des = std::min(v_des, std::sqrt(2.0 * p_.max_acc * std::fabs(err)));
+    if (p_.max_acc > 0.0) {
+        // Diskrete Bremskurve für Schritt dt: v so, dass v²/(2a) + v·dt/2 = Rest (sonst hinkt die Kurve im Raster nach).
+        const double half = 0.5 * p_.max_acc * dt_s;
+        v_des = std::min(v_des, std::sqrt(2.0 * p_.max_acc * std::fabs(err) + half * half) - half);
+    }
     v_des *= dir;
 
     if (p_.max_acc > 0.0)

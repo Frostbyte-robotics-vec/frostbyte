@@ -19,6 +19,13 @@ constexpr int trials = 1000;
 // Fertig-Kriterium: Fehlerquote +-2 Prozentpunkte über 1000 Versuche.
 constexpr double tolerance = 0.02;
 
+// Absolute Toleranz in Prozentpunkten. doctest::Approx(x).epsilon(e) rechnet e * (1 + max(|ist|, |soll|)) und ist bei
+// kleinen Werten viel lockerer als e; deshalb hier ein expliziter Vergleich.
+bool within_rel(double actual, double expected, double rel) { return std::fabs(actual - expected) <= rel * expected; }
+
+bool rate_near(int count, double expected_rate) {
+    return std::fabs(static_cast<double>(count) / trials - expected_rate) <= tolerance;
+}
 }  // namespace
 
 TEST_CASE("Gelenk: erreicht das Ziel ohne Überschwingen, Geschwindigkeit und Beschleunigung bleiben in den Grenzen") {
@@ -27,32 +34,35 @@ TEST_CASE("Gelenk: erreicht das Ziel ohne Überschwingen, Geschwindigkeit und Be
     j.set_target(80.0);
     double max_pos = 0.0;
     double max_vel = 0.0;
-    double max_acc = 0.0;
+    double max_acc = 0.0;         // alle Schritte, auch der, der aufs Ziel einrastet
+    double max_acc_moving = 0.0;  // nur Schritte unterwegs
     double last_vel = 0.0;
     for (int i = 0; i < 5000 && !j.at_target(); ++i) {
         j.step(dt);
         max_pos = std::max(max_pos, j.pos());
         max_vel = std::max(max_vel, std::fabs(j.vel()));
-        // Der letzte Schritt rastet auf dem Ziel ein (Restgeschwindigkeit wenige Grad/s -> 0), das ist kein Beschleunigen.
+        const double acc = std::fabs(j.vel() - last_vel) / dt;
+        max_acc = std::max(max_acc, acc);
         if (!j.at_target())
-            max_acc = std::max(max_acc, std::fabs(j.vel() - last_vel) / dt);
+            max_acc_moving = std::max(max_acc_moving, acc);
         last_vel = j.vel();
     }
     CHECK(j.at_target());
     CHECK(j.pos() == 80.0);
     CHECK(max_pos <= 80.0);
     CHECK(max_vel <= p.max_vel + 1e-9);
-    CHECK(max_vel == doctest::Approx(p.max_vel).epsilon(0.01));  // Trapez: Höchstgeschwindigkeit wird erreicht
-    CHECK(max_acc <= p.max_acc * 1.05);
+    CHECK(within_rel(max_vel, p.max_vel, 0.01));  // Trapez: Höchstgeschwindigkeit wird erreicht
+    CHECK(max_acc_moving <= p.max_acc * 1.05);
+    CHECK(max_acc <= p.max_acc * 2.0 + 1e-6);  // Einrasten springt höchstens um 2·a·dt
 }
 
 TEST_CASE("Gelenk: Fahrzeit entspricht dem Trapezprofil") {
     const JointParams p = test_joint();
     Joint j(p, 0.0);
     // 80 Grad: Beschleunigen 0,25 s (6,25 Grad), Bremsen 0,25 s (6,25 Grad), Rest 67,5 Grad mit 50 Grad/s = 1,35 s.
-    CHECK(j.time_to_reach(80.0) == doctest::Approx(1.85).epsilon(0.03));
+    CHECK(within_rel(j.time_to_reach(80.0), 1.85, 0.03));
     // Kurze Strecke (Dreiecksprofil): 2 Grad -> 2 * sqrt(2 / 200) = 0,2 s.
-    CHECK(j.time_to_reach(2.0) == doctest::Approx(0.2).epsilon(0.05));
+    CHECK(within_rel(j.time_to_reach(2.0), 0.2, 0.05));
 }
 
 TEST_CASE("Gelenk: Sollwert außerhalb der Endlagen wird begrenzt, Anschlag hält an") {
@@ -102,7 +112,7 @@ TEST_CASE("Greifer: ohne Pin schließt er ganz, mit Pin bleibt er bei der Pinbre
 
 TEST_CASE("Greifer: Schließzeit aus Weg und Geschwindigkeit") {
     Claw c(ClawParams{1.5, 0.3, 3.0});
-    CHECK(c.time_to_settle_after_close(true) == doctest::Approx((1.5 - 0.3) / 3.0).epsilon(0.01));
+    CHECK(within_rel(c.time_to_settle_after_close(true), (1.5 - 0.3) / 3.0, 0.01));
 }
 
 TEST_CASE("Mechanismen: sim_params.json lädt (nur Struktur), Arm nur beim Stacker") {
@@ -124,13 +134,13 @@ namespace {
 
 EventParams test_events() {
     EventParams p;
-    p.loader = {1.0, 0.2, 0.05};
-    p.floor = {2.0, 0.5, 0.10};
+    p.loader = {1.0, 0.2, 0.01};
+    p.floor = {2.0, 0.5, 0.04};
     p.yellow_up_loader = 0.8;
     p.yellow_up_floor = 0.4;
-    p.grasp_success = 0.95;
-    p.place_success_level0 = 0.96;
-    p.place_penalty_per_level = 0.02;
+    p.grasp_success = 0.99;
+    p.place_success_level0 = 0.98;
+    p.place_penalty_per_level = 0.01;
     return p;
 }
 
@@ -151,8 +161,8 @@ TEST_CASE("Objekte: Fehlschlagquote der Aufnahme +-2 % über 1000 Versuche (Load
         loader_fail += m.pick(Source::loader).success ? 0 : 1;
         floor_fail += m.pick(Source::floor).success ? 0 : 1;
     }
-    CHECK(static_cast<double>(loader_fail) / trials == doctest::Approx(0.05).epsilon(tolerance / 0.05));
-    CHECK(static_cast<double>(floor_fail) / trials == doctest::Approx(0.10).epsilon(tolerance / 0.10));
+    CHECK(rate_near(loader_fail, 0.01));
+    CHECK(rate_near(floor_fail, 0.04));
 }
 
 TEST_CASE("Objekte: Dauer der Aufnahme hat Mittel und Streuung wie vorgegeben, nie unter 10 %") {
@@ -160,11 +170,11 @@ TEST_CASE("Objekte: Dauer der Aufnahme hat Mittel und Streuung wie vorgegeben, n
     std::vector<double> t;
     for (int i = 0; i < trials; ++i)
         t.push_back(m.pick(Source::floor).time_s);
-    CHECK(mean(t) == doctest::Approx(2.0).epsilon(0.05));
+    CHECK(within_rel(mean(t), 2.0, 0.05));
     double var = 0.0;
     for (double x : t)
         var += (x - mean(t)) * (x - mean(t));
-    CHECK(std::sqrt(var / (trials - 1)) == doctest::Approx(0.5).epsilon(0.10));
+    CHECK(within_rel(std::sqrt(var / (trials - 1)), 0.5, 0.10));
     CHECK(*std::min_element(t.begin(), t.end()) >= 0.2);
 }
 
@@ -179,8 +189,8 @@ TEST_CASE("Objekte: Ausrichtung (gelber Pin oben) trifft Loader und Boden unters
         ok_floor += b.success;
         up_floor += b.yellow_up;
     }
-    CHECK(static_cast<double>(up_loader) / ok_loader == doctest::Approx(0.8).epsilon(0.05));
-    CHECK(static_cast<double>(up_floor) / ok_floor == doctest::Approx(0.4).epsilon(0.05));
+    CHECK(within_rel(static_cast<double>(up_loader) / ok_loader, 0.8, 0.05));
+    CHECK(within_rel(static_cast<double>(up_floor) / ok_floor, 0.4, 0.10));
 }
 
 TEST_CASE("Objekte: Greiferfehlerquote +-2 % über 1000 Versuche") {
@@ -188,13 +198,13 @@ TEST_CASE("Objekte: Greiferfehlerquote +-2 % über 1000 Versuche") {
     int fail = 0;
     for (int i = 0; i < trials; ++i)
         fail += m.grasp() ? 0 : 1;
-    CHECK(static_cast<double>(fail) / trials == doctest::Approx(0.05).epsilon(tolerance / 0.05));
+    CHECK(rate_near(fail, 0.01));
 }
 
 TEST_CASE("Objekte: Setzen wird mit der Ebene unwahrscheinlicher, Fehlerquote +-2 % über 1000 Versuche") {
     ObjectModel m(test_events(), 5);
-    CHECK(m.place_success_probability(0) == doctest::Approx(0.96));
-    CHECK(m.place_success_probability(3) == doctest::Approx(0.90));
+    CHECK(m.place_success_probability(0) == doctest::Approx(0.98));
+    CHECK(m.place_success_probability(3) == doctest::Approx(0.95));
     CHECK(m.place_success_probability(100) == 0.0);
     int fail0 = 0;
     int fail3 = 0;
@@ -202,8 +212,8 @@ TEST_CASE("Objekte: Setzen wird mit der Ebene unwahrscheinlicher, Fehlerquote +-
         fail0 += m.place(0) ? 0 : 1;
         fail3 += m.place(3) ? 0 : 1;
     }
-    CHECK(static_cast<double>(fail0) / trials == doctest::Approx(0.04).epsilon(tolerance / 0.04));
-    CHECK(static_cast<double>(fail3) / trials == doctest::Approx(0.10).epsilon(tolerance / 0.10));
+    CHECK(rate_near(fail0, 0.02));
+    CHECK(rate_near(fail3, 0.05));
 }
 
 TEST_CASE("Zyklus: läuft durch, Fehlerquote gesamt +-2 % über 1000 Versuche, Zeit enthält Aufnahme, Greifer und Lift") {
@@ -224,12 +234,12 @@ TEST_CASE("Zyklus: läuft durch, Fehlerquote gesamt +-2 % über 1000 Versuche, Z
             ++fail;
         }
     }
-    const double expected_fail = 1.0 - (1.0 - 0.05) * 0.95 * (0.96 - 0.02);
-    CHECK(static_cast<double>(fail) / trials == doctest::Approx(expected_fail).epsilon(tolerance / expected_fail));
+    const double expected_fail = 1.0 - (1.0 - 0.01) * 0.99 * (0.98 - 0.01);
+    CHECK(rate_near(fail, expected_fail));
     REQUIRE(ok > 0);
     // Mittel: 1,0 s Aufnahme + 0,4 s Greifer + Liftfahrt von -10 nach 60 Grad.
     const double expected_time = 1.0 + 1.2 / 3.0 + Joint(test_joint(), -10.0).time_to_reach(60.0);
-    CHECK(ok_time / ok == doctest::Approx(expected_time).epsilon(0.05));
+    CHECK(within_rel(ok_time / ok, expected_time, 0.05));
 }
 
 TEST_CASE("Zyklus: Fehlschlag beendet ihn an der Stelle, Zeit nur bis dorthin") {
