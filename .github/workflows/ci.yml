@@ -20,8 +20,9 @@ jobs:
 
   # Eigener Job statt Matrix, damit der Pflicht-Check "tests" seinen Namen behält.
   # Apples libc++ hinkt GCC hinterher (z. B. from_chars für double erst ab libc++ 20).
+  # Bewusst macos-15 (Xcode 16, Apple clang 17) statt latest: so alt wie die Macs im Team.
   tests-macos:
-    runs-on: macos-latest
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - name: Laptop-Tests bauen
