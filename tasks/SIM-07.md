@@ -62,6 +62,8 @@ Offene Fragen (für Menschen):
 docs/plan.md hat keinen Abschnitt zu SIM-07, gearbeitet nach Ticket-Text.
 Advisor-Rat umgesetzt: three.js fest auf r128 (ADR), file:// als Normalfall, Parser-Tests über osascript, Draw-Calls gemessen.
 
+Review (KI, PR #3) „ändern“: (1) ADR-002-viewer-threejs → ADR-005 umbenennen (ADR-002 ist S-04, 003/004 sind vergeben); (2) Start der Viewer-Tests in der Übergabe nennen; (3) Heading-Konvention/lift_deg im PR unter „Am echten Roboter“ aufführen. Browser-Flüssigkeit konnte die KI nicht prüfen.
+
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-01 · Arved Janssen (KI) · Viewer, Parser, Testlog-Generator, ADR-002, Performance · 395c17d
