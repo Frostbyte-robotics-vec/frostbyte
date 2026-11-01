@@ -1,0 +1,35 @@
+cmake_minimum_required(VERSION 3.20)
+project(frostbyte_tests CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+get_filename_component(FB_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
+
+# lib/ und hal/sim: reine Logik ohne PROS-Header. Solange es noch keine .cpp gibt, reicht eine Header-Bibliothek.
+file(GLOB_RECURSE FB_SOURCES CONFIGURE_DEPENDS "${FB_ROOT}/lib/*.cpp" "${FB_ROOT}/hal/sim/*.cpp")
+if(FB_SOURCES)
+    add_library(frostbyte_lib STATIC ${FB_SOURCES})
+else()
+    add_library(frostbyte_lib INTERFACE)
+endif()
+if(FB_SOURCES)
+    set(FB_SCOPE PUBLIC)
+else()
+    set(FB_SCOPE INTERFACE)
+endif()
+target_include_directories(frostbyte_lib ${FB_SCOPE} "${FB_ROOT}/lib" "${FB_ROOT}/hal" "${FB_ROOT}")
+
+file(GLOB FB_TESTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
+add_executable(frostbyte_tests main.cpp ${FB_TESTS})
+target_include_directories(frostbyte_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/third_party")
+target_link_libraries(frostbyte_tests PRIVATE frostbyte_lib)
+if(MSVC)
+    target_compile_options(frostbyte_tests PRIVATE /W4)
+else()
+    target_compile_options(frostbyte_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+enable_testing()
+add_test(NAME unit COMMAND frostbyte_tests)
