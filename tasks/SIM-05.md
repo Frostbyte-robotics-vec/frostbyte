@@ -1,8 +1,8 @@
 ---
 id: SIM-05
 phase: "1b"
-titel: Kollisionen (Roboter, Feldelemente, Rand), Regelprüfer, Scorer nach RSC3
-status: blocked
+titel: Kollisionen (Roboter, Feldelemente, Rand) und Regelprüfer (Scorer: SIM-10)
+status: in_progress
 owner: matelechner01
 branch: ticket/sim-05
 depends: [SIM-04]
@@ -10,10 +10,10 @@ hw: nein
 ---
 
 ## Ziel
-Kollisionen (Roboter, Feldelemente, Rand), Regelprüfer, Scorer nach RSC3
+Kollisionen (Roboter, Feldelemente, Rand) und Regelprüfer (SG2, SG3, SG6, Matchende-Halt). Der Scorer nach RSC3 wurde nach SIM-10 ausgelagert (Wertungsregeln fehlen).
 
 ## Fertig, wenn …
-- je ein Testfall pro Regel; Scorer stimmt mit 5 Handrechnungen überein
+- je ein Testfall pro Regel (SG2, SG3, SG6, Matchende-Halt); Kollisionen Box/Box, Box/Kreis, Feldrand getestet
 - Laptop-Tests grün, beide Roboter bauen, `python tools/board.py validate` grün
 
 
@@ -32,3 +32,4 @@ Offen: Scorer nach RSC3. Die Wertungsregeln (Punkte je Pin/Cup/Goal usw.) stehen
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-01 · matelechner01 (KI) · Kollisionen + Regelprüfer mit Tests; Scorer wartet auf Wertungsregeln
+2026-11-01 · matelechner01 (KI) · Review PR #15: SIM-05 ohne Scorer (SIM-10 angelegt), Test Mittelpunkt in Box

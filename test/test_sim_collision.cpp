@@ -84,3 +84,12 @@ TEST_CASE("Feldelement (Kreis): Ecke der Box trifft den Kreis, Kante nicht") {
     CHECK_FALSE(penetration(box(0, 0, 0), c).has_value());
     CHECK(penetration(box(2, 2, 0), c).has_value());
 }
+
+TEST_CASE("Feldelement (Kreis): Mittelpunkt in der Box, Box wird über die nächste Seite hinausgeschoben") {
+    const Circle c{3.0, 0.0, 1.0};
+    const auto mtv = penetration(box(0, 0, 0), c);
+    REQUIRE(mtv.has_value());
+    // Nächste Seite x = +5 (2 Zoll entfernt) plus Radius 1 -> Box 3 Zoll nach -x.
+    CHECK(mtv->x_in == doctest::Approx(-3.0));
+    CHECK(mtv->y_in == doctest::Approx(0.0));
+}

@@ -2,8 +2,6 @@
 
 #include <optional>
 
-#include "sim/drive.hpp"
-
 // Kollisionen der Simulation (SIM-05): Roboter als orientiertes Rechteck, Feldelemente als Kreis, Feldrand als Quadrat
 // um die Feldmitte. Reine Geometrie; Maße und Positionen kommen vom Aufrufer (Umriss aus sim_params.json, Feldpunkte
 // aus field.json). Berührung ohne Überlappung zählt nicht als Kollision.
