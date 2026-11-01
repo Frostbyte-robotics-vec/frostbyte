@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "sim/drive.hpp"
+
 // Welt der Simulation: fester 1-ms-Schritt, Steuerung und Log auf ganzzahligen ms-Rastern aus sim_params.json.
 // Gleicher Seed = byte-gleiche CSV (keine std::*_distribution, kein Aufaddieren von Gleitkommazeit).
 namespace frostbyte::sim {
@@ -13,16 +15,11 @@ namespace frostbyte::sim {
 // Skills-Match: 60 s (Spielregel, kein Modellwert).
 constexpr int match_ms = 60000;
 
-struct Pose {
-    double x_in = 0.0;
-    double y_in = 0.0;
-    double h_deg = 0.0;
-};
-
 struct RobotSetup {
     std::string name;            // "stacker" oder "runner"
     std::optional<Pose> start;   // leer, solange field.json null-Koordinaten hat (A-01)
     std::vector<std::string> route;  // Routenzeilen ohne Kommentare; interpretiert erst ab dem Routen-Ticket
+    DriveParams drive;               // roboter.<name> aus sim_params.json (SIM-02)
 };
 
 struct SimConfig {
@@ -51,7 +48,7 @@ private:
     std::uint64_t state_;
 };
 
-// Liest welt aus sim_params.json, Startposen aus field.json (posen START_STACKER/START_RUNNER) und die Routen.
+// Liest welt und roboter.<name> (Fahrmodell) aus sim_params.json, Startposen aus field.json (posen START_STACKER/START_RUNNER) und die Routen.
 SimConfig load_config(const std::string& params_path, const std::string& field_path, const std::string& stacker_route,
                       const std::string& runner_route);
 
