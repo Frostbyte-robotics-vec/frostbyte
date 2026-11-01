@@ -35,3 +35,4 @@ Stand: Modelle fertig und getestet (sim/sensor_models.hpp/.cpp, test/test_sim_se
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-01 · DAVIDCOPCOP · Sensormodelle samt Tests, Notes-Eintrag
 2026-11-01 · arjanssen (KI) · main eingemergt, ADR → 010, sigma_deg-Test, Review-Punkte erledigt
+4. ADR-Nummer: ADR-008-sensormodelle kollidiert mit ADR-008-fahrmodell auf main; umbenennen (nächste freie: ADR-012).
