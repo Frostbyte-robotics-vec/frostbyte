@@ -1,0 +1,205 @@
+{
+  "_hinweis": "Koordinaten sind null = noch nicht vermessen (Ticket A-01: aus dem offiziellen STEP-Feldmodell). Namen sind fest, Routen benutzen nur diese Namen.",
+  "version": 1,
+  "einheiten": "Zoll, Grad",
+  "ursprung": "Feldmitte",
+  "null_grad": "von roter zu blauer Station",
+  "feld_in": 144,
+  "goals": [
+    {
+      "id": "RED_ALLIANCE_1",
+      "typ": "alliance_red",
+      "hoehe_in": 3.25,
+      "quadrant": "RED_1",
+      "x_in": null,
+      "y_in": null,
+      "anfahrt_deg": null,
+      "owner": "stacker"
+    },
+    {
+      "id": "NEUTRAL_R1",
+      "typ": "neutral",
+      "hoehe_in": 5.8,
+      "quadrant": "RED_1",
+      "x_in": null,
+      "y_in": null,
+      "anfahrt_deg": null,
+      "owner": "stacker"
+    },
+    {
+      "id": "RED_ALLIANCE_2",
+      "typ": "alliance_red",
+      "hoehe_in": 3.25,
+      "quadrant": "RED_2",
+      "x_in": null,
+      "y_in": null,
+      "anfahrt_deg": null,
+      "owner": "runner"
+    },
+    {
+      "id": "NEUTRAL_R2",
+      "typ": "neutral",
+      "hoehe_in": 5.8,
+      "quadrant": "RED_2",
+      "x_in": null,
+      "y_in": null,
+      "anfahrt_deg": null,
+      "owner": "runner"
+    },
+    {
+      "id": "BLUE_ALLIANCE_1",
+      "typ": "alliance_blue",
+      "hoehe_in": 3.25,
+      "quadrant": "BLUE_1",
+      "x_in": null,
+      "y_in": null,
+      "anfahrt_deg": null,
+      "owner": "runner"
+    },
+    {
+      "id": "NEUTRAL_B1",
+      "typ": "neutral",
+      "hoehe_in": 5.8,
+      "quadrant": "BLUE_1",
+      "x_in": null,
+      "y_in": null,
+      "anfahrt_deg": null,
+      "owner": "runner"
+    },
+    {
+      "id": "BLUE_ALLIANCE_2",
+      "typ": "alliance_blue",
+      "hoehe_in": 3.25,
+      "quadrant": "BLUE_2",
+      "x_in": null,
+      "y_in": null,
+      "anfahrt_deg": null,
+      "owner": "runner"
+    },
+    {
+      "id": "NEUTRAL_B2",
+      "typ": "neutral",
+      "hoehe_in": 5.8,
+      "quadrant": "BLUE_2",
+      "x_in": null,
+      "y_in": null,
+      "anfahrt_deg": null,
+      "owner": "runner"
+    },
+    {
+      "id": "MIDFIELD",
+      "typ": "midfield",
+      "hoehe_in": 8.7,
+      "quadrant": "MIDFIELD",
+      "x_in": null,
+      "y_in": null,
+      "anfahrt_deg": null,
+      "owner": "stacker"
+    }
+  ],
+  "toggles": [
+    {
+      "id": "TOGGLE_RED_1",
+      "quadrant": "RED_1",
+      "x_in": null,
+      "y_in": null,
+      "wand_deg": null,
+      "zielfarbe": "red"
+    },
+    {
+      "id": "TOGGLE_RED_2",
+      "quadrant": "RED_2",
+      "x_in": null,
+      "y_in": null,
+      "wand_deg": null,
+      "zielfarbe": "red"
+    },
+    {
+      "id": "TOGGLE_BLUE_1",
+      "quadrant": "BLUE_1",
+      "x_in": null,
+      "y_in": null,
+      "wand_deg": null,
+      "zielfarbe": "blue"
+    },
+    {
+      "id": "TOGGLE_BLUE_2",
+      "quadrant": "BLUE_2",
+      "x_in": null,
+      "y_in": null,
+      "wand_deg": null,
+      "zielfarbe": "blue"
+    }
+  ],
+  "loader": [
+    {
+      "id": "LOADER_RED_1",
+      "farbe": "red",
+      "x_in": null,
+      "y_in": null,
+      "anfahrt_deg": null,
+      "in_skills_nutzbar": true
+    },
+    {
+      "id": "LOADER_RED_2",
+      "farbe": "red",
+      "x_in": null,
+      "y_in": null,
+      "anfahrt_deg": null,
+      "in_skills_nutzbar": true
+    },
+    {
+      "id": "LOADER_BLUE_1",
+      "farbe": "blue",
+      "x_in": null,
+      "y_in": null,
+      "anfahrt_deg": null,
+      "in_skills_nutzbar": false
+    },
+    {
+      "id": "LOADER_BLUE_2",
+      "farbe": "blue",
+      "x_in": null,
+      "y_in": null,
+      "anfahrt_deg": null,
+      "in_skills_nutzbar": false
+    }
+  ],
+  "midfield": {
+    "form": "quadrat 2x2 Kacheln, 45 Grad gedreht",
+    "seite_in": 48,
+    "mitte_x_in": 0,
+    "mitte_y_in": 0
+  },
+  "posen": [
+    {
+      "id": "START_STACKER",
+      "x_in": null,
+      "y_in": null,
+      "h_deg": null
+    },
+    {
+      "id": "START_RUNNER",
+      "x_in": null,
+      "y_in": null,
+      "h_deg": null
+    },
+    {
+      "id": "MIDFIELD_S",
+      "x_in": null,
+      "y_in": null,
+      "h_deg": null
+    },
+    {
+      "id": "MIDFIELD_R",
+      "x_in": null,
+      "y_in": null,
+      "h_deg": null
+    }
+  ],
+  "objekte_start": {
+    "_hinweis": "Startpositionen der Feldobjekte im Skills-Match (Figur VURS1), A-01",
+    "cups": [],
+    "pins": []
+  }
+}

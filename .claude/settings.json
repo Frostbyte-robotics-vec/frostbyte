@@ -1,0 +1,32 @@
+{
+  "model": "sonnet",
+  "advisorModel": "opus",
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(git branch:*)",
+      "Bash(git checkout:*)", "Bash(git switch:*)", "Bash(git fetch:*)", "Bash(git pull:*)", "Bash(git add:*)",
+      "Bash(git commit:*)", "Bash(git push origin:*)", "Bash(git push -u origin:*)", "Bash(git push)", "Bash(git stash:*)",
+      "Bash(git rebase --continue)", "Bash(git rebase --abort)", "Bash(git merge --no-ff:*)",
+      "Bash(python3 tools/:*)", "Bash(python tools/:*)", "Bash(py tools/:*)",
+      "Bash(cmake:*)", "Bash(ctest:*)", "Bash(make:*)", "Bash(./build-test/:*)", "Bash(build-test/:*)",
+      "Bash(gh pr list:*)", "Bash(gh pr view:*)", "Bash(gh pr diff:*)", "Bash(gh pr checks:*)", "Bash(gh pr create:*)",
+      "Bash(gh pr checkout:*)", "Bash(gh pr review:*)", "Bash(gh pr comment:*)", "Bash(gh pr edit:*)",
+      "Bash(ls:*)", "Bash(cat:*)", "Bash(grep:*)", "Bash(find:*)", "Bash(mkdir:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)", "Bash(git push -f:*)", "Bash(git push origin --force:*)", "Bash(git push origin -f:*)",
+      "Bash(git reset --hard:*)", "Bash(git clean:*)", "Bash(git branch -D:*)", "Bash(rm -rf:*)",
+      "Bash(gh pr merge:*)", "Bash(gh repo delete:*)", "Bash(gh api -X DELETE:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "git fetch -q 2>/dev/null; python3 tools/board.py summary 2>/dev/null || python tools/board.py summary 2>/dev/null || true; echo; echo 'Frostbyte: Sonnet + Advisor Opus. Befehle: /auto (selbststaendig), /start, /review, /handoff, /finish.'" }
+        ]
+      }
+    ]
+  }
+}

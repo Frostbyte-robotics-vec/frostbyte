@@ -1,0 +1,237 @@
+<title>Frostbyte Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Kopf mit Gesamtstand → Phasen-Balken → was gerade läuft → Ticket-Liste zum Filtern. Kühle Werkstatt-Töne, Eisblau als Akzent. */
+:root {
+  --bg: #f3f6f9; --panel: #ffffff; --ink: #142233; --muted: #5b6b7d; --line: #d9e1ea;
+  --accent: #1f6fb2; --accent-soft: #e2eef8;
+  --todo: #c7d2de; --prog: #2f86d6; --review: #8a63d2; --hw: #d98a1c; --done: #2f9e6e; --blocked: #cf4545;
+  --f-display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1620; --panel: #15212e; --ink: #e3ebf3; --muted: #93a4b6; --line: #263546;
+  --accent: #6db3f0; --accent-soft: #1b3249;
+  --todo: #3a4b5e; --prog: #4a9fe8; --review: #a585e6; --hw: #e8a23e; --done: #45b884; --blocked: #e26464;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0e1620; --panel: #15212e; --ink: #e3ebf3; --muted: #93a4b6; --line: #263546;
+  --accent: #6db3f0; --accent-soft: #1b3249;
+  --todo: #3a4b5e; --prog: #4a9fe8; --review: #a585e6; --hw: #e8a23e; --done: #45b884; --blocked: #e26464;
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px; }
+main { max-width: 1120px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; letter-spacing: .01em; }
+h2 { font-size: 18px; font-weight: 600; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.demo { background: var(--accent-soft); color: var(--ink); border: 1px dashed var(--accent); border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+header.top { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: end; justify-content: space-between; }
+.meta { font-size: 13px; color: var(--muted); display: flex; gap: 6px 16px; flex-wrap: wrap; }
+.meta a { color: var(--accent); }
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 24px; align-items: center; }
+@media (max-width: 760px) { .hero { grid-template-columns: 1fr; } }
+.big { font-family: var(--f-display); font-size: 56px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.big small { font-size: 22px; color: var(--muted); font-weight: 500; }
+.bar { height: 14px; border-radius: 7px; background: var(--todo); display: flex; overflow: hidden; }
+.bar span { display: block; height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; margin-top: 10px; }
+.legend i, .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+.phases { display: grid; gap: 10px; }
+.phase { display: grid; grid-template-columns: 170px minmax(0, 1fr) 64px; gap: 12px; align-items: center; font-size: 14px; }
+@media (max-width: 560px) { .phase { grid-template-columns: 1fr 56px; } .phase .bar { grid-column: 1 / -1; grid-row: 2; } }
+.phase .n { text-align: right; color: var(--muted); }
+section { display: grid; gap: 12px; align-content: start; }
+.cols { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; }
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+.active { display: grid; gap: 10px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; min-width: 0; }
+.card .row1 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.card .handoff { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.pill { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; color: #fff; white-space: nowrap; letter-spacing: .02em; }
+.pill.todo { background: var(--todo); color: var(--ink); } .pill.in_progress { background: var(--prog); } .pill.review { background: var(--review); }
+.pill.needs_hw { background: var(--hw); } .pill.done { background: var(--done); } .pill.blocked { background: var(--blocked); }
+.tag { font-size: 12px; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; color: var(--muted); }
+.side { display: grid; gap: 20px; align-content: start; }
+.list { display: grid; gap: 6px; font-size: 14px; margin: 0; padding: 0; list-style: none; }
+.list li { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip { font: 500 13px var(--f-body); border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.chip:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type=search], select { font: 14px var(--f-body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+input[type=search] { flex: 1 1 200px; min-width: 0; }
+.tickets { display: grid; gap: 6px; }
+details.t { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+details.t > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 14px; }
+details.t > summary::-webkit-details-marker { display: none; }
+details.t > summary .title { overflow-wrap: anywhere; }
+details.t > summary .right { display: flex; gap: 6px; align-items: center; justify-content: end; flex-wrap: wrap; }
+@media (max-width: 560px) { details.t > summary { grid-template-columns: 64px minmax(0, 1fr); } details.t > summary .right { grid-column: 1 / -1; justify-content: start; } }
+.tbody { padding: 4px 14px 14px 98px; display: grid; gap: 10px; font-size: 14px; }
+@media (max-width: 560px) { .tbody { padding-left: 14px; } }
+.tbody h3 { font: 600 12px var(--f-body); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 2px; }
+.tbody pre { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; font: 13px/1.5 var(--f-mono); }
+.empty { color: var(--muted); font-size: 14px; }
+@media (prefers-reduced-motion: no-preference) { .bar span { transition: width .4s ease; } }
+</style>
+
+<main>
+  <div class="demo" id="demo" hidden>Demo-Daten: So sieht das Board aus, sobald Tickets laufen. Im Repo zeigt diese Seite den echten Stand.</div>
+  <header class="top">
+    <div>
+      <h1>Frostbyte Board</h1>
+      <div class="muted">VEX U Override 2026/27 · Codebasis Stacker + Runner</div>
+    </div>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <section class="hero" aria-label="Gesamtstand">
+    <div>
+      <div class="big" id="doneBig"></div>
+      <div class="muted">Tickets erledigt</div>
+    </div>
+    <div>
+      <div class="bar" id="totalBar" role="img"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-phases">
+    <h2 id="h-phases">Phasen</h2>
+    <div class="phases" id="phases"></div>
+  </section>
+
+  <div class="cols">
+    <section aria-labelledby="h-active">
+      <h2 id="h-active">Gerade in Arbeit</h2>
+      <div class="active" id="active"></div>
+    </section>
+    <div class="side">
+      <section aria-labelledby="h-unlock">
+        <h2 id="h-unlock">Merge gibt frei</h2>
+        <ul class="list" id="unlock"></ul>
+      </section>
+      <section aria-labelledby="h-next">
+        <h2 id="h-next">Als Nächstes frei</h2>
+        <ul class="list" id="next"></ul>
+      </section>
+      <section aria-labelledby="h-feed">
+        <h2 id="h-feed">Letzte Einträge</h2>
+        <ul class="list" id="feed"></ul>
+      </section>
+    </div>
+  </div>
+
+  <section aria-labelledby="h-all">
+    <h2 id="h-all">Alle Tickets</h2>
+    <div class="filters">
+      <div class="filters" id="statusChips" role="group" aria-label="Status filtern"></div>
+      <select id="phaseSel" aria-label="Phase filtern"></select>
+      <input type="search" id="q" placeholder="Suchen: ID, Titel, Person" aria-label="Tickets durchsuchen">
+    </div>
+    <div class="tickets" id="tickets"></div>
+  </section>
+</main>
+
+<script id="board-data" type="application/json">__BOARD_JSON__</script>
+<script>
+(function () {
+  const D = JSON.parse(document.getElementById('board-data').textContent);
+  const T = D.tickets;
+  const byId = Object.fromEntries(T.map(t => [t.id, t]));
+  const ST = [
+    ['done', 'erledigt'], ['review', 'im Review'], ['needs_hw', 'wartet auf Hardware'],
+    ['in_progress', 'in Arbeit'], ['blocked', 'blockiert'], ['todo', 'offen']
+  ];
+  const LABEL = Object.fromEntries(ST);
+  const PHASES = [['0', 'Setup'], ['1', 'Fundament'], ['1b', 'Simulation'], ['2', 'Antrieb + Ort'], ['3', 'Mechanismen'], ['4', 'Zyklus + Fahrer'], ['5', 'Autonomie'], ['6', 'Link + Feinschliff']];
+  const color = s => `var(--${({in_progress: 'prog', needs_hw: 'hw'})[s] || s})`;
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[c]);
+  const pill = s => `<span class="pill ${s}">${LABEL[s] || s}</span>`;
+  const $ = id => document.getElementById(id);
+
+  if (D.demo) $('demo').hidden = false;
+  const repo = D.repo_url ? `<a href="${esc(D.repo_url)}" target="_blank" rel="noopener">Repository</a>` : '';
+  $('meta').innerHTML = `<span>Stand <span class="mono">${esc(D.generated)}</span></span>` + (D.commit ? `<span>Commit <span class="mono">${esc(D.commit)}</span></span>` : '') + repo;
+
+  const count = s => T.filter(t => t.status === s).length;
+  const done = count('done');
+  $('doneBig').innerHTML = `${done}<small> / ${T.length}</small>`;
+  const segs = ST.filter(([s]) => s !== 'todo');
+  $('totalBar').innerHTML = segs.map(([s]) => `<span style="width:${count(s) / T.length * 100}%;background:${color(s)}"></span>`).join('');
+  $('totalBar').setAttribute('aria-label', ST.map(([s, l]) => `${count(s)} ${l}`).join(', '));
+  $('legend').innerHTML = ST.map(([s, l]) => `<span><i style="background:${color(s)}"></i>${l} <span class="mono">${count(s)}</span></span>`).join('');
+
+  $('phases').innerHTML = PHASES.map(([p, name]) => {
+    const ts = T.filter(t => t.phase === p);
+    if (!ts.length) return '';
+    const c = s => ts.filter(t => t.status === s).length;
+    return `<div class="phase"><div><span class="mono muted">${p}</span> ${name}</div>
+      <div class="bar" role="img" aria-label="${name}: ${c('done')} von ${ts.length} erledigt">${segs.map(([s]) => `<span style="width:${c(s) / ts.length * 100}%;background:${color(s)}"></span>`).join('')}</div>
+      <div class="n mono">${c('done')}/${ts.length}</div></div>`;
+  }).join('');
+
+  const firstLine = s => (s || '').split('\n').map(x => x.trim()).find(x => x && !x.startsWith('(')) || '';
+  const act = T.filter(t => ['in_progress', 'review', 'needs_hw', 'blocked'].includes(t.status));
+  const order = {blocked: 0, needs_hw: 1, review: 2, in_progress: 3};
+  act.sort((a, b) => order[a.status] - order[b.status]);
+  $('active').innerHTML = act.length ? act.map(t => `<div class="card">
+      <div class="row1"><span class="mono">${esc(t.id)}</span>${pill(t.status)}<span class="tag">${esc(t.owner || '–')}</span></div>
+      <div>${esc(t.titel)}</div>
+      ${firstLine(t.uebergabe) ? `<div class="handoff">${esc(firstLine(t.uebergabe))}</div>` : ''}
+    </div>`).join('') : '<div class="empty">Niemand arbeitet gerade an einem Ticket.</div>';
+
+  const unlock = T.filter(t => ['review', 'needs_hw'].includes(t.status)).map(t => ({t, frees: T.filter(u => u.status === 'todo' && u.depends.includes(t.id) && u.depends.every(d => d === t.id || byId[d].status === 'done')).map(u => u.id)}))
+    .filter(x => x.frees.length).sort((a, b) => b.frees.length - a.frees.length);
+  $('unlock').innerHTML = unlock.length ? unlock.map(x => `<li><span class="mono">${esc(x.t.id)}</span><span class="muted">→</span><span class="mono">${x.frees.map(esc).join(', ')}</span></li>`).join('') : '<li class="empty">Kein offener Merge blockiert gerade etwas.</li>';
+
+  const ready = T.filter(t => t.status === 'todo' && !t.owner && t.depends.every(d => byId[d].status === 'done'));
+  $('next').innerHTML = ready.length ? ready.slice(0, 6).map(t => `<li><span class="mono">${esc(t.id)}</span>${t.hw === 'ja' ? '<span class="tag">HW</span>' : ''}<span>${esc(t.titel.length > 60 ? t.titel.slice(0, 58) + '…' : t.titel)}</span></li>`).join('') : '<li class="empty">Nichts frei, erst laufende Tickets abschließen.</li>';
+
+  const feed = [];
+  T.forEach(t => (t.verlauf || []).forEach(line => { const m = line.match(/^(\d{4}-\d{2}-\d{2})/); feed.push({d: m ? m[1] : '', id: t.id, line}); }));
+  feed.sort((a, b) => b.d.localeCompare(a.d));
+  $('feed').innerHTML = feed.length ? feed.slice(0, 8).map(f => `<li><span class="mono">${esc(f.id)}</span><span class="muted">${esc(f.line.replace(/^\d{4}-\d{2}-\d{2}\s*·?\s*/, ''))}</span></li>`).join('') : '<li class="empty">Noch keine Einträge im Verlauf.</li>';
+
+  let fStatus = 'alle', fPhase = 'alle';
+  const chips = [['alle', 'Alle']].concat(ST);
+  $('statusChips').innerHTML = chips.map(([s, l]) => `<button class="chip" id="chip-${s}" type="button" data-s="${s}" aria-pressed="${s === 'alle'}">${l}</button>`).join('');
+  $('phaseSel').innerHTML = '<option value="alle">Alle Phasen</option>' + PHASES.map(([p, n]) => `<option value="${p}">Phase ${p} · ${n}</option>`).join('');
+  try { const saved = JSON.parse(localStorage.getItem('fb-filter') || '{}'); if (saved.s) fStatus = saved.s; if (saved.p) fPhase = saved.p; } catch (e) {}
+  $('phaseSel').value = fPhase;
+
+  const section = (h, body) => body ? `<div><h3>${h}</h3>${body}</div>` : '';
+  function render() {
+    document.querySelectorAll('#statusChips .chip').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === fStatus)));
+    const q = $('q').value.trim().toLowerCase();
+    const list = T.filter(t => (fStatus === 'alle' || t.status === fStatus) && (fPhase === 'alle' || t.phase === fPhase)
+      && (!q || [t.id, t.titel, t.owner].join(' ').toLowerCase().includes(q)));
+    $('tickets').innerHTML = list.length ? list.map(t => {
+      const deps = t.depends.length ? t.depends.map(d => `<span class="mono">${esc(d)}</span> ${pill(byId[d]?.status || 'todo')}`).join(' &nbsp; ') : '';
+      const pr = D.repo_url && t.branch ? ` · <a href="${esc(D.repo_url)}/pulls?q=head%3A${encodeURIComponent(t.branch)}" target="_blank" rel="noopener">Pull Request</a>` : '';
+      return `<details class="t" id="t-${esc(t.id)}"><summary>
+          <span class="mono">${esc(t.id)}</span><span class="title">${esc(t.titel)}</span>
+          <span class="right">${t.hw === 'ja' ? '<span class="tag">HW</span>' : ''}${t.owner ? `<span class="tag">${esc(t.owner)}</span>` : ''}${pill(t.status)}</span>
+        </summary><div class="tbody">
+          ${section('Fertig, wenn …', t.fertig ? `<pre>${esc(t.fertig)}</pre>` : '')}
+          ${section('Abhängigkeiten', deps)}
+          ${section('Branch', t.branch ? `<span class="mono">${esc(t.branch)}</span>${pr}` : '')}
+          ${section('Übergabe', firstLine(t.uebergabe) ? `<pre>${esc(t.uebergabe)}</pre>` : '')}
+          ${section('Verlauf', (t.verlauf || []).length ? `<pre>${esc(t.verlauf.join('\n'))}</pre>` : '')}
+        </div></details>`;
+    }).join('') : '<div class="empty">Kein Ticket passt zu diesem Filter.</div>';
+    try { localStorage.setItem('fb-filter', JSON.stringify({s: fStatus, p: fPhase})); } catch (e) {}
+  }
+  $('statusChips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; fStatus = b.dataset.s; render(); });
+  $('phaseSel').addEventListener('change', e => { fPhase = e.target.value; render(); });
+  $('q').addEventListener('input', render);
+  render();
+})();
+</script>

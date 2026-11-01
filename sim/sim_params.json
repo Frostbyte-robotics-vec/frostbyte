@@ -1,0 +1,48 @@
+{
+  "_hinweis": "Alle Werte mit quelle=schaetzung sind Startwerte. SIM-08 ersetzt die Fahrwerte per Systemidentifikation, die Ereigniswerte aus echten Logs.",
+  "version": 1,
+  "welt": { "schritt_ms": 1, "steuer_ms": 10, "log_ms": 20, "g_in_s2": 386.1 },
+  "rauschen_profile": {
+    "none": { "skala": 0.0 },
+    "realistic": { "skala": 1.0 },
+    "harsh": { "skala": 2.0 }
+  },
+  "roboter": {
+    "stacker": {
+      "antrieb": { "kS_V": 0.6, "kV_V_per_in_s": 0.205, "kA_V_per_in_s2": 0.05, "spurbreite_in": 14.0, "mu": 0.9, "quelle": "schaetzung (200 U/min Kassette, 84T->60T, 4-Zoll-Rad)" },
+      "masse_lb": 16.0,
+      "umriss_in": { "laenge": 17.5, "breite": 17.5 },
+      "mechanismen": {
+        "lift":  { "min_deg": -40, "max_deg": 45, "max_deg_s": 70,  "max_deg_s2": 400, "quelle": "schaetzung, Kassette TODO(HW)" },
+        "arm":   { "min_deg": 0,   "max_deg": 97, "max_deg_s": 170, "max_deg_s2": 900, "quelle": "schaetzung" },
+        "claw":  { "offen_in": 1.29, "pin_in": 0.19, "max_in_s": 4.0, "quelle": "schaetzung" }
+      },
+      "sensoren": {
+        "tracking": { "skalierung_fehler": 0.005, "sigma_in_pro_takt": 0.01 },
+        "imu": { "drift_deg_pro_min": 1.0, "sigma_deg": 0.05 },
+        "gps": { "sigma_in": 0.5, "aussetzer_anteil": 0.02, "guete_verlust_pro_in_s": 0.02 }
+      }
+    },
+    "runner": {
+      "antrieb": { "kS_V": 0.6, "kV_V_per_in_s": 0.205, "kA_V_per_in_s2": 0.035, "spurbreite_in": 11.5, "mu": 0.9, "quelle": "schaetzung" },
+      "masse_lb": 10.0,
+      "umriss_in": { "laenge": 14.84, "breite": 14.7 },
+      "mechanismen": {
+        "lift":  { "min_deg": -20, "max_deg": 60, "max_deg_s": 220, "max_deg_s2": 1200, "quelle": "schaetzung, Kassette TODO(HW)" },
+        "claw":  { "offen_in": 1.29, "pin_in": 0.19, "max_in_s": 4.0, "quelle": "schaetzung" }
+      },
+      "sensoren": {
+        "encoder": { "skalierung_fehler": 0.01, "sigma_in_pro_takt": 0.02 },
+        "imu": { "drift_deg_pro_min": 1.0, "sigma_deg": 0.05 },
+        "gps": { "sigma_in": 0.5, "aussetzer_anteil": 0.02, "guete_verlust_pro_in_s": 0.02 }
+      }
+    }
+  },
+  "ereignisse": {
+    "loader_einheit":   { "dauer_s": 1.2, "sigma_s": 0.3, "fehlschlag": 0.05, "quelle": "schaetzung" },
+    "boden_einheit":    { "dauer_s": 1.8, "sigma_s": 0.5, "fehlschlag": 0.10, "quelle": "schaetzung" },
+    "pin_gelb_oben":    { "loader": 0.95, "boden": 0.50, "quelle": "schaetzung" },
+    "greifer_fasst":    { "erfolg": 0.98, "quelle": "schaetzung" },
+    "setzen":           { "erfolg_ebene0": 0.98, "abzug_pro_ebene": 0.01, "quelle": "schaetzung" }
+  }
+}
