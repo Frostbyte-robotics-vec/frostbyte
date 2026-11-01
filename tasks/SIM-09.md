@@ -2,9 +2,9 @@
 id: SIM-09
 phase: "1b"
 titel: Sensormodelle, Kollisionen und Regelprüfer in run_match einhängen
-status: todo
-owner:
-branch:
+status: in_progress
+owner: matelechner01
+branch: ticket/sim-09
 depends: [SIM-03, SIM-05]
 hw: nein
 ---
@@ -28,6 +28,13 @@ Regeln: CLAUDE.md. Vorher klären: ADR-Nummern der SIM-Tickets (008 doppelt bele
 
 ## Übergabe
 (aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+
+Review PR #17 (KI, 2026-11-01), Empfehlung: ändern:
+1. Blocker: zirkuläre Includes world.hpp <-> sensor_models.hpp, Rng unbekannt (CI rot) → Rng nach sim/rng.hpp.
+2. Danach rot: test/test_sim_world.cpp:85 (erste Logzeile hat jetzt Sensorwerte).
+3. Kriterium 2: SG3/SG6 werden im Lauf nicht geprüft (nur SG2 beim Start); Besitzmodell fehlt → prüfen oder als Ticket abspalten.
+4. Frage: Bericht (sim_report.py = SIM-06?) und Ausgabe von rule_violations in sim/main.cpp.
+5. Klein: CLI-Option Rauschprofil; Board-Status review setzen; nächste ADR-Nummer 013.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->

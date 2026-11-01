@@ -2,7 +2,7 @@
 id: SIM-03
 phase: "1b"
 titel: Sensormodelle: Tracking-Rad, Encoder, IMU-Drift, GPS mit Güte und Aussetzern
-status: review
+status: done
 owner: DAVIDCOPCOP
 branch: ticket/sim-03
 depends: [SIM-01]
