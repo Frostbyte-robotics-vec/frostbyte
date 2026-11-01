@@ -1,6 +1,8 @@
 #include "sim/json.hpp"
 
+#include <cerrno>
 #include <charconv>
+#include <cstdlib>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -122,13 +124,42 @@ private:
             return j;
         }
         j.type_ = Json::Type::Number;
-        // from_chars ist unabhängig vom Gebietsschema (Dezimalpunkt immer '.').
-        const char* begin = s_.data() + i_;
-        const auto [end, ec] = std::from_chars(begin, s_.data() + s_.size(), j.number_);
-        if (ec != std::errc() || end == begin)
-            fail("Zahl erwartet bei Position " + std::to_string(i_));
-        i_ += static_cast<std::size_t>(end - begin);
+        j.number_ = number();
         return j;
+    }
+
+    // Erst genau die JSON-Zahl abgrenzen (-?\d+(\.\d+)?([eE][+-]?\d+)?), dann mit strtod umwandeln.
+    // Nicht from_chars: Apples libc++ kann es für double erst ab Version 20. strtod hängt vom Gebietsschema ab,
+    // aber nichts im Programm ruft setlocale auf: es gilt die C-Locale, der Dezimalpunkt ist immer '.' (ADR-007).
+    double number() {
+        const std::size_t start = i_;
+        const auto digits = [&] {
+            const std::size_t from = i_;
+            while (i_ < s_.size() && s_[i_] >= '0' && s_[i_] <= '9')
+                ++i_;
+            if (i_ == from)
+                fail("Zahl erwartet bei Position " + std::to_string(start));
+        };
+        if (i_ < s_.size() && s_[i_] == '-')
+            ++i_;
+        digits();
+        if (i_ < s_.size() && s_[i_] == '.') {
+            ++i_;
+            digits();
+        }
+        if (i_ < s_.size() && (s_[i_] == 'e' || s_[i_] == 'E')) {
+            ++i_;
+            if (i_ < s_.size() && (s_[i_] == '+' || s_[i_] == '-'))
+                ++i_;
+            digits();
+        }
+        const std::string text(s_.substr(start, i_ - start));
+        errno = 0;
+        char* end = nullptr;
+        const double v = std::strtod(text.c_str(), &end);
+        if (end != text.c_str() + text.size() || errno == ERANGE)
+            fail("Zahl ausserhalb des Wertebereichs bei Position " + std::to_string(start));
+        return v;
     }
 
     std::string string() {

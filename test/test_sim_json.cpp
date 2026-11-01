@@ -41,3 +41,21 @@ TEST_CASE("JSON: Fehler werden gemeldet, nicht still ignoriert") {
     CHECK_THROWS_AS(parse_json("{\"a\": 1}").at("b"), std::runtime_error);
     CHECK_THROWS_AS(parse_json("{\"a\": null}").at("a").as_number(), std::runtime_error);
 }
+
+TEST_CASE("JSON: Zahlen genau nach JSON-Grammatik, korrekt gerundet") {
+    CHECK(parse_json("0.1").as_number() == 0.1);  // exakt, nicht Approx: gleiche Rundung auf jeder Plattform
+    CHECK(parse_json("-0.5").as_number() == -0.5);
+    CHECK(parse_json("1e3").as_number() == 1000.0);
+    CHECK(parse_json("1E-2").as_number() == 0.01);
+    CHECK(parse_json("386.1").as_number() == 386.1);
+    const Json a = parse_json("[1,2]");
+    REQUIRE(a.size() == 2);
+    CHECK(a[1].as_number() == 2.0);
+}
+
+TEST_CASE("JSON: Zahlen ausserhalb der Grammatik oder des Wertebereichs werden abgelehnt") {
+    for (const char* bad : {"0x10", "+1", ".5", "1.", "1e", "-", "1e+", "1e999", "[1.e2]"}) {
+        INFO(bad);
+        CHECK_THROWS_AS(parse_json(bad), std::runtime_error);
+    }
+}

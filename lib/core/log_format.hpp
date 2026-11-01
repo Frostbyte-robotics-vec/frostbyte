@@ -72,10 +72,21 @@ public:
             put(std::snprintf(cur(), room(), "%d", v));
     }
 
+    // Log v1 trennt mit Komma und kennt keine Anführungszeichen: ein gültiges Textfeld enthält also weder ',' noch
+    // '"' noch ein Zeilenende. Der Schreiber setzt das durch und ersetzt sie durch '_' (';' trennt schon Ereignisse).
+    // Das ändert das Format nicht, gültige Felder bleiben byte-gleich (ADR-007).
     void text(const char* s) {
         sep();
-        if (s)
-            put(std::snprintf(cur(), room(), "%s", s));
+        if (!s)
+            return;
+        const std::size_t from = len_;
+        put(std::snprintf(cur(), room(), "%s", s));
+        const std::size_t to = len_ < n_ ? len_ : (n_ > 0 ? n_ - 1 : 0);
+        for (std::size_t i = from; i < to; ++i) {
+            const char c = buf_[i];
+            if (c == ',' || c == '"' || c == '\r' || c == '\n')
+                buf_[i] = '_';
+        }
     }
 
     int length() const { return static_cast<int>(len_); }

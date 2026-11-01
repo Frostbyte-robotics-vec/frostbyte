@@ -47,7 +47,9 @@ public:
     RobotLog(const RobotSetup& robot, std::uint64_t seed, const std::string& build, std::ostream& out)
         : robot_(robot), out_(out) {
         char buf[256];
-        logfmt::format_header(buf, sizeof buf, robot.name.c_str(), "sim", static_cast<std::int64_t>(seed), build.c_str());
+        if (logfmt::format_header(buf, sizeof buf, robot.name.c_str(), "sim", static_cast<std::int64_t>(seed),
+                                  build.c_str()) >= static_cast<int>(sizeof buf))
+            throw std::runtime_error("Log-Kopfzeile länger als " + std::to_string(sizeof buf) + " Byte (build zu lang?)");
         out_ << buf << '\n' << logfmt::columns << '\n';
     }
 
@@ -62,7 +64,9 @@ public:
             r.th_deg = robot_.start->h_deg;
         }
         char buf[512];
-        logfmt::format_row(buf, sizeof buf, r);
+        if (logfmt::format_row(buf, sizeof buf, r) >= static_cast<int>(sizeof buf))
+            throw std::runtime_error("Log-Zeile länger als " + std::to_string(sizeof buf) + " Byte (" + robot_.name +
+                                     ", t = " + std::to_string(t_ms) + " ms)");
         out_ << buf << '\n';
     }
 
@@ -83,8 +87,11 @@ SimConfig load_config(const std::string& params_path, const std::string& field_p
     cfg.schritt_ms = positive_ms(welt, "schritt_ms");
     cfg.steuer_ms = positive_ms(welt, "steuer_ms");
     cfg.log_ms = positive_ms(welt, "log_ms");
-    if (cfg.steuer_ms % cfg.schritt_ms != 0 || cfg.log_ms % cfg.schritt_ms != 0 || match_ms % cfg.log_ms != 0)
+    if (cfg.steuer_ms % cfg.schritt_ms != 0 || cfg.log_ms % cfg.schritt_ms != 0)
         throw std::runtime_error("sim_params welt: steuer_ms und log_ms müssen Vielfache von schritt_ms sein");
+    if (match_ms % cfg.log_ms != 0)
+        throw std::runtime_error("sim_params welt: log_ms muss die Matchdauer (" + std::to_string(match_ms) +
+                                 " ms) ohne Rest teilen");
 
     cfg.stacker = {"stacker", start_pose(field, "START_STACKER"), load_route(stacker_route)};
     cfg.runner = {"runner", start_pose(field, "START_RUNNER"), load_route(runner_route)};

@@ -89,6 +89,12 @@ TEST_CASE("Rng: gleicher Seed, gleiche Folge; Werte in [0, 1)") {
     CHECK(Rng(123).next() != c.next());
 }
 
+TEST_CASE("Welt: log_ms, das die Matchdauer nicht teilt, wird mit eigener Meldung abgelehnt") {
+    CHECK_THROWS_WITH_AS(load_config(fixtures + "/sim_params_log7.json", fixtures + "/field_min.json",
+                                     fixtures + "/empty.route", fixtures + "/empty.route"),
+                         "sim_params welt: log_ms muss die Matchdauer (60000 ms) ohne Rest teilen", std::runtime_error);
+}
+
 TEST_CASE("Welt: echte Repo-Dateien lassen sich einlesen") {
     const std::string root = FB_ROOT_DIR;
     CHECK_NOTHROW(load_config(root + "/sim/sim_params.json", root + "/field/field.json",

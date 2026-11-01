@@ -44,3 +44,45 @@ TEST_CASE("Log v1: Zahlen mit fester Präzision, keine negative Null, Ganzzahl-F
     logfmt::format_row(buf, sizeof buf, r);
     CHECK(std::string(buf) == "0.000,stacker,-12.346,0.000,90.000,,,,,,,,,,,,,BEREIT,,1,,,0,,,,BLOCKED;RULE:SG6");
 }
+
+TEST_CASE("Log v1: Abschneiden wird ueber den Rueckgabewert gemeldet, Puffer bleibt abgeschlossen") {
+    char buf[16];
+    logfmt::Row r;
+    r.t_s = 12.5;
+    r.robot = "stacker";
+    r.event = "BLOCKED;RULE:SG6";
+    const int need = logfmt::format_row(buf, sizeof buf, r);
+    CHECK(need >= static_cast<int>(sizeof buf));
+    CHECK(std::string(buf) == "12.500,stacker,");
+    char big[512];
+    CHECK(logfmt::format_row(big, sizeof big, r) == need);
+
+    char head[32];
+    CHECK(logfmt::format_header(head, sizeof head, "stacker", "sim", 1, "sehr-langer-build-name") >=
+          static_cast<int>(sizeof head));
+    CHECK(std::string(head).size() == sizeof head - 1);
+}
+
+TEST_CASE("Log v1: Text mit Komma, Anfuehrungszeichen oder Zeilenende verschiebt keine Spalten") {
+    char buf[512];
+    logfmt::Row r;
+    r.t_s = 0.0;
+    r.robot = "runner";
+    r.cycle = "A,B";
+    r.route_step = "12:cycle \"X\"";
+    r.event = "E\r\nF";
+    logfmt::format_row(buf, sizeof buf, r);
+    CHECK(std::string(buf) == "0.000,runner,,,,,,,,,,,,,,,,A_B,12:cycle _X_,,,,,,,,E__F");
+}
+
+TEST_CASE("Log v1: Ersetzen bleibt innerhalb des Puffers, auch genau an der Abschneidegrenze") {
+    logfmt::Row r;
+    r.t_s = 0.0;
+    r.robot = "ab,cd";
+    char buf9[9];
+    logfmt::format_row(buf9, sizeof buf9, r);
+    CHECK(std::string(buf9) == "0.000,ab");
+    char buf10[10];
+    logfmt::format_row(buf10, sizeof buf10, r);
+    CHECK(std::string(buf10) == "0.000,ab_");
+}
