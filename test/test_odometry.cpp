@@ -139,6 +139,7 @@ TEST_CASE("Odometrie: Sim-Quadrat 3 m ohne Rauschen, Fehler <= 1 cm ueber den ga
         rig.move(side_in, 0.0);
         rig.move(0.0, quarter_arc_in);
     }
+    MESSAGE("Quadrat: max. Positionsfehler ", rig.max_pos_err_in, " in, Heading ", rig.max_head_err_deg, " Grad");
     CHECK(rig.max_pos_err_in <= mm_to_in(10.0));
     CHECK(rig.max_head_err_deg < 0.5);
     const sim::Pose truth = rig.drive.pose();
@@ -154,4 +155,13 @@ TEST_CASE("Odometrie: IMU springt von 179 auf -179 Grad, das ist eine Drehung um
     CHECK(odo.pose().heading_deg == doctest::Approx(-179.0));
     CHECK(odo.pose().x_in == doctest::Approx(-1.0).epsilon(0.001));
     CHECK(odo.pose().y_in == doctest::Approx(0.0).epsilon(0.001).scale(1.0));
+}
+
+TEST_CASE("Odometrie: Kreisfahrt (Fahrt und Drehung im selben Takt) bleibt auf dem Bogen") {
+    Rig rig(sim::Pose{0.0, 0.0, -150.0}, imu_offset_deg);
+    for (int i = 0; i < 400; ++i)  // 4 s, Radius = Spurbreite / 2 * (30 + 20) / (30 - 20) = 30 Zoll
+        rig.tick(20.0, 30.0);
+    MESSAGE("Kreis: max. Positionsfehler ", rig.max_pos_err_in, " in");
+    CHECK(rig.max_pos_err_in < 0.05);
+    CHECK(rig.max_head_err_deg < 0.1);
 }
