@@ -14,6 +14,9 @@ Status: angenommen (1. Nov 2026), Ticket S-01
 - `common.mk`: eine Zeile, `DEPDIR := .d` wurde zu `DEPDIR ?= .d`, damit das Makefile ein Verzeichnis je Roboter setzen kann. Nach `pros conduct upgrade` prüfen, ob die Änderung noch da ist.
 - Das Beispielverzeichnis `static/` ist entfernt. `firmware/hot-cold-asset.mk` setzt `bin/` fest im Pfad voraus und bricht mit `BINDIR=bin/<robot>`. Sobald Assets eingebettet werden sollen (z. B. LemLib-Pfade), muss diese Regel angepasst werden.
 
+- `USE_PACKAGE:=0` (ein Monolith je Roboter, ca. 0,4 MB). `pros upload` liest die Ausgabe-Pfade (`hot_output`/`cold_output`) fest aus `project.pros`; die gibt es nur einmal, `bin/<robot>/` aber je Roboter. Mit Monolith lädt man die Datei explizit hoch:
+  `py -m pros.cli.main upload bin/stacker/monolith.bin --target v5 --name stacker` (bzw. `runner`).
+
 ## Folgen
 - `tools/format.py` (S-04) durchsucht `include/`; dort liegen fremde Header (pros, liblvgl, lemlib, fmt). Beim Zusammenführen von S-04 und S-01 muss `include/` aus der Format-Prüfung ausgenommen werden (ausgenommen sein sollten auch `firmware/` und alles fremde unter `include/`).
 - `project.pros` enthält absolute Pfade der Maschine, die es erzeugt hat (`location`). `make` nutzt die Datei nicht; nur `pros`-Befehle lesen sie.

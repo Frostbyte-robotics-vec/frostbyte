@@ -30,7 +30,8 @@ EXTRA_CFLAGS=-D$(ROBOT_DEFINE)
 EXTRA_CXXFLAGS=-D$(ROBOT_DEFINE) -iquote$(ROOT)
 
 # Set to 1 to enable hot/cold linking
-USE_PACKAGE:=1
+# Frostbyte: 0, weil pros upload die Ausgabe-Pfade aus project.pros liest und BINDIR je Roboter verschieden ist (ADR-003)
+USE_PACKAGE:=0
 
 # Add libraries you do not wish to include in the cold image here
 # EXCLUDE_COLD_LIBRARIES:= $(FWDIR)/your_library.a
