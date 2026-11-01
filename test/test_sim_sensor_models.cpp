@@ -146,6 +146,20 @@ TEST_CASE("GPS: Positionsrauschen im Stand +-10 % der Vorgabe") {
     CHECK(within_rel(stats_of(ex).sigma, 1.0, 0.10));
 }
 
+TEST_CASE("GPS: Heading-Rauschen +-10 % der Vorgabe in 1000 Proben") {
+    const SensorParams p = alpha();
+    GpsModel m(p.gps, p.noise_scale, 24);
+    std::vector<double> eh;
+    while (static_cast<int>(eh.size()) < samples) {
+        const GpsSample g = m.measure(0.0, 0.0, 30.0, 0.0);
+        if (g.valid)
+            eh.push_back(g.heading_deg - 30.0);
+    }
+    const Stats s = stats_of(eh);
+    CHECK(within_rel(s.sigma, 2.0, 0.10));
+    CHECK(std::fabs(s.mean) < 0.2);
+}
+
 TEST_CASE("GPS: Güte sinkt mit der Fahrgeschwindigkeit, Rauschen folgt der gemeldeten Güte") {
     const SensorParams p = alpha();
     GpsModel m(p.gps, p.noise_scale, 22);
