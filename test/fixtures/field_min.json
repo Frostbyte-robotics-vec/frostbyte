@@ -1,0 +1,9 @@
+{
+  "_hinweis": "Testfeld mit bekannten Werten – unabhängig von Platzhaltern in field/field.json.",
+  "version": 1,
+  "feld_in": 144,
+  "posen": [
+    { "id": "START_STACKER", "x_in": -60.0, "y_in": 12.5, "h_deg": 90 },
+    { "id": "START_RUNNER", "x_in": null, "y_in": null, "h_deg": null }
+  ]
+}
