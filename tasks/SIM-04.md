@@ -2,7 +2,7 @@
 id: SIM-04
 phase: "1b"
 titel: Mechanismen als Gelenke + Objektmodell als Ereignisse (Loader, Boden, Ausrichtung, Greifen, Setzen)
-status: review
+status: done
 owner: DAVIDCOPCOP
 branch: ticket/sim-04
 depends: [SIM-01]
