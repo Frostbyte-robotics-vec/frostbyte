@@ -24,7 +24,10 @@ Details im Plan: docs/plan.md (Ticket SIM-07). Regeln: CLAUDE.md.
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand: ADR-002 (three.js r128 per CDN) und Testlog-Generator tools/viewer/make_test_logs.py mit Tests
+(python3 -m unittest discover -s tools/viewer -p "test_*.py", prüft Spalten gegen docs/log_format.md) fertig.
+Nächster Schritt: tools/viewer/index.html.
+Hinweis: docs/plan.md hat keinen Abschnitt zu SIM-07, gearbeitet nach Ticket-Text.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
