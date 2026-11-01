@@ -2,7 +2,7 @@
 id: SIM-05
 phase: "1b"
 titel: Kollisionen (Roboter, Feldelemente, Rand), Regelprüfer, Scorer nach RSC3
-status: blocked
+status: review
 owner: matelechner01
 branch: ticket/sim-05
 depends: [SIM-04]
