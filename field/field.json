@@ -1,5 +1,5 @@
 {
-  "_hinweis": "Goals, Toggles und Loader: vermessen im CAD 276-9250-000 (2026-04-26) von DAVIDCOPCOP, Ticket A-01. Goal-anfahrt_deg: Goals zeigen von der nächsten Wand weg ins Feld (Entscheidung des Menschen, 2026-11-02); MIDFIELD bleibt null. Offen (null): posen (Ticket A-08), objekte_start. Namen sind fest, Routen benutzen nur diese Namen.",
+  "_hinweis": "Goals, Toggles und Loader: vermessen im CAD 276-9250-000 (2026-04-26) von DAVIDCOPCOP, Ticket A-01. Goal-anfahrt_deg: Goals zeigen von der nächsten Wand weg ins Feld (Entscheidung des Menschen, 2026-11-02); MIDFIELD bleibt null. Offen (null): posen (Ticket A-08). Namen sind fest, Routen benutzen nur diese Namen.",
   "version": 1,
   "einheiten": "Zoll, Grad",
   "ursprung": "Feldmitte",
@@ -198,9 +198,605 @@
     }
   ],
   "objekte_start": {
-    "_hinweis": "Startpositionen der Feldobjekte im Skills-Match (Figur VURS1), A-01",
-    "cups": [],
-    "pins": []
+    "_hinweis": "Startaufstellung im Skills-Match, vermessen im CAD 276-9250-000 (2026-04-26). Cup = klarer Cone, Pin = alle anderen (Variante: yellow, red_yellow, blue_yellow, red_blue; Entscheidung des Menschen, 2026-11-02 - bitte gegen Game Manual/VURS1 bestätigen). ebene 0 = am Boden, 1 = obenauf. gelb_deg = Richtung, in die die gelbe Seite eines liegenden Pins zeigt. oben_farbe = obere Hälfte eines rot/blauen Pins. Objekte in den Alliance Stations (ausserhalb des Felds) fehlen absichtlich.",
+    "cups": [
+      {
+        "id": "CROSS_R1_C",
+        "x_in": -23.546,
+        "y_in": 23.546,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_R2_C",
+        "x_in": -47.091,
+        "y_in": 47.091,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_B1_C",
+        "x_in": 23.546,
+        "y_in": -23.546,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_B2_C",
+        "x_in": 47.091,
+        "y_in": -47.091,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "STACK_R1",
+        "x_in": -23.546,
+        "y_in": -23.546,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "STACK_R2",
+        "x_in": -47.091,
+        "y_in": -47.091,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "STACK_B1",
+        "x_in": 23.546,
+        "y_in": 23.546,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "STACK_B2",
+        "x_in": 47.091,
+        "y_in": 47.091,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "CENTER_STACK_R1",
+        "x_in": -23.546,
+        "y_in": 0.0,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "CENTER_STACK_R2",
+        "x_in": 0.0,
+        "y_in": -23.546,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "CENTER_STACK_B1",
+        "x_in": 23.546,
+        "y_in": 0.0,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "CENTER_STACK_B2",
+        "x_in": 0.0,
+        "y_in": 23.546,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_W_S_1",
+        "x_in": -68.626,
+        "y_in": -26.703,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_W_S_2",
+        "x_in": -68.626,
+        "y_in": -23.546,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_W_S_3",
+        "x_in": -68.626,
+        "y_in": -20.388,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_W_N_1",
+        "x_in": -68.626,
+        "y_in": 20.388,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_W_N_2",
+        "x_in": -68.626,
+        "y_in": 23.546,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_W_N_3",
+        "x_in": -68.626,
+        "y_in": 26.703,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_E_S_1",
+        "x_in": 68.626,
+        "y_in": -26.703,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_E_S_2",
+        "x_in": 68.626,
+        "y_in": -23.546,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_E_S_3",
+        "x_in": 68.626,
+        "y_in": -20.388,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_E_N_1",
+        "x_in": 68.626,
+        "y_in": 20.388,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_E_N_2",
+        "x_in": 68.626,
+        "y_in": 23.546,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_E_N_3",
+        "x_in": 68.626,
+        "y_in": 26.703,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_S_W_1",
+        "x_in": -26.703,
+        "y_in": -68.626,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_S_W_2",
+        "x_in": -23.546,
+        "y_in": -68.626,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_S_W_3",
+        "x_in": -20.388,
+        "y_in": -68.626,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_S_E_1",
+        "x_in": 20.388,
+        "y_in": -68.626,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_S_E_2",
+        "x_in": 23.546,
+        "y_in": -68.626,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_S_E_3",
+        "x_in": 26.703,
+        "y_in": -68.626,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_N_W_1",
+        "x_in": -26.703,
+        "y_in": 68.626,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_N_W_2",
+        "x_in": -23.546,
+        "y_in": 68.626,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_N_W_3",
+        "x_in": -20.388,
+        "y_in": 68.626,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_N_E_1",
+        "x_in": 20.388,
+        "y_in": 68.626,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_N_E_2",
+        "x_in": 23.546,
+        "y_in": 68.626,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "WALL_N_E_3",
+        "x_in": 26.703,
+        "y_in": 68.626,
+        "lage": "steht",
+        "ebene": 0
+      }
+    ],
+    "pins": [
+      {
+        "id": "CROSS_R1_RED_W",
+        "variante": "red_yellow",
+        "x_in": -28.163,
+        "y_in": 23.546,
+        "lage": "liegt",
+        "gelb_deg": 0,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_R1_RED_S",
+        "variante": "red_yellow",
+        "x_in": -23.546,
+        "y_in": 18.929,
+        "lage": "liegt",
+        "gelb_deg": 90,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_R1_BLUE_N",
+        "variante": "blue_yellow",
+        "x_in": -23.546,
+        "y_in": 28.163,
+        "lage": "liegt",
+        "gelb_deg": 270,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_R1_BLUE_E",
+        "variante": "blue_yellow",
+        "x_in": -18.929,
+        "y_in": 23.546,
+        "lage": "liegt",
+        "gelb_deg": 180,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_R2_RED_W",
+        "variante": "red_yellow",
+        "x_in": -51.7,
+        "y_in": 47.091,
+        "lage": "liegt",
+        "gelb_deg": 0,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_R2_RED_S",
+        "variante": "red_yellow",
+        "x_in": -47.091,
+        "y_in": 42.483,
+        "lage": "liegt",
+        "gelb_deg": 90,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_R2_BLUE_N",
+        "variante": "blue_yellow",
+        "x_in": -47.091,
+        "y_in": 51.7,
+        "lage": "liegt",
+        "gelb_deg": 270,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_R2_BLUE_E",
+        "variante": "blue_yellow",
+        "x_in": -42.483,
+        "y_in": 47.091,
+        "lage": "liegt",
+        "gelb_deg": 180,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_B1_RED_W",
+        "variante": "red_yellow",
+        "x_in": 18.929,
+        "y_in": -23.546,
+        "lage": "liegt",
+        "gelb_deg": 0,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_B1_RED_S",
+        "variante": "red_yellow",
+        "x_in": 23.546,
+        "y_in": -28.163,
+        "lage": "liegt",
+        "gelb_deg": 90,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_B1_BLUE_N",
+        "variante": "blue_yellow",
+        "x_in": 23.546,
+        "y_in": -18.929,
+        "lage": "liegt",
+        "gelb_deg": 270,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_B1_BLUE_E",
+        "variante": "blue_yellow",
+        "x_in": 28.163,
+        "y_in": -23.546,
+        "lage": "liegt",
+        "gelb_deg": 180,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_B2_RED_W",
+        "variante": "red_yellow",
+        "x_in": 42.483,
+        "y_in": -47.091,
+        "lage": "liegt",
+        "gelb_deg": 0,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_B2_RED_S",
+        "variante": "red_yellow",
+        "x_in": 47.091,
+        "y_in": -51.7,
+        "lage": "liegt",
+        "gelb_deg": 90,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_B2_BLUE_N",
+        "variante": "blue_yellow",
+        "x_in": 47.091,
+        "y_in": -42.483,
+        "lage": "liegt",
+        "gelb_deg": 270,
+        "ebene": 0
+      },
+      {
+        "id": "CROSS_B2_BLUE_E",
+        "variante": "blue_yellow",
+        "x_in": 51.7,
+        "y_in": -47.091,
+        "lage": "liegt",
+        "gelb_deg": 180,
+        "ebene": 0
+      },
+      {
+        "id": "STACK_R1_PIN",
+        "variante": "yellow",
+        "x_in": -23.546,
+        "y_in": -23.546,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1
+      },
+      {
+        "id": "STACK_R2_PIN",
+        "variante": "yellow",
+        "x_in": -47.091,
+        "y_in": -47.091,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1
+      },
+      {
+        "id": "STACK_B1_PIN",
+        "variante": "yellow",
+        "x_in": 23.546,
+        "y_in": 23.546,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1
+      },
+      {
+        "id": "STACK_B2_PIN",
+        "variante": "yellow",
+        "x_in": 47.091,
+        "y_in": 47.091,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1
+      },
+      {
+        "id": "CENTER_STACK_R1_PIN",
+        "variante": "red_blue",
+        "x_in": -23.546,
+        "y_in": 0.0,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1,
+        "oben_farbe": "red"
+      },
+      {
+        "id": "CENTER_STACK_R2_PIN",
+        "variante": "red_blue",
+        "x_in": 0.0,
+        "y_in": -23.546,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1,
+        "oben_farbe": "red"
+      },
+      {
+        "id": "CENTER_STACK_B1_PIN",
+        "variante": "red_blue",
+        "x_in": 23.546,
+        "y_in": 0.0,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1,
+        "oben_farbe": "blue"
+      },
+      {
+        "id": "CENTER_STACK_B2_PIN",
+        "variante": "red_blue",
+        "x_in": 0.0,
+        "y_in": 23.546,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1,
+        "oben_farbe": "blue"
+      },
+      {
+        "id": "WALL_W_S_PIN",
+        "variante": "yellow",
+        "x_in": -68.626,
+        "y_in": -23.546,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1
+      },
+      {
+        "id": "WALL_W_N_PIN",
+        "variante": "yellow",
+        "x_in": -68.626,
+        "y_in": 23.546,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1
+      },
+      {
+        "id": "WALL_E_S_PIN",
+        "variante": "yellow",
+        "x_in": 68.626,
+        "y_in": -23.546,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1
+      },
+      {
+        "id": "WALL_E_N_PIN",
+        "variante": "yellow",
+        "x_in": 68.626,
+        "y_in": 23.546,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1
+      },
+      {
+        "id": "WALL_S_W_PIN",
+        "variante": "yellow",
+        "x_in": -23.546,
+        "y_in": -68.626,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1
+      },
+      {
+        "id": "WALL_S_E_PIN",
+        "variante": "yellow",
+        "x_in": 23.546,
+        "y_in": -68.626,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1
+      },
+      {
+        "id": "WALL_N_W_PIN",
+        "variante": "yellow",
+        "x_in": -23.546,
+        "y_in": 68.626,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1
+      },
+      {
+        "id": "WALL_N_E_PIN",
+        "variante": "yellow",
+        "x_in": 23.546,
+        "y_in": 68.626,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1
+      },
+      {
+        "id": "GOAL_NEUTRAL_R1_PIN",
+        "variante": "yellow",
+        "x_in": -47.091,
+        "y_in": 23.546,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1,
+        "auf_goal": "NEUTRAL_R1"
+      },
+      {
+        "id": "GOAL_NEUTRAL_R2_PIN",
+        "variante": "yellow",
+        "x_in": -23.546,
+        "y_in": 47.091,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1,
+        "auf_goal": "NEUTRAL_R2"
+      },
+      {
+        "id": "GOAL_NEUTRAL_B1_PIN",
+        "variante": "yellow",
+        "x_in": 47.091,
+        "y_in": -23.546,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1,
+        "auf_goal": "NEUTRAL_B1"
+      },
+      {
+        "id": "GOAL_NEUTRAL_B2_PIN",
+        "variante": "yellow",
+        "x_in": 23.546,
+        "y_in": -47.091,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1,
+        "auf_goal": "NEUTRAL_B2"
+      },
+      {
+        "id": "GOAL_MIDFIELD_PIN",
+        "variante": "yellow",
+        "x_in": 0.0,
+        "y_in": 0.0,
+        "lage": "steht",
+        "gelb_deg": null,
+        "ebene": 1,
+        "auf_goal": "MIDFIELD"
+      }
+    ]
   },
   "_winkel": "anfahrt_deg = Richtung vom Ziel zu der Seite, von der der Roboter kommt (Fahrtrichtung = anfahrt_deg + 180). wand_deg = Richtung von der Feldmitte zur Wand. 0 Grad = +x (rot -> blau), +y = 90 Grad."
 }

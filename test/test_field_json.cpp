@@ -126,3 +126,78 @@ TEST_CASE("field.json: Goal-Anfahrt zeigt von der nächsten Wand ins Feld, rot/b
               doctest::Approx(wrap_deg(find_id(goals, b).at("anfahrt_deg").as_number())));
     }
 }
+
+namespace {
+
+// Alle Objekte einer Liste an gespiegelter Stelle wiederfinden (Punktsymmetrie), gleiche Variante.
+void check_point_symmetric(const Json& list, const std::string& variante_key) {
+    for (std::size_t i = 0; i < list.size(); ++i) {
+        const double x = list[i].at("x_in").as_number();
+        const double y = list[i].at("y_in").as_number();
+        const int ebene = static_cast<int>(list[i].at("ebene").as_number());
+        const std::string var = variante_key.empty() ? "" : list[i].at(variante_key).as_string();
+        bool gefunden = false;
+        for (std::size_t j = 0; j < list.size(); ++j) {
+            if (std::fabs(list[j].at("x_in").as_number() + x) > 1e-6 ||
+                std::fabs(list[j].at("y_in").as_number() + y) > 1e-6)
+                continue;
+            if (static_cast<int>(list[j].at("ebene").as_number()) != ebene)
+                continue;
+            if (!variante_key.empty() && list[j].at(variante_key).as_string() != var)
+                continue;
+            gefunden = true;
+        }
+        INFO(list[i].at("id").as_string());
+        CHECK(gefunden);
+    }
+}
+
+}  // namespace
+
+TEST_CASE("field.json: Startobjekte - Cups (klar) und Pins (alle anderen, mit Variante)") {
+    const Json f = field();
+    const Json& cups = f.at("objekte_start").at("cups");
+    const Json& pins = f.at("objekte_start").at("pins");
+    const double half = f.at("feld_in").as_number() / 2.0;
+    CHECK(cups.size() == 36);
+    CHECK(pins.size() == 37);
+
+    std::vector<std::string> ids;
+    for (const Json* list : {&cups, &pins}) {
+        for (std::size_t i = 0; i < list->size(); ++i) {
+            const Json& o = (*list)[i];
+            ids.push_back(o.at("id").as_string());
+            INFO(ids.back());
+            CHECK(std::fabs(o.at("x_in").as_number()) <= half);
+            CHECK(std::fabs(o.at("y_in").as_number()) <= half);
+        }
+    }
+    for (std::size_t i = 0; i < ids.size(); ++i)
+        for (std::size_t j = i + 1; j < ids.size(); ++j)
+            CHECK_MESSAGE(ids[i] != ids[j], "doppelte id: " << ids[i]);
+
+    const std::vector<std::string> varianten = {"yellow", "red_yellow", "blue_yellow", "red_blue"};
+    int rot_gelb = 0, blau_gelb = 0, gelb = 0, rot_blau = 0;
+    for (std::size_t i = 0; i < pins.size(); ++i) {
+        const std::string v = pins[i].at("variante").as_string();
+        bool bekannt = false;
+        for (const auto& k : varianten)
+            bekannt = bekannt || k == v;
+        INFO(pins[i].at("id").as_string());
+        CHECK(bekannt);
+        rot_gelb += v == "red_yellow";
+        blau_gelb += v == "blue_yellow";
+        gelb += v == "yellow";
+        rot_blau += v == "red_blue";
+        // Liegende Pins sagen, wohin die gelbe Seite zeigt; stehende nicht.
+        if (pins[i].at("lage").as_string() == "liegt")
+            CHECK_FALSE(pins[i].at("gelb_deg").is_null());
+    }
+    CHECK(rot_gelb == 8);
+    CHECK(blau_gelb == 8);
+    CHECK(gelb == 17);
+    CHECK(rot_blau == 4);
+
+    check_point_symmetric(cups, "");
+    check_point_symmetric(pins, "");
+}
