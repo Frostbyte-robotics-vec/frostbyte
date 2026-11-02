@@ -1,5 +1,5 @@
 {
-  "_hinweis": "Koordinaten sind null = noch nicht vermessen (Ticket A-01: aus dem offiziellen STEP-Feldmodell). Namen sind fest, Routen benutzen nur diese Namen.",
+  "_hinweis": "Goals, Toggles und Loader: vermessen im CAD 276-9250-000 (2026-04-26) von DAVIDCOPCOP, Ticket A-01. Offen (null, Strategieentscheidung bzw. nicht im CAD): anfahrt_deg der Goals, alle posen, objekte_start. Namen sind fest, Routen benutzen nur diese Namen.",
   "version": 1,
   "einheiten": "Zoll, Grad",
   "ursprung": "Feldmitte",
@@ -11,8 +11,8 @@
       "typ": "alliance_red",
       "hoehe_in": 3.25,
       "quadrant": "RED_1",
-      "x_in": null,
-      "y_in": null,
+      "x_in": -47.091,
+      "y_in": -23.546,
       "anfahrt_deg": null,
       "owner": "stacker"
     },
@@ -21,8 +21,8 @@
       "typ": "neutral",
       "hoehe_in": 5.8,
       "quadrant": "RED_1",
-      "x_in": null,
-      "y_in": null,
+      "x_in": -47.091,
+      "y_in": 23.546,
       "anfahrt_deg": null,
       "owner": "stacker"
     },
@@ -31,8 +31,8 @@
       "typ": "alliance_red",
       "hoehe_in": 3.25,
       "quadrant": "RED_2",
-      "x_in": null,
-      "y_in": null,
+      "x_in": -23.546,
+      "y_in": -47.091,
       "anfahrt_deg": null,
       "owner": "runner"
     },
@@ -41,8 +41,8 @@
       "typ": "neutral",
       "hoehe_in": 5.8,
       "quadrant": "RED_2",
-      "x_in": null,
-      "y_in": null,
+      "x_in": -23.546,
+      "y_in": 47.091,
       "anfahrt_deg": null,
       "owner": "runner"
     },
@@ -51,8 +51,8 @@
       "typ": "alliance_blue",
       "hoehe_in": 3.25,
       "quadrant": "BLUE_1",
-      "x_in": null,
-      "y_in": null,
+      "x_in": 47.091,
+      "y_in": 23.546,
       "anfahrt_deg": null,
       "owner": "runner"
     },
@@ -61,8 +61,8 @@
       "typ": "neutral",
       "hoehe_in": 5.8,
       "quadrant": "BLUE_1",
-      "x_in": null,
-      "y_in": null,
+      "x_in": 47.091,
+      "y_in": -23.546,
       "anfahrt_deg": null,
       "owner": "runner"
     },
@@ -71,8 +71,8 @@
       "typ": "alliance_blue",
       "hoehe_in": 3.25,
       "quadrant": "BLUE_2",
-      "x_in": null,
-      "y_in": null,
+      "x_in": 23.546,
+      "y_in": 47.091,
       "anfahrt_deg": null,
       "owner": "runner"
     },
@@ -81,8 +81,8 @@
       "typ": "neutral",
       "hoehe_in": 5.8,
       "quadrant": "BLUE_2",
-      "x_in": null,
-      "y_in": null,
+      "x_in": 23.546,
+      "y_in": -47.091,
       "anfahrt_deg": null,
       "owner": "runner"
     },
@@ -91,8 +91,8 @@
       "typ": "midfield",
       "hoehe_in": 8.7,
       "quadrant": "MIDFIELD",
-      "x_in": null,
-      "y_in": null,
+      "x_in": 0.0,
+      "y_in": 0.0,
       "anfahrt_deg": null,
       "owner": "stacker"
     }
@@ -101,33 +101,33 @@
     {
       "id": "TOGGLE_RED_1",
       "quadrant": "RED_1",
-      "x_in": null,
-      "y_in": null,
-      "wand_deg": null,
+      "x_in": -71.537,
+      "y_in": 0.0,
+      "wand_deg": 180,
       "zielfarbe": "red"
     },
     {
       "id": "TOGGLE_RED_2",
       "quadrant": "RED_2",
-      "x_in": null,
-      "y_in": null,
-      "wand_deg": null,
+      "x_in": 0.0,
+      "y_in": -71.537,
+      "wand_deg": 270,
       "zielfarbe": "red"
     },
     {
       "id": "TOGGLE_BLUE_1",
       "quadrant": "BLUE_1",
-      "x_in": null,
-      "y_in": null,
-      "wand_deg": null,
+      "x_in": 71.537,
+      "y_in": 0.0,
+      "wand_deg": 0,
       "zielfarbe": "blue"
     },
     {
       "id": "TOGGLE_BLUE_2",
       "quadrant": "BLUE_2",
-      "x_in": null,
-      "y_in": null,
-      "wand_deg": null,
+      "x_in": 0.0,
+      "y_in": 71.537,
+      "wand_deg": 90,
       "zielfarbe": "blue"
     }
   ],
@@ -135,33 +135,33 @@
     {
       "id": "LOADER_RED_1",
       "farbe": "red",
-      "x_in": null,
-      "y_in": null,
-      "anfahrt_deg": null,
+      "x_in": -69.161,
+      "y_in": -58.763,
+      "anfahrt_deg": 0,
       "in_skills_nutzbar": true
     },
     {
       "id": "LOADER_RED_2",
       "farbe": "red",
-      "x_in": null,
-      "y_in": null,
-      "anfahrt_deg": null,
+      "x_in": -69.161,
+      "y_in": 58.763,
+      "anfahrt_deg": 0,
       "in_skills_nutzbar": true
     },
     {
       "id": "LOADER_BLUE_1",
       "farbe": "blue",
-      "x_in": null,
-      "y_in": null,
-      "anfahrt_deg": null,
+      "x_in": 69.161,
+      "y_in": 58.763,
+      "anfahrt_deg": 180,
       "in_skills_nutzbar": false
     },
     {
       "id": "LOADER_BLUE_2",
       "farbe": "blue",
-      "x_in": null,
-      "y_in": null,
-      "anfahrt_deg": null,
+      "x_in": 69.161,
+      "y_in": -58.763,
+      "anfahrt_deg": 180,
       "in_skills_nutzbar": false
     }
   ],
@@ -201,5 +201,6 @@
     "_hinweis": "Startpositionen der Feldobjekte im Skills-Match (Figur VURS1), A-01",
     "cups": [],
     "pins": []
-  }
+  },
+  "_winkel": "anfahrt_deg = Richtung vom Ziel zu der Seite, von der der Roboter kommt (Fahrtrichtung = anfahrt_deg + 180). wand_deg = Richtung von der Feldmitte zur Wand. 0 Grad = +x (rot -> blau), +y = 90 Grad."
 }
