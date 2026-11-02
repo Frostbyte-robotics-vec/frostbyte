@@ -201,3 +201,35 @@ TEST_CASE("field.json: Startobjekte - Cups (klar) und Pins (alle anderen, mit Va
     check_point_symmetric(cups, "");
     check_point_symmetric(pins, "");
 }
+
+TEST_CASE("field.json: Pins drehen sich mit der Feldmitte um 180 Grad (Farbe vertauscht, gelbe Seite gedreht)") {
+    const Json f = field();
+    const Json& pins = f.at("objekte_start").at("pins");
+    auto tausch = [](const std::string& v) {
+        return v == "red_yellow" ? std::string("blue_yellow") : v == "blue_yellow" ? std::string("red_yellow") : v;
+    };
+    for (std::size_t i = 0; i < pins.size(); ++i) {
+        const Json& a = pins[i];
+        bool gefunden = false;
+        for (std::size_t j = 0; j < pins.size(); ++j) {
+            const Json& b = pins[j];
+            if (std::fabs(a.at("x_in").as_number() + b.at("x_in").as_number()) > 1e-6 ||
+                std::fabs(a.at("y_in").as_number() + b.at("y_in").as_number()) > 1e-6 ||
+                a.at("ebene").as_number() != b.at("ebene").as_number() ||
+                b.at("variante").as_string() != tausch(a.at("variante").as_string()))
+                continue;
+            if (!a.at("gelb_deg").is_null() && wrap_deg(a.at("gelb_deg").as_number() + 180.0) !=
+                                                   doctest::Approx(wrap_deg(b.at("gelb_deg").as_number())))
+                continue;
+            if (a.at("variante").as_string() == "red_blue") {
+                const Json* oa = a.find("oben_farbe");
+                const Json* ob = b.find("oben_farbe");
+                if (!oa || !ob || oa->as_string() == ob->as_string())
+                    continue;
+            }
+            gefunden = true;
+        }
+        INFO(a.at("id").as_string());
+        CHECK(gefunden);
+    }
+}
