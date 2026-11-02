@@ -9,3 +9,13 @@
 #else
 #error "Kein Zielroboter: make ROBOT=stacker oder make ROBOT=runner"
 #endif
+
+// Die Header der Roboter liegen in config::stacker bzw. config::runner (beide gleichzeitig einbindbar, z. B. in Tests);
+// hier wird der gewählte Roboter nach config:: übernommen.
+namespace config {
+#if defined(FROSTBYTE_ROBOT_STACKER)
+using namespace stacker;
+#else
+using namespace runner;
+#endif
+}  // namespace config

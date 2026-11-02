@@ -2,7 +2,7 @@
 id: SIM-11
 phase: "1b"
 titel: frostbyte_sim --demo: Demo-Szenario (Handsteuerung, Platzhalter-Posen) und --noise-Option
-status: review
+status: done
 owner: matelechner01
 branch: ticket/sim-11
 depends: [SIM-09]
