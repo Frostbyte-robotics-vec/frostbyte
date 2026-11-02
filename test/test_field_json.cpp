@@ -98,3 +98,31 @@ TEST_CASE("field.json: Midfield-Goal liegt in der Feldmitte") {
     CHECK(m.at("x_in").as_number() == doctest::Approx(0.0));
     CHECK(m.at("y_in").as_number() == doctest::Approx(0.0));
 }
+
+TEST_CASE("field.json: Goal-Anfahrt zeigt von der nächsten Wand ins Feld, rot/blau um 180 Grad gedreht") {
+    const Json f = field();
+    const Json& goals = f.at("goals");
+    // Nächste Wand: größerer Betrag von |x| bzw. |y|; die Anfahrtsrichtung zeigt von dort zur Feldmitte (Wand + 180).
+    for (std::size_t i = 0; i < goals.size(); ++i) {
+        const std::string id = goals[i].at("id").as_string();
+        if (id == "MIDFIELD") {
+            CHECK(goals[i].at("anfahrt_deg").is_null());
+            continue;
+        }
+        INFO(id);
+        REQUIRE_FALSE(goals[i].at("anfahrt_deg").is_null());
+        const double x = goals[i].at("x_in").as_number();
+        const double y = goals[i].at("y_in").as_number();
+        const double wand = std::fabs(x) > std::fabs(y) ? (x < 0 ? 180.0 : 0.0) : (y < 0 ? 270.0 : 90.0);
+        CHECK(wrap_deg(goals[i].at("anfahrt_deg").as_number()) == doctest::Approx(wrap_deg(wand + 180.0)));
+    }
+    const std::vector<std::pair<std::string, std::string>> paare = {{"RED_ALLIANCE_1", "BLUE_ALLIANCE_1"},
+                                                                    {"RED_ALLIANCE_2", "BLUE_ALLIANCE_2"},
+                                                                    {"NEUTRAL_R1", "NEUTRAL_B1"},
+                                                                    {"NEUTRAL_R2", "NEUTRAL_B2"}};
+    for (const auto& [r, b] : paare) {
+        INFO(r << " / " << b);
+        CHECK(wrap_deg(find_id(goals, r).at("anfahrt_deg").as_number() + 180.0) ==
+              doctest::Approx(wrap_deg(find_id(goals, b).at("anfahrt_deg").as_number())));
+    }
+}

@@ -1,5 +1,5 @@
 {
-  "_hinweis": "Goals, Toggles und Loader: vermessen im CAD 276-9250-000 (2026-04-26) von DAVIDCOPCOP, Ticket A-01. Offen (null, Strategieentscheidung bzw. nicht im CAD): anfahrt_deg der Goals, alle posen, objekte_start. Namen sind fest, Routen benutzen nur diese Namen.",
+  "_hinweis": "Goals, Toggles und Loader: vermessen im CAD 276-9250-000 (2026-04-26) von DAVIDCOPCOP, Ticket A-01. Goal-anfahrt_deg: Goals zeigen von der nächsten Wand weg ins Feld (Entscheidung des Menschen, 2026-11-02); MIDFIELD bleibt null. Offen (null): posen (Ticket A-08), objekte_start. Namen sind fest, Routen benutzen nur diese Namen.",
   "version": 1,
   "einheiten": "Zoll, Grad",
   "ursprung": "Feldmitte",
@@ -13,7 +13,7 @@
       "quadrant": "RED_1",
       "x_in": -47.091,
       "y_in": -23.546,
-      "anfahrt_deg": null,
+      "anfahrt_deg": 0,
       "owner": "stacker"
     },
     {
@@ -23,7 +23,7 @@
       "quadrant": "RED_1",
       "x_in": -47.091,
       "y_in": 23.546,
-      "anfahrt_deg": null,
+      "anfahrt_deg": 0,
       "owner": "stacker"
     },
     {
@@ -33,7 +33,7 @@
       "quadrant": "RED_2",
       "x_in": -23.546,
       "y_in": -47.091,
-      "anfahrt_deg": null,
+      "anfahrt_deg": 90,
       "owner": "runner"
     },
     {
@@ -43,7 +43,7 @@
       "quadrant": "RED_2",
       "x_in": -23.546,
       "y_in": 47.091,
-      "anfahrt_deg": null,
+      "anfahrt_deg": 270,
       "owner": "runner"
     },
     {
@@ -53,7 +53,7 @@
       "quadrant": "BLUE_1",
       "x_in": 47.091,
       "y_in": 23.546,
-      "anfahrt_deg": null,
+      "anfahrt_deg": 180,
       "owner": "runner"
     },
     {
@@ -63,7 +63,7 @@
       "quadrant": "BLUE_1",
       "x_in": 47.091,
       "y_in": -23.546,
-      "anfahrt_deg": null,
+      "anfahrt_deg": 180,
       "owner": "runner"
     },
     {
@@ -73,7 +73,7 @@
       "quadrant": "BLUE_2",
       "x_in": 23.546,
       "y_in": 47.091,
-      "anfahrt_deg": null,
+      "anfahrt_deg": 270,
       "owner": "runner"
     },
     {
@@ -83,7 +83,7 @@
       "quadrant": "BLUE_2",
       "x_in": 23.546,
       "y_in": -47.091,
-      "anfahrt_deg": null,
+      "anfahrt_deg": 90,
       "owner": "runner"
     },
     {
