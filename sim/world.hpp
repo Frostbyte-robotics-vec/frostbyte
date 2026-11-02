@@ -30,6 +30,9 @@ struct RobotSetup {
     double width_in = 0.0;
     // Handsteuerung bis zum Routen-Ticket: Spannung links/rechts zur Zeit t_ms. Leer = 0 V.
     std::function<std::pair<double, double>(int t_ms)> open_loop;
+    // Regelung (D-05, z. B. sim/motion_adapter.hpp): je Steuertakt mit der geschätzten Pose aufgerufen, die Spannung
+    // gilt bis zum nächsten Takt. Gesetzt hat Vorrang vor open_loop. Matchende 0:00 wie bei open_loop.
+    std::function<std::pair<double, double>(int t_ms, const Pose& est)> closed_loop;
 };
 
 struct SimConfig {

@@ -109,7 +109,8 @@ struct RobotRun {
     GpsSample gps_sample;
     double last_dist_in = 0.0;
     double last_measured_in = 0.0;
-    std::string events;  // seit dem letzten Log-Takt, mit ';' getrennt
+    std::pair<double, double> held_cmd{0.0, 0.0};  // letzte Ausgabe von closed_loop
+    std::string events;                            // seit dem letzten Log-Takt, mit ';' getrennt
     bool wall_contact = false;
     bool robot_contact = false;
     int wall_free_steps = 0;
@@ -236,25 +237,9 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
     };
 
     // Zeit als ganzzahlige ms; t_s wird pro Zeile neu berechnet, nie aufaddiert.
-    // Je ms: Befehle, Steuerung (auf ihrem Raster), Log des Zustands bei t_ms, dann Physik t_ms -> t_ms + schritt_ms.
+    // Je ms: Steuerung (auf ihrem Raster), Befehle, Log des Zustands bei t_ms, dann Physik t_ms -> t_ms + schritt_ms.
     for (int t_ms = 0; t_ms <= match_ms; t_ms += cfg.schritt_ms) {
-        double volts[2][2] = {{0.0, 0.0}, {0.0, 0.0}};  // ohne Regler und Handsteuerung 0 V (Haftreibung hält)
-        for (int i = 0; i < 2; ++i) {
-            RobotRun& r = runs[i];
-            if (!r.drive || !r.setup.open_loop)
-                continue;
-            const auto cmd = r.setup.open_loop(t_ms);
-            volts[i][0] = cmd.first;
-            volts[i][1] = cmd.second;
-            if (t_ms >= match_ms) {  // Matchende 0:00: alle Motoren Halt, sonst Regelverstoß
-                if (!motors_stopped({cmd.first, cmd.second})) {
-                    r.add_event("RULE:MOTORS_END");
-                    ++result.rule_violations;
-                }
-                volts[i][0] = volts[i][1] = 0.0;
-            }
-        }
-
+        // Steuerung zuerst (sie ändert weder Spannungen der Handsteuerung noch Ereignisse), damit closed_loop im selben ms wirkt.
         if (t_ms % cfg.steuer_ms == 0) {
             ++result.control_ticks;
             for (RobotRun& r : runs) {
@@ -268,8 +253,27 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
                 const double h_deg = r.imu->measure_deg(r.drive->pose().h_deg, t_ms / 1000.0);
                 const double h_rad = h_deg * pi / 180.0;
                 r.est = Pose{r.est->x_in + step_in * std::cos(h_rad), r.est->y_in + step_in * std::sin(h_rad), h_deg};
+                if (r.setup.closed_loop)
+                    r.held_cmd = r.setup.closed_loop(t_ms, *r.est);
             }
         }
+        double volts[2][2] = {{0.0, 0.0}, {0.0, 0.0}};  // ohne Regler und Handsteuerung 0 V (Haftreibung hält)
+        for (int i = 0; i < 2; ++i) {
+            RobotRun& r = runs[i];
+            if (!r.drive || (!r.setup.closed_loop && !r.setup.open_loop))
+                continue;
+            const auto cmd = r.setup.closed_loop ? r.held_cmd : r.setup.open_loop(t_ms);
+            volts[i][0] = cmd.first;
+            volts[i][1] = cmd.second;
+            if (t_ms >= match_ms) {  // Matchende 0:00: alle Motoren Halt, sonst Regelverstoß
+                if (!motors_stopped({cmd.first, cmd.second})) {
+                    r.add_event("RULE:MOTORS_END");
+                    ++result.rule_violations;
+                }
+                volts[i][0] = volts[i][1] = 0.0;
+            }
+        }
+
         if (t_ms % cfg.log_ms == 0) {
             for (int i = 0; i < 2; ++i) {
                 RobotRun& r = runs[i];
