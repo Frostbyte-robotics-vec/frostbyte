@@ -21,7 +21,8 @@ Status: angenommen (2. Nov 2026), Ticket D-05. Nummer 017, weil 013–016 auf of
   `frostbyte::Regulator`.
 - LemLib-Adapter: `src/lemlib_regulator.hpp` packt `lemlib::PID` hinter `Regulator`. Er liegt in `src/`, weil LemLib-Header
   nur in `hal/pros/` und `src/` stehen dürfen (ADR-003) und ein Regler nicht zur Hardware-Schicht gehört. `lemlib::PID`
-  rechnet je Aufruf statt je Sekunde; der Adapter rechnet ki · T und kd / T mit der festen Taktzeit um.
+  rechnet je Aufruf statt je Sekunde (pid.cpp.o in firmware/LemLib.a ruft weder millis noch micros auf, geprüft mit
+  `arm-none-eabi-nm -A firmware/LemLib.a`); der Adapter rechnet ki · T und kd / T mit der festen Taktzeit um.
   Standard ist der eigene Pid (`config::motion_uses_lemlib_pid = false`); der Schalter dient dem Vergleich in D-07.
 - Sim-Adapter: `RobotSetup::closed_loop` in `sim/world.hpp` wird je Steuertakt mit der geschätzten Pose (Sensormodelle
   und Odometrie der Simulation, nicht die Wahrheit) aufgerufen; `sim/motion_adapter.hpp` (`motion_loop`) verbindet
