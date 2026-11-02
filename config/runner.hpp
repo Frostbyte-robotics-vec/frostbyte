@@ -5,6 +5,7 @@
 namespace config::runner {
 inline constexpr const char* robot_name = "runner";
 inline constexpr double footprint_in = 15.0;
+// TODO(HW): GPS-Fusion (estimation/gps_fusion.hpp, ADR-016): Schwellen/Gewinne und GPS-Einbaulage, siehe config/stacker.hpp.
 // TODO(HW): Ports, Drehrichtungen, Uebersetzungen, Radgroessen folgen mit dem Antriebs-Ticket
 // TODO(HW): Odometrie (estimation/drive_odometry.hpp, ADR-015): wirksame Spurbreite track_width_in (am Roboter einmessen,
 //   nicht nur aus dem CAD), IMU-Vorzeichen (Feld: gegen den Uhrzeigersinn positiv) und die Erkennungsschwellen
