@@ -1,10 +1,12 @@
 #include "main.h"
 
 #include "config/robot.hpp"
+#include "control/motion_controller.hpp"
 #include "core/control_loop.hpp"
 #include "core/log_format.hpp"  // prueft nur, dass der Log-v1-Schreiber fuer ARM kompiliert; genutzt ab F-05 (ADR-007)
 #include "hal/pros/pros_devices.hpp"  // prueft nur, dass die PROS-Wrapper kompilieren; instanziert wird erst mit den Ports (TODO(HW))
 #include "lemlib/api.hpp"  // prueft nur, dass LemLib einbindbar ist; Aufrufe erst hinter hal/ (ADR-001)
+#include "lemlib_regulator.hpp"
 
 namespace {
 
@@ -14,6 +16,24 @@ constexpr std::uint32_t display_period_ms = 200;
 // Alles statisch: der Steuer-Task legt nach dem Start nichts an.
 frostbyte::PhaseFlag g_phase;
 frostbyte::SharedCycleStats g_cycle_stats;
+
+// Bewegung (D-05, ADR-017): eigener Pid wie in der Simulation; lemlib::PID nur, wenn config es verlangt (Vergleich D-07).
+// Der Steuer-Task ruft g_motion.update() auf, sobald Pose (F-05) und Routen (A-03) da sind.
+frostbyte::Pid g_lat_pid(config::lateral_pid);
+frostbyte::Pid g_ang_pid(config::angular_pid);
+frostbyte::LemlibRegulator g_lat_lemlib(config::lateral_pid, control_period_ms / 1000.0);
+frostbyte::LemlibRegulator g_ang_lemlib(config::angular_pid, control_period_ms / 1000.0);
+frostbyte::Regulator& lateral_regulator() {
+    if constexpr (config::motion_uses_lemlib_pid)
+        return g_lat_lemlib;
+    return g_lat_pid;
+}
+frostbyte::Regulator& angular_regulator() {
+    if constexpr (config::motion_uses_lemlib_pid)
+        return g_ang_lemlib;
+    return g_ang_pid;
+}
+frostbyte::MotionController g_motion(config::motion, lateral_regulator(), angular_regulator());
 
 std::uint32_t micros_u32() { return static_cast<std::uint32_t>(pros::micros()); }
 

@@ -2,6 +2,9 @@
 
 Kurze Einträge, neueste oben: Datum · Ticket · Erkenntnis. Jede KI-Sitzung liest diese Datei beim Start eines Tickets mit.
 
+2026-11-02 · D-05 · lemlib::PID rechnet je Aufruf, nicht je Sekunde (Integral += Fehler, D = Fehleränderung). Eigene Verstärkungen in V/s-Einheiten vorher umrechnen: ki · T, kd / T (src/lemlib_regulator.hpp). lemlib::Chassis-Bewegungen sind standardmäßig async (eigene Tasks) – nicht benutzen (ADR-017).
+2026-11-02 · D-05 · `tools/format.py` ohne `--check` formatiert alle Dateien in place, auch fremde (ein unbekanntes Argument wie `--help` zählt als „formatieren“). Danach mit `git status` prüfen und fremde Dateien zurücksetzen; nur `--check` ändert nichts.
+2026-11-02 · D-05 · Windows: `python3`/`python` können der Store-Platzhalter sein (Meldung „Python … nicht gefunden“, Exit 49). Dann `py tools/board.py …`. frostbyte_sim braucht `C:/msys64/ucrt64/bin` im PATH auch zum Ausführen, sonst schreibt es still nichts.
 2026-11-02 · D-04 · Warum der Simulator noch kein Stacking zeigt und was dafür fehlt: GitHub-Issue #26.
 2026-11-02 · D-03 · Windows ohne Compiler (kein cmake/g++/Arm-GCC): lokal reicht `pip install cmake ninja ziglang clang-format==18.1.8`; .cmd-Wrapper (`@python -m ziglang c++ %*`, ebenso cc, ar, ranlib) und `cmake -S test -B build-test -G Ninja -DCMAKE_CXX_COMPILER=… -DCMAKE_C_COMPILER=… -DCMAKE_AR=… -DCMAKE_RANLIB=…`; cmake/ninja liegen in %APPDATA%\Python\Python314\Scripts. Roboter-Build (arm-none-eabi-gcc) damit nicht möglich, den prüft die CI.
 2026-11-02 · D-03 · Windows: `tools/board.py summary` stürzt mit UnicodeEncodeError (cp1252) ab; `PYTHONIOENCODING=utf-8` setzen. board.py selbst ist nicht angepasst.

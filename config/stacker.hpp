@@ -1,5 +1,6 @@
 #pragma once
 
+#include "control/motion_controller.hpp"
 #include "match/driver_map.hpp"
 
 namespace config::stacker {
@@ -32,4 +33,30 @@ inline constexpr int profile_count = sizeof(profiles) / sizeof(profiles[0]);
 // TODO(HW): Lift (subsystems/lift.hpp, ADR-019): Sensor (Rotation oder Motorencoder), Port, Drehrichtung, Homing-Richtung
 //   (home_v-Vorzeichen), die 5 Kalibrierpunkte (Sensorwinkel relativ zu Home -> gemessene Hoehe in Zoll), min_in/max_in,
 //   kp, kg, Spannungsgrenzen, Timeouts. Nichts davon raten; Messanleitung in tasks/M-01.md.
+
+// Bewegung (D-05, ADR-017): Startwerte, getunt wird am Testchassis in D-07 (TODO(HW)). Toleranzen und Blocked-Fenster
+// sind Software-Entscheidungen; Verstaerkungen und Spurbreite haengen von der Hardware ab.
+// TODO(HW): Spurbreite messen (Mitte Rad links bis Mitte Rad rechts); 14.0 ist die Schaetzung aus sim_params.json
+inline constexpr frostbyte::MotionConfig motion{
+    .max_volts = 12.0,
+    .track_width_in = 14.0,
+    .turn_tol_deg = 2.0,
+    .move_tol_in = 1.0,
+    .settle_s = 0.1,
+    .near_in = 4.0,
+    .lookahead_in = 10.0,
+    .follow_max_volts = 8.0,
+    .blocked_window_s = 0.5,
+    .blocked_min_effort_v = 2.0,
+    .blocked_min_motion_in = 0.5,
+    .blocked_min_motion_deg = 2.0,
+};
+// TODO(HW): PID-Verstaerkungen am Roboter tunen (D-07). lateral: V je Zoll, angular: V je Grad.
+inline constexpr frostbyte::PidGains lateral_pid{
+    .kp = 1.0, .ki = 0.0, .kd = 0.08, .i_zone = 0.0, .i_max_v = 2.0, .out_max_v = 12.0};
+inline constexpr frostbyte::PidGains angular_pid{
+    .kp = 0.15, .ki = 0.5, .kd = 0.01, .i_zone = 10.0, .i_max_v = 2.0, .out_max_v = 12.0};
+// false: eigener Pid (wie in der Simulation). true: lemlib::PID ueber src/lemlib_regulator.hpp, nur zum Vergleich in D-07.
+inline constexpr bool motion_uses_lemlib_pid = false;
+
 }  // namespace config::stacker
