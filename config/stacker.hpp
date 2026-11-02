@@ -12,14 +12,10 @@ inline constexpr double footprint_in = 24.0;  // SG2
 
 // Fahrer-Belegung (C-03, ADR-014). Grundbelegung identisch auf beiden Robotern; Fahrer bestaetigt sie am Roboter.
 inline constexpr frostbyte::Binding bindings[] = {
-    {frostbyte::Action::grab, frostbyte::Button::r1},
-    {frostbyte::Action::place, frostbyte::Button::r2},
-    {frostbyte::Action::rotate_cup, frostbyte::Button::l1},
-    {frostbyte::Action::slow, frostbyte::Button::l2},
-    {frostbyte::Action::hold, frostbyte::Button::b},
-    {frostbyte::Action::toggle_place, frostbyte::Button::a},
-    {frostbyte::Action::assist_toggle, frostbyte::Button::x},
-    {frostbyte::Action::endgame, frostbyte::Button::y},
+    {frostbyte::Action::grab, frostbyte::Button::r1},         {frostbyte::Action::place, frostbyte::Button::r2},
+    {frostbyte::Action::rotate_cup, frostbyte::Button::l1},   {frostbyte::Action::slow, frostbyte::Button::l2},
+    {frostbyte::Action::hold, frostbyte::Button::b},          {frostbyte::Action::toggle_place, frostbyte::Button::a},
+    {frostbyte::Action::assist_toggle, frostbyte::Button::x}, {frostbyte::Action::endgame, frostbyte::Button::y},
 };
 inline constexpr int bindings_count = sizeof(bindings) / sizeof(bindings[0]);
 

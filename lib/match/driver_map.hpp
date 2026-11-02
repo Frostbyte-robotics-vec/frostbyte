@@ -31,8 +31,8 @@ struct DriverProfile {
 
 struct DriverIntent {
     DriveRequest drive;
-    bool manual_drive = false;     // Stick außerhalb der Totzone: laufende Fahr-Makros abbrechen
-    bool assist_enabled = false;   // Fahrassistenz nur zuschaltbar, startet immer aus
+    bool manual_drive = false;                 // Stick außerhalb der Totzone: laufende Fahr-Makros abbrechen
+    bool assist_enabled = false;               // Fahrassistenz nur zuschaltbar, startet immer aus
     std::array<bool, action_count> actions{};  // Flanke (Drücken) bzw. gehalten, siehe is_held()
 
     bool pressed(Action a) const { return actions[static_cast<int>(a)]; }

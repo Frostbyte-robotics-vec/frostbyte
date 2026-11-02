@@ -47,17 +47,19 @@ inline std::string controls_table(const char* robot, const Binding* bindings, in
     s += "| Linker Stick (hoch/runter) | Fahren vor/zurück |\n| Rechter Stick (links/rechts) | Drehen |\n";
     for (int i = 0; i < count; ++i)
         s += std::string("| ") + button_label(bindings[i].button) + " | " + action_label(bindings[i].action) + " |\n";
-    s += "\nFahrerprofile (Tuning, am Roboter mit dem Fahrer einstellen):\n\n| Profil | Totzone | Exponent | Höchstgeschwindigkeit |\n| --- | --- | --- | --- |\n";
+    s += "\nFahrerprofile (Tuning, am Roboter mit dem Fahrer einstellen):\n\n| Profil | Totzone | Exponent | "
+         "Höchstgeschwindigkeit |\n| --- | --- | --- | --- |\n";
     for (int i = 0; i < profile_count; ++i)
-        s += std::string("| ") + profiles[i].name + " | " + std::to_string(profiles[i].drive.deadband).substr(0, 4) + " | " +
-             std::to_string(profiles[i].drive.exponent).substr(0, 3) + " | " +
+        s += std::string("| ") + profiles[i].name + " | " + std::to_string(profiles[i].drive.deadband).substr(0, 4) +
+             " | " + std::to_string(profiles[i].drive.exponent).substr(0, 3) + " | " +
              std::to_string(profiles[i].drive.max_speed).substr(0, 4) + " |\n";
     return s + "\n";
 }
 
 inline std::string controls_markdown() {
     std::string s =
-        "<!-- Erzeugt aus config/stacker.hpp und config/runner.hpp mit frostbyte_controls_export. Nicht von Hand ändern. -->\n"
+        "<!-- Erzeugt aus config/stacker.hpp und config/runner.hpp mit frostbyte_controls_export. Nicht von Hand "
+        "ändern. -->\n"
         "# Fahrerbedienung\n\n"
         "Greifen, Setzen und Fahren liegen auf beiden Robotern auf denselben Tasten. Jede manuelle Fahreingabe bricht "
         "laufende Makros am Antrieb sofort ab. Der Controller vibriert bei 15 s und 10 s Restzeit.\n\n";
