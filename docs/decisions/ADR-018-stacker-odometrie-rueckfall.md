@@ -13,6 +13,11 @@ Status: angenommen (2. Nov 2026), Ticket D-08. Der Advisor (Opus) hat vorgegeben
 - Der Rückfall ist endgültig bis `reset()`. `degraded()` und `fallback_reason()` (`StackerFallback`) wie in ADR-015. Verdrahtung in Safe-Modus, Log und Controller-Warnung gehört nicht zu D-08.
 - Schwellen kommen über den Konstruktor; echte Werte später in `config/` (TODO(HW)). Tests nehmen eigene Werte.
 
+## Schwellen im Test (Messwerte, Sim mit 5 % Skalierungsfehler, Rauschen, Drift, 15 % Antriebsschlupf im Anlauf)
+- Größte Abweichung vom Erwartungswert in einem Takt: Parallelrad 0,42 in, Querrad 0,06 in; `jump_in` im Test 1,0 in (Faktor ≈ 2,4 Reserve zum Parallelrad). Die echten Werte am Roboter messen (TODO(HW)).
+- Querrad eingefroren bei schneller Drehung: Positionsfehler bis 0,64 in durch den unentdeckten Anlauf.
+- Der Sprung beim Umschalten selbst ist < 0,05 in / < 0,1° (Test misst den Fehlersprung genau im Umschalttakt).
+
 ## Grenzen
 - Querrad: Die Antriebsencoder liefern keine Seitenreferenz. Ein eingefrorenes Querrad ist nur bei Drehung mit `perpendicular_x_in ≠ 0` sichtbar und nur, wenn der Erwartungswert über `still_drive_in` liegt (im Anlauf einer Drehung nicht); bei Geradeausfahrt liest es ohnehin ≈ 0 und ist harmlos. Je Takt geht höchstens `still_drive_in` als Fehler ein.
 - Schiebt ein Gegner den Roboter seitlich oder rutscht er, kann das Querrad mehr als `jump_in` messen: falscher Alarm → Rückfall (sicher, aber ungenauer). Ebenso drehende Antriebsräder gegen eine Wand (Parallelrad steht, Encoder drehen). `jump_in` und `still_cycles` am Roboter so wählen, dass Schlupf darunter bleibt.

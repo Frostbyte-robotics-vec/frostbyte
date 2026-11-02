@@ -117,8 +117,11 @@ struct Rig {
         const double dl = drive.links_in() - l0, dr = drive.rechts_in() - r0;
         const double dtheta = deg_to_rad(wrap_deg(drive.pose().h_deg - h0));
         // Wahrer Radweg: Parallelrad rollt in x, Querrad in y (bei Drehung um den Versatz mitgedreht).
-        left.step(dl);
-        right.step(dr);
+        // Antriebsschlupf: die Antriebsraeder drehen mehr als der Roboter faehrt (nur die Antriebsencoder sehen das).
+        const double slip = cycle < slip_cycles ? slip_factor : 0.0;
+        const double left_before = left.measured_in(), right_before = right.measured_in();
+        left.step(dl * (1.0 + slip));
+        right.step(dr * (1.0 + slip));
         par.step((dl + dr) / 2.0 - dtheta * geo.parallel_y_in);
         perp.step(dtheta * geo.perpendicular_x_in);
         l0 = drive.links_in();
@@ -126,11 +129,19 @@ struct Rig {
         h0 = drive.pose().h_deg;
         ++cycle;
 
+        const double par_before = par.measured_in(), perp_before = perp.measured_in();
         const double par_read = wheel_reading(Wheel::parallel, par.measured_in(), par_frozen);
         const double perp_read = wheel_reading(Wheel::perpendicular, perp.measured_in(), perp_frozen);
         const bool inv = fault == Fault::invalid;
         odo.update(left.measured_in(), right.measured_in(), par_read, !(inv && faulty(Wheel::parallel)), perp_read,
                    !(inv && faulty(Wheel::perpendicular)), imu_reading(), !(inv && faulty(Wheel::imu)));
+
+        // Abweichung der Raeder vom Erwartungswert aus Antriebsencodern und wahrer Drehung (ohne Fehler eingespeist).
+        const double fwd = ((left.measured_in() - left_before) + (right.measured_in() - right_before)) / 2.0;
+        max_res_par_in =
+            std::max(max_res_par_in, std::fabs((par.measured_in() - par_before) - (fwd - dtheta * geo.parallel_y_in)));
+        max_res_perp_in =
+            std::max(max_res_perp_in, std::fabs((perp.measured_in() - perp_before) - dtheta * geo.perpendicular_x_in));
 
         const Pose est = odo.pose();
         const sim::Pose truth = drive.pose();
@@ -138,8 +149,15 @@ struct Rig {
         const double err_h = wrap_deg(est.heading_deg - truth.h_deg);
         const double prev_err_x = prev_est.x_in - prev_truth.x_in, prev_err_y = prev_est.y_in - prev_truth.y_in;
         const double prev_err_h = wrap_deg(prev_est.heading_deg - prev_truth.h_deg);
-        max_step_pos_in = std::max(max_step_pos_in, std::hypot(err_x - prev_err_x, err_y - prev_err_y));
-        max_step_head_deg = std::max(max_step_head_deg, std::fabs(wrap_deg(err_h - prev_err_h)));
+        const double step_pos = std::hypot(err_x - prev_err_x, err_y - prev_err_y);
+        const double step_head = std::fabs(wrap_deg(err_h - prev_err_h));
+        if (odo.degraded() && !was_degraded) {
+            switch_step_pos_in = step_pos;
+            switch_step_head_deg = step_head;
+        }
+        was_degraded = odo.degraded();
+        max_step_pos_in = std::max(max_step_pos_in, step_pos);
+        max_step_head_deg = std::max(max_step_head_deg, step_head);
         max_pos_err_in = std::max(max_pos_err_in, std::hypot(err_x, err_y));
         max_head_err_deg = std::max(max_head_err_deg, std::fabs(err_h));
         prev_est = est;
@@ -167,6 +185,11 @@ struct Rig {
     Pose prev_est;
     sim::Pose prev_truth;
     double max_step_pos_in = 0.0, max_step_head_deg = 0.0;
+    double switch_step_pos_in = 0.0, switch_step_head_deg = 0.0;  // Fehlersprung im Takt der Umschaltung
+    bool was_degraded = false;
+    double slip_factor = 0.0;
+    int slip_cycles = 0;
+    double max_res_par_in = 0.0, max_res_perp_in = 0.0;
     double max_pos_err_in = 0.0, max_head_err_deg = 0.0;
 };
 
@@ -189,7 +212,8 @@ TEST_CASE("Stacker-Odometrie: Fahrt und Drehung ohne Fehler, kein Ausfall, Pose 
     CHECK(rig.max_head_err_deg < 0.1);
 }
 
-TEST_CASE("Stacker-Odometrie: Rauschen, Drift, Skalierungsfehler und Radschlupf loesen keinen falschen Ausfall aus") {
+TEST_CASE(
+    "Stacker-Odometrie: Rauschen, Drift, Skalierungsfehler und Antriebsschlupf loesen keinen falschen Ausfall aus") {
     sim::OdometryParams wheels;
     wheels.scale_error = 0.05;  // 5 % Skalierungsfehler an allen Raedern
     wheels.sigma_in_per_tick = 0.0005;
@@ -204,6 +228,10 @@ TEST_CASE("Stacker-Odometrie: Rauschen, Drift, Skalierungsfehler und Radschlupf 
         rig.run(100, 0.0, 0.0);      // Stand
         rig.run(200, -40.0, -40.0);  // rueckwaerts
         CHECK_FALSE(rig.odo.degraded());
+        MESSAGE("Seed ", seed, ": max. Abweichung Parallelrad ", rig.max_res_par_in, " in, Querrad ",
+                rig.max_res_perp_in, " in (Grenze jump_in ", odo_params().jump_in, ")");
+        CHECK(rig.max_res_par_in < odo_params().jump_in / 2.0);
+        CHECK(rig.max_res_perp_in < odo_params().jump_in / 2.0);
     }
 }
 
@@ -217,6 +245,8 @@ TEST_CASE("Stacker-Odometrie: Parallelrad springt, Umschaltung im selben Takt oh
     rig.run(1, 25.0, 25.0);  // dieser Takt liefert den Sprung (5 in)
     CHECK(rig.odo.degraded());
     CHECK(rig.odo.fallback_reason() == StackerFallback::parallel_jump);
+    CHECK(rig.switch_step_pos_in < 0.05);
+    CHECK(rig.switch_step_head_deg < 0.1);
     rig.run(150, 20.0, 30.0);
     CHECK(rig.max_step_pos_in < 0.05);
     CHECK(rig.max_step_head_deg < 0.1);
@@ -248,6 +278,7 @@ TEST_CASE(
     rig.run(10, 30.0, 30.0);
     CHECK(rig.odo.degraded());
     CHECK(rig.odo.fallback_reason() == StackerFallback::parallel_stall);
+    CHECK(rig.switch_step_pos_in < 0.05);
     rig.run(100, 20.0, 30.0);
     // Auch die Verdachtstakte rechnen mit den Antriebsencodern: kein Zurueckbleiben um still_cycles * Weg je Takt.
     CHECK(rig.max_step_pos_in < 0.05);
@@ -263,6 +294,9 @@ TEST_CASE("Stacker-Odometrie: Querrad friert bei Drehung ein") {
     CHECK_FALSE(rig.odo.degraded());  // Geradeaus liest das Querrad ohnehin ~0: nicht sichtbar, nicht schlimm
     rig.run(100, -30.0, 30.0);  // schnelle Drehung: erwarteter Querradweg 0,15 in je Takt, sonst unter der Schwelle
     CHECK(rig.odo.fallback_reason() == StackerFallback::perpendicular_stall);
+    CHECK(rig.switch_step_pos_in < 0.05);
+    MESSAGE("Querrad eingefroren: max. Positionsfehler ", rig.max_pos_err_in, " in");
+    CHECK(rig.max_pos_err_in < 1.0);  // gemessen 0,64 in: der unentdeckte Anlauf der Drehung
     // Grenze: im Anlauf der Drehung liegt der Erwartungswert unter still_drive_in; dort bleibt ein eingefrorenes Rad
     // unentdeckt, je Takt geht höchstens diese Schwelle als Fehler ein.
     CHECK(rig.max_step_pos_in <= odo_params().still_drive_in);
@@ -279,6 +313,7 @@ TEST_CASE("Stacker-Odometrie: ungueltiges Rad (HAL) und NaN schalten sofort um, 
             CHECK_FALSE(rig.odo.degraded());
             rig.run(1, 20.0, 30.0);
             CHECK(rig.odo.degraded());
+            CHECK(rig.switch_step_pos_in < 0.05);
             rig.run(100, 20.0, 30.0);
             CHECK(std::isfinite(rig.odo.pose().x_in));
             CHECK(std::isfinite(rig.odo.pose().heading_deg));
