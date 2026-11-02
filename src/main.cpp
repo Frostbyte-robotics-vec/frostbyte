@@ -38,8 +38,8 @@ frostbyte::Regulator& angular_regulator() {
 frostbyte::MotionController g_motion(config::motion, lateral_regulator(), angular_regulator());
 
 // Tuning (D-06, ADR-020): nur mit config::tuning_enabled und eigenem Pid. Die Werte werden einmal in initialize() von der
-// SD-Karte gelesen. TODO: TuningMode im Steuer-Task mit dem Controller fuettern, take_save_request() im niedrig
-// priorisierten Task mit save_tuning() beantworten und take_event() ins Log schreiben (mit dem Logger, F-05).
+// SD-Karte gelesen. TODO(D-09): TuningMode im Steuer-Task mit dem Controller fuettern, take_save_request() im niedrig
+// priorisierten Task mit save_tuning() beantworten und take_event() ins Log schreiben (braucht Logger F-05); Fahrer-Aktionen sperren.
 frostbyte::hal::ProsStorage g_tuning_store("/usd/tuning.txt");
 
 std::uint32_t micros_u32() { return static_cast<std::uint32_t>(pros::micros()); }

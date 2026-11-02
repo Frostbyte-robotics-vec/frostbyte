@@ -25,8 +25,12 @@ Status: angenommen (2. Nov 2026), Ticket D-06. Nummer 020, weil 018 (D-08, PR #2
 - **Nur eigener Pid:** Mit `motion_uses_lemlib_pid = true` (nur Vergleich in D-07) ist Tuning aus; `LemlibRegulator` bekommt
   die Werte im Konstruktor und bräuchte sonst eine eigene Umrechnung (ki·T, kd/T, siehe docs/notes.md).
 
+- **Stromverlust beim Schreiben:** Die Datei ist dann abgeschnitten (letzte Zeile ohne Zeilenende oder Schlüssel fehlt) und wird komplett verworfen.
+- **Rat des Advisors (Opus):** Speichern nur außerhalb des Steuer-Tasks und nur auf Tastendruck, Datei ganz oder gar nicht, Tuning standardmäßig aus, nur mit dem eigenen Pid, Ereignisse in der bestehenden Spalte `event` statt neuer Log-Version.
+
 ## Nicht Teil dieses Tickets
 - Anzeige auf dem Controller (C-04). `TuningMode::state()` ist die Schnittstelle dafür.
-- Verdrahtung im Steuer-Task und Logger (braucht Controller-Eingabe im Steuer-Task und Logger F-05); in `src/main.cpp` als TODO markiert. Geladen wird bereits in `initialize()`.
+- Verdrahtung im Steuer-Task, Speichern im Low-Prio-Task und `take_event()` ins Log: Ticket D-09 (hängt an F-05, Logger). Geladen wird bereits in `initialize()`. Bis dahin schreibt auf dem Roboter nichts die Datei; „überlebt Neustart“ ist nur am Laptop belegt (Round-Trip über `SimStorage`).
+- Konflikt mit der Fahrer-Belegung: Ist Tuning an, feuert `DriverMap` auf A/B/X weiter (toggle_place, HOLD, Assist). D-09 muss die Fahrer-Aktionen im Tuning-Modus sperren.
 - Übernahme getunter Werte ins Repo: von Hand in config/ (D-07).
 - Atomares Schreiben (Temp-Datei + Umbenennen): am Roboter prüfen, ob die SD-Karte das zuverlässig kann (TODO(HW)).

@@ -81,15 +81,24 @@ TEST_CASE("Tuning: kaputte Dateien werden ganz verworfen, die Zielwerte bleiben 
         s.replace(s.find("v1"), 2, "v2");
         CHECK(rejected(s));
     }
-    SUBCASE("NaN") {
+    // Die ganze Zeile eines Werts ersetzen, damit der Test wirklich den Wert prüft und nicht die Zeilenform.
+    auto with_line = [&](const std::string& from, const std::string& to) {
         std::string s = text;
-        s.replace(s.find("lat.kp=") + 7, 6, "nan   ");
-        CHECK(rejected(s));
-    }
-    SUBCASE("negativer Wert") {
-        std::string s = text;
-        s.replace(s.find("lat.kp=") + 7, 1, "-");
-        CHECK(rejected(s));
+        const auto p = s.find(from);
+        REQUIRE(p != std::string::npos);
+        s.replace(p, s.find('\n', p) - p, to);
+        return s;
+    };
+    SUBCASE("NaN") { CHECK(rejected(with_line("lat.kp=", "lat.kp=nan"))); }
+    SUBCASE("unendlich") { CHECK(rejected(with_line("lat.kp=", "lat.kp=inf"))); }
+    SUBCASE("negativer Wert") { CHECK(rejected(with_line("lat.kp=", "lat.kp=-0.5"))); }
+    SUBCASE("zu groß") { CHECK(rejected(with_line("lat.kp=", "lat.kp=1e9"))); }
+    SUBCASE("kein Zahlenwert") { CHECK(rejected(with_line("lat.kp=", "lat.kp=abc"))); }
+    SUBCASE("gültiger Wert wird angenommen (Gegenprobe)") {
+        TuningSet target = base_set();
+        const std::string s = with_line("lat.kp=", "lat.kp=2.5");
+        CHECK(parse_tuning(s.data(), s.size(), target));
+        CHECK(target.lateral.kp == doctest::Approx(2.5));
     }
     SUBCASE("unbekannter Schlüssel") { CHECK(rejected(text + "lat.foo=1.0\n")); }
     SUBCASE("Müll nach dem Wert") {
