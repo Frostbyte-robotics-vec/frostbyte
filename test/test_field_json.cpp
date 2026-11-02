@@ -262,7 +262,9 @@ void check_start(const Json& f, const std::string& id, double seite_in) {
     const double half = f.at("feld_in").as_number() / 2.0;
     const int wand = wand_of(s);
     const double abstand = wand % 2 == 0 ? half - std::fabs(s.x) : half - std::fabs(s.y);
-    CHECK(abstand == doctest::Approx(seite_in / 2.0));  // Rückseite berührt die Wand
+    // Rückseite an der Wand: höchstens 1 in Luft (Stacker steht 13 in Mitte-Wand, Entscheidung des Menschen).
+    CHECK(abstand >= seite_in / 2.0 - 1e-9);
+    CHECK(abstand <= seite_in / 2.0 + 1.0 + 1e-9);
     CHECK(std::fabs(s.x) + seite_in / 2.0 <= half + 1e-9);
     CHECK(std::fabs(s.y) + seite_in / 2.0 <= half + 1e-9);
     // Blick senkrecht von der Wand weg, ins Feld.
