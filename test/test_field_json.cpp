@@ -278,3 +278,32 @@ TEST_CASE("field.json: Startposen an der Wand, ins Feld gerichtet, verschiedene 
     check_start(f, "START_RUNNER", 15.0);
     CHECK(wand_of(start_of(f, "START_STACKER")) != wand_of(start_of(f, "START_RUNNER")));
 }
+
+TEST_CASE("field.json: keine Elementmitte liegt im Footprint der Startposen, die Roboter überlappen sich nicht") {
+    const Json f = field();
+    const double seite[2] = {24.0, 15.0};
+    const char* ids[2] = {"START_STACKER", "START_RUNNER"};
+    Start s[2] = {start_of(f, ids[0]), start_of(f, ids[1])};
+    auto innen = [&](int r, double x, double y) {
+        return std::fabs(x - s[r].x) < seite[r] / 2.0 && std::fabs(y - s[r].y) < seite[r] / 2.0;
+    };
+    for (int r = 0; r < 2; ++r) {
+        for (const char* key : {"goals", "toggles", "loader"}) {
+            const Json& list = f.at(key);
+            for (std::size_t i = 0; i < list.size(); ++i) {
+                INFO(std::string(ids[r]) << " / " << list[i].at("id").as_string());
+                CHECK_FALSE(innen(r, list[i].at("x_in").as_number(), list[i].at("y_in").as_number()));
+            }
+        }
+        for (const char* key : {"cups", "pins"}) {
+            const Json& list = f.at("objekte_start").at(key);
+            for (std::size_t i = 0; i < list.size(); ++i) {
+                INFO(std::string(ids[r]) << " / " << list[i].at("id").as_string());
+                CHECK_FALSE(innen(r, list[i].at("x_in").as_number(), list[i].at("y_in").as_number()));
+            }
+        }
+    }
+    const double dx = std::fabs(s[0].x - s[1].x) - (seite[0] + seite[1]) / 2.0;
+    const double dy = std::fabs(s[0].y - s[1].y) - (seite[0] + seite[1]) / 2.0;
+    CHECK((dx >= 0.0 || dy >= 0.0));
+}
