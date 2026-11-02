@@ -1,5 +1,5 @@
 {
-  "_hinweis": "Goals, Toggles und Loader: vermessen im CAD 276-9250-000 (2026-04-26) von DAVIDCOPCOP, Ticket A-01. Goal-anfahrt_deg: Goals zeigen von der nächsten Wand weg ins Feld (Entscheidung des Menschen, 2026-11-02); MIDFIELD bleibt null. Offen (null): posen (Ticket A-08). Namen sind fest, Routen benutzen nur diese Namen.",
+  "_hinweis": "Goals, Toggles und Loader: vermessen im CAD 276-9250-000 (2026-04-26) von DAVIDCOPCOP, Ticket A-01. Goal-anfahrt_deg: Goals zeigen von der nächsten Wand weg ins Feld (Entscheidung des Menschen, 2026-11-02); MIDFIELD bleibt null. START_STACKER/START_RUNNER: Rücken an der Wand, in verschiedenen Dreiecken (Quadrant Placement), Wahl des Menschen 2026-11-02, Ticket A-08. Offen (null): MIDFIELD_S, MIDFIELD_R. Namen sind fest, Routen benutzen nur diese Namen.",
   "version": 1,
   "einheiten": "Zoll, Grad",
   "ursprung": "Feldmitte",
@@ -174,15 +174,15 @@
   "posen": [
     {
       "id": "START_STACKER",
-      "x_in": null,
-      "y_in": null,
-      "h_deg": null
+      "x_in": -60.0,
+      "y_in": 0.0,
+      "h_deg": 0
     },
     {
       "id": "START_RUNNER",
-      "x_in": null,
-      "y_in": null,
-      "h_deg": null
+      "x_in": -40.0,
+      "y_in": -64.5,
+      "h_deg": 90
     },
     {
       "id": "MIDFIELD_S",
