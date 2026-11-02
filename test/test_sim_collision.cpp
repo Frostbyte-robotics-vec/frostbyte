@@ -71,8 +71,8 @@ TEST_CASE("Feldrand: Ecke in der Ecke wird auf beiden Achsen zurückgeschoben") 
 
 TEST_CASE("Feldelement (Kreis): Kontakt und Abstand") {
     const Circle c{20.0, 0.0, 3.0};
-    CHECK_FALSE(penetration(box(0, 0, 0), c).has_value());   // Box bis x = 5, Kreis ab 17
-    const auto mtv = penetration(box(14, 0, 0), c);          // Box bis 19, Kreis ab 17 -> 2 Zoll
+    CHECK_FALSE(penetration(box(0, 0, 0), c).has_value());  // Box bis x = 5, Kreis ab 17
+    const auto mtv = penetration(box(14, 0, 0), c);         // Box bis 19, Kreis ab 17 -> 2 Zoll
     REQUIRE(mtv.has_value());
     CHECK(mtv->x_in == doctest::Approx(-2.0));
     CHECK(mtv->y_in == doctest::Approx(0.0).epsilon(1e-9));

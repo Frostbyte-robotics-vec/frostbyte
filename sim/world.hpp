@@ -21,8 +21,8 @@ namespace frostbyte::sim {
 constexpr int match_ms = 60000;
 
 struct RobotSetup {
-    std::string name;            // "stacker" oder "runner"
-    std::optional<Pose> start;   // leer, solange field.json null-Koordinaten hat (A-01)
+    std::string name;                // "stacker" oder "runner"
+    std::optional<Pose> start;       // leer, solange field.json null-Koordinaten hat (A-01)
     std::vector<std::string> route;  // Routenzeilen ohne Kommentare; interpretiert erst ab dem Routen-Ticket
     DriveParams drive;               // roboter.<name> aus sim_params.json (SIM-02)
     SensorParams sensors;            // roboter.<name>.sensoren, skaliert mit dem Rauschprofil (SIM-03)
@@ -44,8 +44,8 @@ struct SimConfig {
 };
 
 struct RunResult {
-    int log_rows = 0;       // je Roboter
-    int control_ticks = 0;  // je Roboter
+    int log_rows = 0;        // je Roboter
+    int control_ticks = 0;   // je Roboter
     int wall_contacts = 0;   // Kontakte mit dem Feldrand (je Beginn), beide Roboter zusammen
     int robot_contacts = 0;  // Kontakte der Roboter untereinander (je Beginn)
     int rule_violations = 0;

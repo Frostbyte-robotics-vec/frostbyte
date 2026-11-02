@@ -15,9 +15,7 @@ public:
     bool timed_out() const { return timed_out_; }
     double elapsed_s(double now_s) const { return now_s - entered_s_; }
 
-    void enter(State next, double now_s) {
-        enter(next, now_s, no_timeout, next);
-    }
+    void enter(State next, double now_s) { enter(next, now_s, no_timeout, next); }
 
     void enter(State next, double now_s, double timeout_s, State on_timeout) {
         state_ = next;

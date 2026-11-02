@@ -50,6 +50,4 @@ TEST_CASE("Demo: gleicher Seed = byte-gleiche Logs") {
     CHECK(run() == run());
 }
 
-TEST_CASE("Leerer Routenpfad heißt: keine Route") {
-    CHECK(load_route("").empty());
-}
+TEST_CASE("Leerer Routenpfad heißt: keine Route") { CHECK(load_route("").empty()); }

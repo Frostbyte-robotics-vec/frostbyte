@@ -178,8 +178,10 @@ TEST_CASE("Sim fährt ein Quadrat und kommt am Start an") {
         const double target = std::fmod(90.0 * (side + 1), 360.0);
         auto err = [&] {
             double e = target - model.pose().h_deg;
-            while (e > 180.0) e -= 360.0;
-            while (e <= -180.0) e += 360.0;
+            while (e > 180.0)
+                e -= 360.0;
+            while (e <= -180.0)
+                e += 360.0;
             return e;
         };
         // P-Regler auf die Blickrichtung (nur Test; der echte Regler kommt mit den Bewegungen), 2 s Einschwingen.

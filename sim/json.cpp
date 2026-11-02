@@ -179,26 +179,26 @@ private:
                 fail("Escape ohne Zeichen");
             const char e = s_[i_++];
             switch (e) {
-            case '"': out += '"'; break;
-            case '\\': out += '\\'; break;
-            case '/': out += '/'; break;
-            case 'b': out += '\b'; break;
-            case 'f': out += '\f'; break;
-            case 'n': out += '\n'; break;
-            case 'r': out += '\r'; break;
-            case 't': out += '\t'; break;
-            case 'u': {
-                unsigned cp = 0;
-                if (i_ + 4 > s_.size())
-                    fail("\\u ohne 4 Hexziffern");
-                const auto [p, ec] = std::from_chars(s_.data() + i_, s_.data() + i_ + 4, cp, 16);
-                if (ec != std::errc() || p != s_.data() + i_ + 4)
-                    fail("\\u ohne 4 Hexziffern");
-                i_ += 4;
-                append_utf8(out, cp);
-                break;
-            }
-            default: fail(std::string("unbekanntes Escape \\") + e);
+                case '"': out += '"'; break;
+                case '\\': out += '\\'; break;
+                case '/': out += '/'; break;
+                case 'b': out += '\b'; break;
+                case 'f': out += '\f'; break;
+                case 'n': out += '\n'; break;
+                case 'r': out += '\r'; break;
+                case 't': out += '\t'; break;
+                case 'u': {
+                    unsigned cp = 0;
+                    if (i_ + 4 > s_.size())
+                        fail("\\u ohne 4 Hexziffern");
+                    const auto [p, ec] = std::from_chars(s_.data() + i_, s_.data() + i_ + 4, cp, 16);
+                    if (ec != std::errc() || p != s_.data() + i_ + 4)
+                        fail("\\u ohne 4 Hexziffern");
+                    i_ += 4;
+                    append_utf8(out, cp);
+                    break;
+                }
+                default: fail(std::string("unbekanntes Escape \\") + e);
             }
         }
     }
