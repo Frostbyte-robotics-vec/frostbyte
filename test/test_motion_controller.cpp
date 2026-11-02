@@ -270,3 +270,36 @@ TEST_CASE("Motion: ungültige Pose (NaN) gibt 0 V statt Unsinn") {
     CHECK(o.left_v == 0.0);
     CHECK(o.right_v == 0.0);
 }
+
+TEST_CASE("Motion: Pose-Ausfall länger als ein Blocked-Fenster -> danach weiter running, nicht BLOCKED oder DONE") {
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    {  // Roboter stand im Ausfall (0 V); erster gültiger Takt darf nicht mit dem alten Fenster verglichen werden.
+        Pid lat(lateral_gains()), ang(angular_gains());
+        MotionController mc(test_config(), lat, ang);
+        REQUIRE(mc.request(MotionCommand::move_to(24.0, 0.0, 5.0), 0.0));
+        CHECK(mc.update(0.0, Pose{}).left_v > 2.0);  // Fenster öffnet mit hoher Spannung
+        for (double t = 0.01; t < 0.8; t += 0.01)
+            mc.update(t, Pose{nan, 0.0, 0.0});
+        const MotionOutput o = mc.update(0.8, Pose{});
+        CHECK(mc.state() == MotionState::running);
+        CHECK(o.left_v > 2.0);
+        // Steckt er danach wirklich fest, kommt BLOCKED ein volles Fenster später.
+        double t = 0.81;
+        for (; t < 2.0 && mc.state() == MotionState::running; t += 0.01)
+            mc.update(t, Pose{});
+        CHECK(mc.state() == MotionState::blocked);
+        CHECK(t >= 0.8 + 0.5);
+    }
+    {  // Im Ziel vor dem Ausfall: die Beruhigungszeit beginnt nach dem Ausfall neu.
+        Pid lat(lateral_gains()), ang(angular_gains());
+        MotionController mc(test_config(), lat, ang);
+        REQUIRE(mc.request(MotionCommand::move_to(0.5, 0.0, 5.0), 0.0));
+        mc.update(0.0, Pose{});  // im Ziel, Beruhigung beginnt
+        for (double t = 0.01; t < 0.5; t += 0.01)
+            mc.update(t, Pose{nan, 0.0, 0.0});
+        mc.update(0.5, Pose{});
+        CHECK(mc.state() == MotionState::running);  // nicht sofort DONE
+        mc.update(0.61, Pose{});
+        CHECK(mc.state() == MotionState::done);  // erst nach settle_s mit gültiger Pose
+    }
+}

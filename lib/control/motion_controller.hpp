@@ -143,8 +143,14 @@ public:
         sm_.update(now_s);
         if (sm_.state() != MotionState::running)
             return MotionOutput{};
-        if (!std::isfinite(pose.x_in) || !std::isfinite(pose.y_in) || !std::isfinite(pose.heading_deg))
+        if (!std::isfinite(pose.x_in) || !std::isfinite(pose.y_in) || !std::isfinite(pose.heading_deg)) {
+            // Nach dem Ausfall neu beginnen: Blocked-Fenster und Beruhigung nicht über die Lücke vergleichen,
+            // und kein riesiges dt für die Regler (I-Sprung).
+            window_open_ = false;
+            settling_ = false;
+            has_last_ = false;
             return MotionOutput{};
+        }
         const double dt_s = has_last_ ? now_s - last_s_ : 0.0;
         last_s_ = now_s;
         has_last_ = true;

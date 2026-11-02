@@ -16,6 +16,11 @@ Status: angenommen (2. Nov 2026), Ticket D-05. Nummer 017, weil 013–016 auf of
 - `move_to`: Fährt der Roboter nach einer Annäherung (näher als `near_in`) über das Ziel hinaus, setzt er zurück,
   statt zu wenden (Lenkfehler auf −90…90° gefaltet). Ohne diese Regel kreiste er in der Simulation ums Ziel.
 - Pfade haben eine feste Kapazität (`Path::capacity = 32`), kein dynamischer Speicher.
+- Ungültige Pose (NaN/inf, z. B. Sensorausfall): 0 V, und nach dem Ausfall beginnen Blocked-Fenster, Beruhigungszeit
+  und dt der Regler neu (Hinweis aus dem KI-Review von PR #28). Das Timeout läuft weiter.
+- Einschränkung `follow`: Der Zielpunkt ist der weiteste Schnitt des Vorausschau-Kreises über alle restlichen Abschnitte.
+  Läuft ein Pfad innerhalb des Vorausschau-Radius zurück (Haarnadel, enge Schleife), wird er abgekürzt. Solche Pfade
+  in einzelne `follow`-/`move_to`-Befehle teilen.
 - Regler: eigener `frostbyte::Pid` (`lib/control/pid.hpp`) mit Ausgabegrenze, I-Grenze, i_zone und Anti-Windup
   (keine Integration, solange die Ausgabe in Fehlerrichtung gesättigt ist). Der Controller kennt nur die Schnittstelle
   `frostbyte::Regulator`.
