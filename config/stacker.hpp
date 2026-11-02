@@ -29,4 +29,7 @@ inline constexpr frostbyte::DriverProfile profiles[] = {
     {"Vorsichtig", {.deadband = 0.08, .exponent = 3.0, .max_speed = 0.7}},
 };
 inline constexpr int profile_count = sizeof(profiles) / sizeof(profiles[0]);
+// TODO(HW): Lift (subsystems/lift.hpp, ADR-019): Sensor (Rotation oder Motorencoder), Port, Drehrichtung, Homing-Richtung
+//   (home_v-Vorzeichen), die 5 Kalibrierpunkte (Sensorwinkel relativ zu Home -> gemessene Hoehe in Zoll), min_in/max_in,
+//   kp, kg, Spannungsgrenzen, Timeouts. Nichts davon raten; Messanleitung in tasks/M-01.md.
 }  // namespace config::stacker
