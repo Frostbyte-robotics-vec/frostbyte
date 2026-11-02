@@ -6,7 +6,7 @@ Status: angenommen (2. Nov 2026), Ticket S-09.
 Die CI installierte `gcc-arm-none-eabi` per `apt` auf `ubuntu-latest`. Der Paketstand wechselte zwischen zwei Läufen von 14.2 auf 13.2; `common.mk` verlangt `--std=gnu++26` (ab GCC 14), der Roboterbau brach auf main ab (Lauf 41406373566).
 
 ## Entscheidung
-- Die CI lädt die Arm GNU Toolchain **14.3.rel1** (x86_64, `arm-none-eabi`) von developer.arm.com, prüft die SHA-256 (von Arm veröffentlicht) und cached sie. Das ist dieselbe Version wie die lokale PROS-Installation (14.3.Rel1).
+- Die CI lädt die Arm GNU Toolchain **14.3.rel1** (x86_64, `arm-none-eabi`) von developer.arm.com, prüft die SHA-256 (von Arm veröffentlicht) und cached sie. Das ist dieselbe Version, die auf dem Laptop von arjanssen in der PROS-Erweiterung von VS Code liegt (14.3.Rel1; bei anderen Teammitgliedern nicht geprüft).
 - Kein neues Paket im Projekt, nur eine feste Werkzeugversion; deshalb dieser ADR.
 
 ## Update-Weg
