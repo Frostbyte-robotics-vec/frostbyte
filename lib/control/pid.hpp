@@ -51,6 +51,13 @@ public:
         return std::clamp(out, -g_.out_max_v, g_.out_max_v);
     }
 
+    // Verstärkungen im Betrieb ändern (Tuning-Modus, D-06). Der aufgelaufene I-Anteil ist schon mit ki multipliziert
+    // und bleibt, springt also nicht; eine engere I-Grenze kappt ihn sofort.
+    void set_gains(const PidGains& g) {
+        g_ = g;
+        i_term_ = std::clamp(i_term_, -g_.i_max_v, g_.i_max_v);
+    }
+
     void reset() override {
         i_term_ = 0.0;
         prev_error_ = 0.0;

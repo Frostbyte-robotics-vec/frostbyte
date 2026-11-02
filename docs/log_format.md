@@ -2,7 +2,7 @@
 
 Erste Zeile: `# frostbyte-log v1 robot=<stacker|runner> source=<robot|sim> seed=<n|-> build=<git-hash>`
 Zweite Zeile: Spaltennamen. Danach eine Zeile alle 20 ms pro Roboter. Trennzeichen Komma, Dezimalpunkt `.`.
-Leere Zelle = Wert nicht vorhanden. Spalten nie umbenennen oder umsortieren ohne neue Versionsnummer.
+Leere Zelle = Wert nicht vorhanden. Spalten nie umbenennen oder umsortieren ohne neue Versionsnummer. Neue Ereignis-Token in der Spalte `event` (z. B. TUNE:…) sind keine Formatänderung, solange Spalten, Einheiten und bestehende Token unverändert bleiben; Leser müssen unbekannte Token ignorieren (Entscheidung 2. Nov 2026, D-06).
 
 | Spalte | Einheit | Bedeutung |
 | --- | --- | --- |
@@ -18,4 +18,4 @@ Leere Zelle = Wert nicht vorhanden. Spalten nie umbenennen oder umsortieren ohne
 | has_cup, has_pin, pin_yellow_up | 0/1 | Besitz und Ausrichtung |
 | score | Punkte | laufender Punktestand (Simulation: Scorer; Roboter: Schätzung) |
 | cpu_ms, batt_v, temp_max_c | ms, V, °C | Gesundheit |
-| event | Text | Ereignisse dieses Takts, mit `;` getrennt: TIMEOUT:<zustand>, BLOCKED, COLLISION:<mit>, RULE:<regel>, PLACED:<goal>:<ebene> |
+| event | Text | Ereignisse dieses Takts, mit `;` getrennt: TIMEOUT:<zustand>, BLOCKED, COLLISION:<mit>, RULE:<regel>, PLACED:<goal>:<ebene>, TUNE:<schlüssel>=<wert> / TUNE:save / TUNE:revert (Tuning-Modus, nur am Testchassis; ADR-020) |

@@ -55,5 +55,9 @@ inline constexpr frostbyte::PidGains angular_pid{
     .kp = 0.15, .ki = 0.5, .kd = 0.01, .i_zone = 10.0, .i_max_v = 2.0, .out_max_v = 12.0};
 // false: eigener Pid (wie in der Simulation). true: lemlib::PID ueber src/lemlib_regulator.hpp, nur zum Vergleich in D-07.
 inline constexpr bool motion_uses_lemlib_pid = false;
+// Tuning-Modus (D-06, ADR-020): PID-Werte per Controller aendern und auf der SD-Karte speichern. Nur am Testchassis
+// einschalten (Tasten A/B/X und das Steuerkreuz gehoeren dann dem Tuning, nicht dem Fahrer); im Match immer false.
+// Gilt nur mit dem eigenen Pid (motion_uses_lemlib_pid = false). Uebernahme ins Repo: Werte hier eintragen (D-07).
+inline constexpr bool tuning_enabled = false;
 
 }  // namespace config::stacker
