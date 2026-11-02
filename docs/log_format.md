@@ -2,7 +2,7 @@
 
 Erste Zeile: `# frostbyte-log v1 robot=<stacker|runner> source=<robot|sim> seed=<n|-> build=<git-hash>`
 Zweite Zeile: Spaltennamen. Danach eine Zeile alle 20 ms pro Roboter. Trennzeichen Komma, Dezimalpunkt `.`.
-Leere Zelle = Wert nicht vorhanden. Spalten nie umbenennen oder umsortieren ohne neue Versionsnummer.
+Leere Zelle = Wert nicht vorhanden. Spalten nie umbenennen oder umsortieren ohne neue Versionsnummer. Neue Ereignis-Token in der Spalte `event` (z. B. TUNE:…) sind keine Formatänderung, solange Spalten, Einheiten und bestehende Token unverändert bleiben; Leser müssen unbekannte Token ignorieren (Entscheidung 2. Nov 2026, D-06).
 
 | Spalte | Einheit | Bedeutung |
 | --- | --- | --- |
