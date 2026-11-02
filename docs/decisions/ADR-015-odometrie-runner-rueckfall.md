@@ -16,4 +16,5 @@ Status: angenommen (2. Nov 2026), Ticket D-03. Der Advisor (Opus) hat vorgegeben
 
 ## Folgen
 - Rückfall bei Ausfall eines Tracking-Rads (Stacker) ist hier noch nicht gebaut, nur der Baustein: `DriveOdometry` ist die Stacker-Rückfallodometrie. Die Prüfung der Tracking-Räder gegen die Antriebsencoder und die Umschaltung `TrackingOdometry` → `DriveOdometry` bekommt Ticket D-08.
+- Grenze der Erkennung „eingefroren“: Dreht der Roboter je Takt weniger als `still_encoder_deg` (Anlauf einer Drehung), bleibt ein eingefrorenes IMU unentdeckt; je Takt geht dabei höchstens diese Schwelle als Heading-Fehler ein, über den Anlauf zusammen einige Zehntel Grad (Test: Grenze 1°, gemessener Wert steht in der Testausgabe). Die Testschranke beruht auf dieser Grenze.
 - Bekannte Grenze: schiebt der Roboter gegen eine Wand und die Räder drehen durch, zeigen die Encoder Drehung bei stehendem IMU. Nach `still_cycles` Takten wird dann fälschlich umgeschaltet. Die Taktzahl am Roboter hoch genug wählen.

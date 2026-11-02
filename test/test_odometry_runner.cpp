@@ -40,12 +40,12 @@ enum class Fault { none, jump, frozen, invalid, non_finite };
 // Fahrmodells (nicht aus der wahren Pose). Ein IMU-Fehler wird ab fail_cycle eingespeist.
 struct Rig {
     Rig(const sim::Pose& start, const sim::OdometryParams& enc_p, const sim::ImuParams& imu_p, double noise_scale,
-        const DriveOdometryParams& op)
+        const DriveOdometryParams& op, int seed = 0)
         : p(drive_params()),
           drive(p, start),
-          left(enc_p, noise_scale, 1),
-          right(enc_p, noise_scale, 2),
-          imu(imu_p, noise_scale, 3),
+          left(enc_p, noise_scale, 1 + seed),
+          right(enc_p, noise_scale, 2 + seed),
+          imu(imu_p, noise_scale, 3 + seed),
           odo(op) {
         l0 = drive.links_in();
         r0 = drive.rechts_in();
@@ -185,7 +185,7 @@ TEST_CASE("Runner-Odometrie: Rauschen, Drift und Skalierungsfehler loesen keinen
     imu.drift_deg_per_min = 2.0;
     imu.sigma_deg = 0.05;
     for (int seed_variant = 0; seed_variant < 3; ++seed_variant) {
-        Rig rig(sim::Pose{0.0, 0.0, -150.0 + 10.0 * seed_variant}, enc, imu, 1.0, odo_params());
+        Rig rig(sim::Pose{0.0, 0.0, -150.0 + 10.0 * seed_variant}, enc, imu, 1.0, odo_params(), 10 * seed_variant);
         rig.run(400, 20.0, 30.0);   // Kreis
         rig.run(200, -12.0, 12.0);  // Punktdrehung
         rig.run(200, 0.0, 0.0);     // Stand
@@ -220,6 +220,7 @@ TEST_CASE("Runner-Odometrie: eingefrorenes IMU wird in einer Drehung erkannt, Fe
     CHECK(rig.odo.degraded());
     CHECK(rig.odo.fallback_reason() == FallbackReason::imu_frozen);
     rig.run(50, 25.0, 25.0);
+    MESSAGE("eingefroren: max. Heading-Fehler ", rig.max_head_err_deg, " Grad, Position ", rig.max_pos_err_in, " in");
     // Unterhalb von still_encoder_deg je Takt (Anlauf der Drehung) bleibt der Fehler unentdeckt: je Takt hoechstens diese
     // Schwelle, ueber den Anlauf einige Zehntel Grad.
     CHECK(rig.max_step_head_deg <= odo_params().still_encoder_deg + 0.01);
@@ -275,22 +276,36 @@ TEST_CASE("Runner-Odometrie: IMU 179 -> -179 Grad ist eine Drehung um 2 Grad, ke
     CHECK(odo.pose().heading_deg == doctest::Approx(-179.0));
 }
 
+TEST_CASE("Runner-Odometrie: im Normalbetrieb zaehlt das IMU, nicht die Encoder-Drehung") {
+    // Spurbreite 5 % zu gross angegeben: die Encoder-Drehung waere nach 180 Grad rund 9 Grad falsch, das IMU stimmt.
+    DriveOdometryParams op = odo_params();
+    op.track_width_in = 12.6;
+    Rig rig(sim::Pose{0.0, 0.0, 0.0}, sim::OdometryParams{}, sim::ImuParams{}, 0.0, op);
+    rig.run(160, -12.0, 12.0);
+    CHECK(std::fabs(rig.drive.pose().h_deg) > 90.0);  // es wurde wirklich gedreht
+    CHECK_FALSE(rig.odo.degraded());
+    CHECK(rig.max_head_err_deg < 0.1);
+}
+
 TEST_CASE("Runner-Odometrie: Stillstand-Erkennung zaehlt nur zusammenhaengende Takte") {
     DriveOdometry odo(odo_params());
     odo.reset(Pose{}, 0.0, 0.0, 0.0);
     const double half = deg_to_rad(1.0) * 12.0 / 2.0;  // Encoder zeigen 1 Grad pro Takt
-    double l = 0.0, r = 0.0;
-    for (int round = 0; round < 5; ++round) {
-        for (int i = 0; i < 19; ++i) {  // 19 verdaechtige Takte (eine weniger als still_cycles), IMU steht
-            l -= half;
-            r += half;
-            odo.update(l, r, 0.0, true);
-        }
+    double l = 0.0, r = 0.0, imu = 0.0;
+    auto cycle = [&](bool imu_moves) {
         l -= half;
         r += half;
-        odo.update(l, r, 1.0, true);  // IMU dreht um 1 Grad: passt zu den Encodern
-        CHECK_FALSE(odo.degraded());
-        odo.reset(Pose{}, 0.0, 0.0, 0.0);
-        l = r = 0.0;
-    }
+        if (imu_moves)
+            imu += 1.0;
+        odo.update(l, r, imu, true);
+    };
+    for (int i = 0; i < 19; ++i)  // eine weniger als still_cycles, IMU steht
+        cycle(false);
+    cycle(true);  // IMU dreht wieder normal: Zaehler faengt neu an
+    for (int i = 0; i < 19; ++i)
+        cycle(false);
+    CHECK_FALSE(odo.degraded());
+    cycle(false);  // 20. Takt in Folge: Positivkontrolle
+    CHECK(odo.degraded());
+    CHECK(odo.fallback_reason() == FallbackReason::imu_frozen);
 }
