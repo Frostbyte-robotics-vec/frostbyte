@@ -5,8 +5,8 @@
 
 #include "config/runner.hpp"
 #include "config/stacker.hpp"
-#include "doctest/doctest.h"
 #include "controls_doc.hpp"
+#include "doctest/doctest.h"
 #include "match/driver_map.hpp"
 
 using namespace frostbyte;
@@ -15,8 +15,8 @@ namespace {
 
 // Testwerte, unabhängig von config/.
 const Binding kBindings[] = {
-    {Action::grab, Button::r1},   {Action::place, Button::r2}, {Action::slow, Button::l2},
-    {Action::hold, Button::b},    {Action::assist_toggle, Button::x},
+    {Action::grab, Button::r1}, {Action::place, Button::r2},        {Action::slow, Button::l2},
+    {Action::hold, Button::b},  {Action::assist_toggle, Button::x},
 };
 const DriverProfile kProfiles[] = {
     {"p0", {.deadband = 0.1, .exponent = 2.0, .max_speed = 1.0}},
@@ -173,11 +173,11 @@ TEST_CASE("Endgame-Vibration bei 15 s und 10 s Restzeit, je einmal pro Überschr
     CHECK_FALSE(endgame_rumble(14.9, 14.5));
     CHECK(endgame_rumble(10.01, 9.99));
     CHECK_FALSE(endgame_rumble(9.9, 5.0));
-    CHECK(endgame_rumble(15.0 + 0.001, 15.0));    // genau auf der Schwelle
-    CHECK(endgame_rumble(16.0, 12.0));            // Sprung über 15 s
-    CHECK(endgame_rumble(12.0, 8.0));             // Sprung über 10 s
-    CHECK_FALSE(endgame_rumble(10.0, 10.0));      // keine Zeit vergangen
-    CHECK_FALSE(endgame_rumble(8.0, 12.0));       // Uhr läuft nie rückwärts
+    CHECK(endgame_rumble(15.0 + 0.001, 15.0));  // genau auf der Schwelle
+    CHECK(endgame_rumble(16.0, 12.0));          // Sprung über 15 s
+    CHECK(endgame_rumble(12.0, 8.0));           // Sprung über 10 s
+    CHECK_FALSE(endgame_rumble(10.0, 10.0));    // keine Zeit vergangen
+    CHECK_FALSE(endgame_rumble(8.0, 12.0));     // Uhr läuft nie rückwärts
 }
 
 TEST_CASE("docs/controls.md stimmt mit der Belegung in config/ überein (Export)") {

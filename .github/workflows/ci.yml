@@ -33,6 +33,14 @@ jobs:
           test -s viewer-demo/demo/run000_runner.csv
           cp tools/viewer/index.html tools/viewer/logparse.js tools/viewer/robots.js viewer-demo/
           cp field/field.json viewer-demo/field.json
+      - name: 100 Läufe in höchstens 30 s und Bericht
+        run: |
+          start=$(date +%s)
+          ./build-test/frostbyte_sim --demo --runs 100 --seed 1 --out out/sim
+          dauer=$(( $(date +%s) - start ))
+          echo "100 Läufe: ${dauer} s"
+          test "$dauer" -le 30
+          python3 tools/sim_report.py out/sim --html viewer-demo/report.html
       - uses: actions/upload-artifact@v4
         with:
           name: viewer-demo
@@ -73,4 +81,4 @@ jobs:
       - name: Board validieren
         run: python3 tools/board.py validate
       - name: Board-Werkzeug testen
-        run: python3 -m unittest discover -s tools -p "test_board.py"
+        run: python3 -m unittest discover -s tools -p "test_*.py"

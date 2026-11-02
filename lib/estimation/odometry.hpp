@@ -1,19 +1,12 @@
 #pragma once
 
-#include <cmath>
-
 #include "core/units.hpp"
+#include "estimation/pose.hpp"
 
 // Odometrie Stacker (D-02): zwei Tracking-Räder (parallel und quer) plus IMU-Heading.
 // Konventionen wie im Feldplan: Zoll, Grad, 0° = +x (rote -> blaue Station), gegen den Uhrzeigersinn positiv.
 // Das IMU-Vorzeichen (HAL/config, TODO(HW)) muss schon stimmen, bevor der Wert hier ankommt.
 namespace frostbyte {
-
-struct Pose {
-    double x_in = 0.0;
-    double y_in = 0.0;
-    double heading_deg = 0.0;  // (-180, 180]
-};
 
 // Lage der Räder im Roboterkoordinatensystem (x nach vorn, y nach links), vom Drehmittelpunkt aus gemessen.
 struct TrackingGeometry {
@@ -43,18 +36,7 @@ public:
         const double dx = (parallel_total_in - last_par_in_) + dtheta * g_.parallel_y_in;
         const double dy = (perpendicular_total_in - last_perp_in_) - dtheta * g_.perpendicular_x_in;
 
-        // Bewegung auf einem Kreisbogen (Pose-Exponential) im Roboterrahmen am Takt-Anfang.
-        double lx = dx, ly = dy;
-        if (std::fabs(dtheta) > 1e-9) {
-            const double s = std::sin(dtheta) / dtheta;
-            const double c = (1.0 - std::cos(dtheta)) / dtheta;
-            lx = dx * s - dy * c;
-            ly = dx * c + dy * s;
-        }
-        const double h = deg_to_rad(pose_.heading_deg);
-        pose_.x_in += lx * std::cos(h) - ly * std::sin(h);
-        pose_.y_in += lx * std::sin(h) + ly * std::cos(h);
-        pose_.heading_deg = wrap_deg(pose_.heading_deg + dtheta_deg);
+        advance_pose(pose_, dx, dy, dtheta_deg);
 
         last_par_in_ = parallel_total_in;
         last_perp_in_ = perpendicular_total_in;

@@ -9,7 +9,11 @@ inline constexpr double footprint_in = 24.0;  // SG2
 // TODO(HW): Lage der Tracking-Raeder (Versatz vom Drehmittelpunkt, Zoll) fuer estimation/odometry.hpp:
 //   parallel_y_in (Parallelrad, links positiv), perpendicular_x_in (Querrad, vorn positiv). Ebenso Rad-Durchmesser,
 //   Ports, Drehrichtung und das IMU-Vorzeichen (Feld: gegen den Uhrzeigersinn positiv).
+// TODO(HW): GPS-Fusion (estimation/gps_fusion.hpp, ADR-016): max_error_in, max_speed_in_s, gate_in, position_gain, heading_gain
+//   und Einbaulage/Versatz des GPS-Sensors am Roboter; Werte aus echten GPS-Logs ableiten.
 // TODO(HW): Ports, Drehrichtungen, Uebersetzungen, Radgroessen folgen mit dem Antriebs-Ticket
+// TODO(HW): Rueckfall auf Antriebsencoder (estimation/drive_odometry.hpp, ADR-015): track_width_in und Erkennungsschwellen,
+//   sobald die Umschaltung bei Ausfall eines Tracking-Rads verdrahtet wird (Folgeticket D-08).
 
 // Fahrer-Belegung (C-03, ADR-014). Grundbelegung identisch auf beiden Robotern; Fahrer bestaetigt sie am Roboter.
 inline constexpr frostbyte::Binding bindings[] = {
