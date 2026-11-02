@@ -3,7 +3,7 @@ id: SIM-06
 phase: "1b"
 titel: Monte-Carlo-Lauf, summary.json, tools/sim_report.py (HTML), Abnahmeregeln als Exit-Code, CI-Schritt
 status: review
-owner:
+owner: matelechner01
 branch:
 depends: [SIM-02, SIM-03, SIM-05, SIM-09]
 hw: nein
