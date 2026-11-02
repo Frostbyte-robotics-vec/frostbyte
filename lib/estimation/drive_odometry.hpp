@@ -77,7 +77,16 @@ public:
             last_imu_deg_ = imu_heading_deg;
     }
 
+    // Überschreibt nur die Pose; Bezugswerte und Ausfallzustand bleiben (anders als reset()). Für die Stacker-Odometrie
+    // (D-08): die Schattenodometrie wird jeden Takt auf die aktive Pose gesetzt, behält aber ihre IMU-Vorgeschichte.
+    void set_pose(const Pose& pose) {
+        pose_ = pose;
+        pose_.heading_deg = wrap_deg(pose.heading_deg);
+    }
+
     const Pose& pose() const { return pose_; }
+    // Verdacht auf eingefrorenes IMU, noch nicht bestätigt: dieser Takt rechnet schon mit der Encoder-Drehung.
+    bool imu_suspect() const { return !degraded() && still_count_ > 0; }
     bool degraded() const { return reason_ != FallbackReason::none; }
     FallbackReason fallback_reason() const { return reason_; }
 
