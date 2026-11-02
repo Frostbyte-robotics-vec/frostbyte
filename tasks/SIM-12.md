@@ -2,7 +2,7 @@
 id: SIM-12
 phase: "1b"
 titel: Viewer und Demo-Logs auf GitHub Pages veröffentlichen
-status: review
+status: done
 owner: matelechner01
 branch: ticket/sim-12
 depends: [SIM-11]
