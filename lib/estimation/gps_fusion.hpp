@@ -24,6 +24,7 @@ struct GpsFusionParams {
     double gate_in;         // weiter als das von der aktuellen Schätzung: Ausreißer verwerfen
     double position_gain;   // Anteil der Abweichung, der je angenommener Messung korrigiert wird (0..1)
     double heading_gain;    // dasselbe fürs Heading; 0 = Heading nur aus der Odometrie
+    int resync_samples;     // so viele Ausreißer in Folge: die Odometrie ist verrutscht, GPS gilt wieder
 };
 
 enum class GpsResult { no_data, bad_quality, too_fast, outlier, accepted };
@@ -36,6 +37,7 @@ public:
     void reset() {
         dx_in_ = dy_in_ = dheading_deg_ = 0.0;
         result_ = GpsResult::no_data;
+        outlier_count_ = 0;
         pose_ = Pose{};
     }
 
@@ -43,6 +45,10 @@ public:
     // aktuellen Fahrgeschwindigkeit aus der Odometrie (Zoll/s).
     const Pose& update(const Pose& odo, const GpsReading& gps, double speed_in_s) {
         result_ = classify(odo, gps, speed_in_s);
+        if (result_ == GpsResult::outlier && ++outlier_count_ >= p_.resync_samples)
+            result_ = GpsResult::accepted;  // lange Folge: eher ist die Odometrie verrutscht als das GPS
+        else if (result_ == GpsResult::accepted)
+            outlier_count_ = 0;
         if (result_ == GpsResult::accepted) {
             dx_in_ += p_.position_gain * (gps.x_in - (odo.x_in + dx_in_));
             dy_in_ += p_.position_gain * (gps.y_in - (odo.y_in + dy_in_));
@@ -73,6 +79,7 @@ private:
     double dx_in_ = 0.0;
     double dy_in_ = 0.0;
     double dheading_deg_ = 0.0;
+    int outlier_count_ = 0;  // Ausreißer in Folge (gültig, gut, langsam, aber außerhalb des Tors)
     GpsResult result_ = GpsResult::no_data;
     Pose pose_;
 };

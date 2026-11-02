@@ -32,6 +32,7 @@ GpsFusionParams fusion_params() {
     p.gate_in = 6.0;          // weiter weg von der Schätzung: Ausreißer
     p.position_gain = 0.1;
     p.heading_gain = 0.0;
+    p.resync_samples = 10;  // so viele Ausreisser in Folge gelten als Wahrheit (Odometrie ist verrutscht)
     return p;
 }
 
@@ -137,6 +138,47 @@ TEST_CASE("GPS-Fusion: 2 Zoll Odometrie-Drift werden auf <= 1 Zoll zurueckgezoge
         CHECK(mit.fused_error_in() <= 1.0);
         CHECK(mit.odo_error_in() > 1.5);  // die Odometrie selbst bleibt unveraendert
     }
+}
+
+TEST_CASE("GPS-Fusion: Drift erst aufbauen, dann mit GPS zurueckziehen") {
+    Run r(1, fusion_params());
+    r.drive_cycles(1000, 10.0, false);  // 100 in ohne GPS: ca. 2 in Drift
+    REQUIRE(r.fused_error_in() > 1.5);
+    int cycles = 0;
+    while (r.fused_error_in() > 1.0 && cycles < 2000) {
+        r.drive_cycles(1, 5.0);  // langsam weiter, GPS an
+        ++cycles;
+    }
+    MESSAGE("Zurueckgezogen nach ", cycles, " Takten (", cycles / 100.0, " s), Gewinn 0.1, GPS alle 5 Takte");
+    CHECK(cycles < 1000);
+    CHECK(r.fused_error_in() <= 1.0);
+}
+
+TEST_CASE("GPS-Fusion: ein einzelner Ausreisser wird verworfen, viele in Folge setzen die Pose neu") {
+    GpsFusion f(fusion_params());
+    f.reset();
+    const Pose odo{0.0, 0.0, 0.0};
+    const GpsReading far{true, 10.0, 0.0, 0.0, 0.3};  // Odometrie 10 in neben dem GPS, Tor 6 in
+    for (int i = 0; i < 9; ++i) {
+        f.update(odo, far, 0.0);
+        CHECK(f.last_result() == GpsResult::outlier);
+    }
+    f.update(odo, GpsReading{true, 0.2, 0.0, 0.0, 0.3}, 0.0);  // ein guter Wert unterbricht die Folge
+    CHECK(f.last_result() == GpsResult::accepted);
+    for (int i = 0; i < 9; ++i)
+        f.update(odo, far, 0.0);
+    CHECK(f.last_result() == GpsResult::outlier);  // Zaehler war zurueckgesetzt: erst 9 in Folge
+
+    // Odometrie verrutscht im Lauf (z. B. Schlupf nach Kollision) um 10 in: GPS holt die Pose wieder.
+    Run r(1, fusion_params());
+    r.drive_cycles(300, 10.0);
+    r.odo.reset(Pose{r.odo.pose().x_in + 10.0, r.odo.pose().y_in, r.odo.pose().heading_deg}, r.left.measured_in(),
+                r.right.measured_in(), r.drive.pose().h_deg);
+    r.drive_cycles(1, 10.0, false);
+    REQUIRE(r.fused_error_in() > 8.0);
+    r.drive_cycles(1000, 10.0);
+    MESSAGE("Nach Verrutschen um 10 in: Fehler ", r.fused_error_in(), " in");
+    CHECK(r.fused_error_in() <= 1.0);
 }
 
 TEST_CASE("GPS-Fusion: zu schnelle Fahrt wird ignoriert") {
