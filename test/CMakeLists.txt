@@ -40,11 +40,16 @@ target_compile_definitions(frostbyte_sim PRIVATE FB_BUILD="${FB_BUILD}")
 
 file(GLOB FB_TESTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
 add_executable(frostbyte_tests main.cpp ${FB_TESTS})
-target_include_directories(frostbyte_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/third_party")
+target_include_directories(frostbyte_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/third_party" "${FB_ROOT}/tools")
 target_link_libraries(frostbyte_tests PRIVATE frostbyte_lib frostbyte_simlib)
 target_compile_definitions(frostbyte_tests PRIVATE FB_TEST_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"
                                                    FB_ROOT_DIR="${FB_ROOT}")
-foreach(t frostbyte_tests frostbyte_simlib frostbyte_sim)
+# docs/controls.md aus config/ erzeugen: frostbyte_controls_export docs/controls.md
+add_executable(frostbyte_controls_export "${FB_ROOT}/tools/controls_export.cpp")
+target_link_libraries(frostbyte_controls_export PRIVATE frostbyte_lib)
+target_include_directories(frostbyte_controls_export PRIVATE "${FB_ROOT}/tools")
+
+foreach(t frostbyte_controls_export frostbyte_tests frostbyte_simlib frostbyte_sim)
     if(MSVC)
         target_compile_options(${t} PRIVATE /W4)
     else()
