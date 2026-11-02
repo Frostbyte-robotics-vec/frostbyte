@@ -2,6 +2,11 @@
 
 Kurze Einträge, neueste oben: Datum · Ticket · Erkenntnis. Jede KI-Sitzung liest diese Datei beim Start eines Tickets mit.
 
+2026-11-02 · D-04 · Warum der Simulator noch kein Stacking zeigt und was dafür fehlt: GitHub-Issue #26.
+2026-11-02 · D-03 · Windows ohne Compiler (kein cmake/g++/Arm-GCC): lokal reicht `pip install cmake ninja ziglang clang-format==18.1.8`; .cmd-Wrapper (`@python -m ziglang c++ %*`, ebenso cc, ar, ranlib) und `cmake -S test -B build-test -G Ninja -DCMAKE_CXX_COMPILER=… -DCMAKE_C_COMPILER=… -DCMAKE_AR=… -DCMAKE_RANLIB=…`; cmake/ninja liegen in %APPDATA%\Python\Python314\Scripts. Roboter-Build (arm-none-eabi-gcc) damit nicht möglich, den prüft die CI.
+2026-11-02 · D-03 · Windows: `tools/board.py summary` stürzt mit UnicodeEncodeError (cp1252) ab; `PYTHONIOENCODING=utf-8` setzen. board.py selbst ist nicht angepasst.
+2026-11-02 · D-03 · `tools/format.py` (clang-format 18.1.8) meldet auf main schon Abweichungen in lib/match/driver_map.hpp, test/test_driver_map.cpp, tools/controls_doc.hpp (aus C-03); gehört nicht zu D-03.
+
 2026-11-01 · SIM-03 · Sensormodelle (sim/sensor_models.*): Zufall nur über Rng; gauss() = Summe von 12 Gleichverteilten minus 6 (bit-gleich auf jeder Plattform, Box-Muller wäre es nicht). Skalierungsfehler und IMU-Drift haben feste Größe mit Vorzeichen je Lauf. Entscheidungen: docs/decisions/ADR-010-sensormodelle.md.
 2026-11-01 · SIM-04 · doctest::Approx(x).epsilon(e) rechnet e * (1 + max(|ist|, |soll|)), ist bei kleinen Werten also fast absolut und viel lockerer als e. Für Toleranzen "±10 %" oder "±2 Prozentpunkte" einen expliziten Vergleich schreiben (test_sim_sensor_models.cpp: within_rel, test_sim_mechanism.cpp: within_rel/rate_near). Bei N = 1000 Versuchen und ±2 pp die Testquoten so wählen, dass die Toleranz mindestens 3 Sigma ist (Quote höchstens etwa 5 %).
 2026-11-01 · SIM-07 · Viewer (tools/viewer/index.html) läuft per Doppelklick (file://): dort geht fetch nicht, Logs und field.json über Dateiauswahl/Drag-and-drop. Über `python3 -m http.server` aus dem Repo-Wurzelordner gehen auch URL-Parameter `?log=../../out/sim/x.csv&log=…&t=12&selftest`.
