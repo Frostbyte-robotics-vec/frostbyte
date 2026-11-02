@@ -2,10 +2,12 @@
 
 #include "config/robot.hpp"
 #include "control/motion_controller.hpp"
+#include "control/tuning_store.hpp"
 #include "core/control_loop.hpp"
 #include "core/log_format.hpp"  // prueft nur, dass der Log-v1-Schreiber fuer ARM kompiliert; genutzt ab F-05 (ADR-007)
 #include "hal/pros/pros_devices.hpp"  // prueft nur, dass die PROS-Wrapper kompilieren; instanziert wird erst mit den Ports (TODO(HW))
-#include "lemlib/api.hpp"  // prueft nur, dass LemLib einbindbar ist; Aufrufe erst hinter hal/ (ADR-001)
+#include "hal/pros/pros_storage.hpp"  // SD-Karte fuer die Tuning-Werte (D-06)
+#include "lemlib/api.hpp"             // prueft nur, dass LemLib einbindbar ist; Aufrufe erst hinter hal/ (ADR-001)
 #include "lemlib_regulator.hpp"
 
 namespace {
@@ -34,6 +36,11 @@ frostbyte::Regulator& angular_regulator() {
     return g_ang_pid;
 }
 frostbyte::MotionController g_motion(config::motion, lateral_regulator(), angular_regulator());
+
+// Tuning (D-06, ADR-020): nur mit config::tuning_enabled und eigenem Pid. Die Werte werden einmal in initialize() von der
+// SD-Karte gelesen. TODO: TuningMode im Steuer-Task mit dem Controller fuettern, take_save_request() im niedrig
+// priorisierten Task mit save_tuning() beantworten und take_event() ins Log schreiben (mit dem Logger, F-05).
+frostbyte::hal::ProsStorage g_tuning_store("/usd/tuning.txt");
 
 std::uint32_t micros_u32() { return static_cast<std::uint32_t>(pros::micros()); }
 
@@ -78,6 +85,11 @@ void display_task(void*) {
 void initialize() {
     pros::lcd::initialize();
     pros::lcd::set_text(1, config::robot_name);
+    if constexpr (config::tuning_enabled && !config::motion_uses_lemlib_pid) {
+        frostbyte::TuningSet tuned{config::lateral_pid, config::angular_pid};
+        if (frostbyte::load_tuning(g_tuning_store, tuned) == frostbyte::LoadResult::loaded)
+            frostbyte::apply_tuning(tuned, g_lat_pid, g_ang_pid);
+    }
     static pros::Task task(control_task, nullptr, TASK_PRIORITY_MAX - 1, TASK_STACK_DEPTH_DEFAULT, "control");
     static pros::Task display(display_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "display");
 }
