@@ -10,6 +10,7 @@
 
 #include "sim/collision.hpp"
 #include "sim/drive.hpp"
+#include "sim/game.hpp"
 #include "sim/rng.hpp"
 #include "sim/sensor_models.hpp"
 
@@ -44,6 +45,8 @@ struct SimConfig {
     double field_in = 144.0;                  // Kantenlänge des Feldquadrats; load_config nimmt feld_in aus field.json
     RobotSetup stacker;
     RobotSetup runner;
+    // Spielzustand und Punktestand (SIM-20). Leer (kein Goal) = Spalte score bleibt leer; gefüllt nur vom Demo.
+    GameSetup game;
 };
 
 struct RunResult {

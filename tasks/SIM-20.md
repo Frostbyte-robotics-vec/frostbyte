@@ -26,19 +26,11 @@ Korrektur nach Advisor-Rat: Der Pages-Bericht kommt aus `frostbyte_sim --demo --
 —
 
 ## Übergabe
-pausiert – frei zur Übernahme durch DAVIDCOPCOP (Owner bleibt DAVIDCOPCOP; arjanssen hat die Arbeit vorgezogen, weil die eigene Übernahme zeitgleich fehlschlug – bitte nicht doppelt arbeiten).
-
-Stand auf Branch ticket/sim-20 (Laptop-Tests, Format, board validate grün; 100 Demo-Läufe in 9,8 s): sim/game.* (Spielzustand, Zyklen über ObjectModel, score_skills bei Änderung), score in beiden Logs im Demo (leer ohne Spielzustand), Bericht-Hinweis angepasst, ADR-026, sim_params.json `spiel`, Tests test_sim_game.cpp, test_sim_game_log.cpp, HtmlHintTest.
-
-Noch zu tun (Advisor-Review vor dem PR):
-1. Test mit exaktem Endstand im Log: Fixture test/fixtures/sim_params_game.json (Kopie von sim_params_min.json plus `mechanismen` für beide Roboter, `spiel`, `ereignisse` mit Fehlschlag 0, sigma 0, Erfolg 1, Abzug 0, pin_gelb_oben.loader 1). run_match mit apply_demo(cfg, fixture); letzte score-Zelle beider Logs = fester Zahlenwert und = score_skills auf dem von Hand gebauten Zustand (je Goal 5 Teile: Pin, Cup, Pin, Cup, Pin; Zyklen bei 5–45 s und 7–47 s). Für summary.json im PR auf test_score_is_last_value und die P10-Tests verweisen.
-2. In sim/sim_params.json `spiel.quelle` mit „schaetzung“ beginnen lassen (CLAUDE.md), z. B. „schaetzung (Annahme: Cup-Lage ungeklärt …)“; vorher grep -rn schaetzung tools sim test.
-3. JS-Test gegen die echte sim_params.json (test_echte_parameter_und_feld) lokal über jsc laufen lassen (kein node hier): `/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc` mit Shim `var console={log:print}`.
-4. PR: erwähnen, dass Demo-Logs/viewer-demo jetzt eine score-Spalte tragen; robot-make hatte nichts zu bauen (kein C++ in lib/ oder src/ geändert). Dann /finish (Status review).
-
-Danach: A-03 (RoutePlayer). Hinweise des Advisors dafür: depends C-01 → M-07 → F-04 (needs_hw); Überspringen nur mit Begründung in der Übergabe (Player hängt nur an einer Executor-Schnittstelle in lib/match, Adapter an den CycleController kommt mit C-01). Tick-basiertes update(), nichts Blockierendes, kein dynamischer Speicher, Verschachtelung über festen Stack mit body_len; jeder Befehl mit Timeout (timeout_s < 0 → Standard je Op, nie unendlich); retry begrenzt; `at` bricht die laufende Anweisung auch in `parallel` ab; bei 0:00 alles Halt; Namen und signal/wait_for über Schnittstellen, Tests mit eigener Lookup-Tabelle statt field.json.
+Fertig, Branch ticket/sim-20 (Stand von arjanssen übernommen). sim/game.* (Zyklen über ObjectModel, Scorer bei Änderung), Midfield aus field.json (45°-Quadrat, Roboterumrisse je Logzeile, Score(n)), Besitz je Roboter (has_pin/has_cup von Zyklusstart bis -ende), score in beiden Logs (leer ohne Spielzustand), Bericht-Hinweis, ADR-026, `spiel` in sim_params.json (quelle: schaetzung). Tests: exakter Endstand 60 = Handrechnung, Midfield-Geometrie, Besitz, Midfield im Log; Tests hängen nicht an Platzhaltern (Demo-Test setzt Cup-Lage und Midfield selbst). Test-Fix: strip in test_sim_game_log.cpp schrieb bei leerer score-Spalte außerhalb des Vektors (Absturz unter MinGW). Lokal grün: Laptop-Tests (307), Format, board validate, Python-Tests. PROS-Build (make ROBOT=...) scheitert auf diesem Windows-Rechner an einer Umgebungsmeldung (auch auf main); in lib/ und src/ wurde kein C++ geändert, CI baut. JS-Test (jsc) lokal nicht gelaufen; test_livesim.py grün. Kriterium 3 (summary.json): Kette aus C++-Test (Endstand im Log) und test_sim_report.py (P10/Median/P90 aus Logs mit score); kein Test, der ein Szenario bis in summary.json führt. Parallele Lösung ticket/sim-20-davidcop verworfen; Löschen ist Sache des Menschen. Demo- und viewer-demo-Logs tragen jetzt eine score-Spalte. Am Roboter nichts zu prüfen. Danach: A-03 (RoutePlayer), Hinweise des Advisors in git show fc35e54.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-03 · arjanssen (KI) · Ticket angelegt: SIM-10 lieferte nur die Funktion, kein Einhängen (Hinweis von arjanssen zu report.html) · –
 2026-11-03 · arjanssen (KI) · Game + score im Log + Bericht + ADR-026; Übergabe an DAVIDCOPCOP · 
+2026-11-03 · DAVIDCOPCOP (KI) · Übernommen von arjanssen: Endstand-Test, Test-Fix, schaetzung-Quelle · –
+2026-11-03 · DAVIDCOPCOP (KI) · Midfield aus field.json, Besitz in has_pin/has_cup, Endstand-Test, Tests ohne Platzhalter · –

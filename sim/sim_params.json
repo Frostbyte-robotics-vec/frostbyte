@@ -42,6 +42,10 @@
       }
     }
   },
+  "spiel": {
+    "cup_undurchsichtig_unten": false,
+    "quelle": "schaetzung (Annahme: Cup-Lage ungeklärt, ADR-024)"
+  },
   "ereignisse": {
     "loader_einheit":   { "dauer_s": 1.2, "sigma_s": 0.3, "fehlschlag": 0.05, "quelle": "schaetzung" },
     "boden_einheit":    { "dauer_s": 1.8, "sigma_s": 0.5, "fehlschlag": 0.10, "quelle": "schaetzung" },

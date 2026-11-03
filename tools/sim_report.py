@@ -6,7 +6,7 @@
 
 Liest DIR/run<NNN>_<roboter>.csv (Log-Format v1, docs/log_format.md), schreibt summary.json und einen HTML-Bericht
 (P10/Median/P90 je Kennzahl und Roboter). Exit-Code 1 bei Regelverstoß (RULE:… im Log) oder wenn der P10 der Punkte unter
-target_p10 der Route liegt. Fehlt der Punktestand im Log (Scorer: SIM-10), wird target_p10 ausdrücklich als „nicht geprüft“
+target_p10 der Route liegt. Fehlt der Punktestand im Log (nur Demo-Läufe führen einen Spielzustand, ADR-026; Routen erst mit dem Routenspieler A-03), wird target_p10 ausdrücklich als „nicht geprüft“
 gemeldet, nicht als bestanden gezählt.
 """
 import argparse
@@ -137,7 +137,7 @@ def acceptance(summary, targets):
     for robot, target in targets.items():
         score = summary["robots"].get(robot, {}).get("score")
         if score is None:
-            msgs.append(f"target_p10 {target:g} für {robot} nicht geprüft (kein Punktestand im Log, Scorer: SIM-10)")
+            msgs.append(f"target_p10 {target:g} für {robot} nicht geprüft (kein Punktestand im Log: Routenläufe führen noch keinen Spielzustand, ADR-026)")
         elif score["p10"] < target:
             ok = False
             msgs.append(f"{robot}: P10 der Punkte {score['p10']:g} liegt unter target_p10 {target:g}")
@@ -175,7 +175,7 @@ def html_report(summary, msgs):
             out.append("</table>")
         else:
             out.append("<p>Keine Timeouts in den Läufen.</p>")
-    out.append("<p>Punkte erscheinen, sobald der Scorer (SIM-10) im Log steht; bis dahin „–“.</p></body></html>")
+    out.append("<p>Punkte: Teamsumme aus dem Scorer (SIM-10). Im Demo-Lauf kommen sie aus Platzhalter-Zyklen mit geschätzten Werten, nicht von einer Route: kein Maß für die Roboter und keine Prognose. „–“ heißt: das Log hat keinen Punktestand.</p></body></html>")
     return "".join(out)
 
 

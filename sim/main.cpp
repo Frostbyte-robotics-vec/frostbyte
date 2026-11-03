@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
         frostbyte::sim::SimConfig cfg = frostbyte::sim::load_config(params, field, stacker, runner, noise);
         cfg.build = FB_BUILD;
         if (demo)
-            frostbyte::sim::apply_demo(cfg);
+            frostbyte::sim::apply_demo(cfg, params);
         if (!input.empty()) {
             const frostbyte::sim::InputScript script = frostbyte::sim::load_input_script(input, cfg.steuer_ms);
             cfg.stacker.open_loop = frostbyte::sim::input_open_loop(script.stacker);
