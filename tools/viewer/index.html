@@ -682,7 +682,7 @@ if (q.has('selftest')) {
     el.textContent = (el.hidden ? '' : el.textContent + '\n') + `Selbsttest ${name}: ${r.ok} ok, ${r.fail} Fehler` + (r.msgs.length ? '\n' + r.msgs.join('\n') : '');
     el.className = bad ? 'bad' : 'ok'; el.hidden = false;
   };
-  [['logparse_test.js', () => runLogparseTests(FBLog), 'logparse'], ['livesim_test.js', () => runLivesimTests(FBLive), 'livesim']].forEach(([src, run, name]) => {
+  [['logparse_test.js', () => runLogparseTests(FBLog), 'logparse'], ['livesim_test.js', () => runLivesimTests(FBLive, FBLog), 'livesim']].forEach(([src, run, name]) => {
     const s = document.createElement('script'); s.src = src;
     s.onload = () => showTest(name, run());
     document.head.appendChild(s);

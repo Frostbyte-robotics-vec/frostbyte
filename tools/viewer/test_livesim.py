@@ -12,6 +12,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import make_test_logs as mtl
+
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 POS_TOL_IN = 0.1     # Toleranz laut SIM-17
@@ -19,7 +21,8 @@ HEAD_TOL_DEG = 0.5
 
 
 def run_node(body):
-    src = (HERE / "livesim.js").read_text(encoding="utf-8") + "\n" + \
+    src = (HERE / "logparse.js").read_text(encoding="utf-8") + "\n" + \
+        (HERE / "livesim.js").read_text(encoding="utf-8") + "\n" + \
         (HERE / "livesim_test.js").read_text(encoding="utf-8") + "\n" + body
     with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
         f.write(src)
@@ -41,9 +44,13 @@ class TestLivesim(unittest.TestCase):
             raise unittest.SkipTest("node fehlt")
 
     def test_js_einheitentests(self):
-        res = run_node("console.log(JSON.stringify(runLivesimTests(FBLive)));")
+        res = run_node("console.log(JSON.stringify(runLivesimTests(FBLive, FBLog)));")
         self.assertEqual(res["fail"], 0, "\n".join(res["msgs"]))
         self.assertGreater(res["ok"], 30)
+
+    def test_spalten_wie_log_format(self):
+        res = run_node("console.log(JSON.stringify(FBLive.LOG_COLUMNS));")
+        self.assertEqual(res, mtl.COLUMNS)
 
     def test_echte_parameter_und_feld(self):
         params = ROOT / "sim" / "sim_params.json"
