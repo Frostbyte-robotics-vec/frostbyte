@@ -67,6 +67,9 @@ inline constexpr bool tuning_enabled = false;
 // RuleGuard (M-07, ADR-027). TODO(HW): lift_top_offset_in = Hoehe der hoechsten Roboterstelle ueber dem Boden minus gemessene
 // Lifthoehe (bei jeder Lifthoehe konstant, sonst Kurve noetig); Messung in M-09. NaN (Standard) sperrt den Lift
 // nach oben immer. Geraten wird nichts.
+// TODO(HW) (M-09, ADR-027 Nachtrag): lift_footprint_ceiling_in (Lifthoehe, ab der der Footprint 24" ueberschreitet; +inf wenn nie),
+//   arm_min_deg/arm_max_deg (Armbereich mit Footprint <= 24" und Hoehe <= 50", Worst Case ueber die Lifthoehe). NaN (Standard) sperrt
+//   Lift nach oben und Arm in beide Richtungen. Messung in M-11.
 inline constexpr frostbyte::RuleGuardConfig rule_guard{};
 
 // Routen (A-03, ADR-029): Standard-Timeout je Befehlsart, wenn die Route keins nennt. Startwerte (Software-Entscheidung), am

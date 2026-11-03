@@ -7,7 +7,7 @@ Status: angenommen (3. Nov 2026), Ticket M-07. Der Advisor (Opus) hat vorgegeben
 - **SG3:** "no part of the Robot may exceed an overall height of 50"" jederzeit (Webversion v2.1 gelesen; die lokale Textkopie ist am rechten Rand abgeschnitten). Einschließlich. Der Changelog-Eintrag "SG3 clarify Endgame expansion limits" ändert den Wert nicht.
 - **SG12 (Endgame):** in v2.1 kein Höhenwert; laut Changelog wurde die frühere harte Grenze zu einer weichen mit mündlichen Verwarnungen. Eine harte Endgame-Höhe im Midfield (plan.md) ist daher eine Team-Entscheidung, keine v2.1-Regel (siehe M-08).
 - **SG6:** höchstens ein Pin und ein Cup im Besitz. Besitz = "fully supported by the Robot" oder Objekt bewegt sich in allen Richtungen mit dem Roboter (Definition Possession, Anhang B). Bei Verstoß: sofort alles außer Abbauen stoppen.
-- VAIRM1: VEX-U-Regeln gelten wie geschrieben, "except Robot sizes" (betrifft nur die Startgröße). 24"/50" gelten für Stacker und Runner gleich.
+- **VUR1b/c (VEX U):** ein Roboter höchstens 24" × 24" × 24", der andere 15" × 15" × 15", jeweils **zu Beginn des Matches**. Das ist nur die Startgröße; SG2/SG3 (24"/50") gelten danach für Stacker und Runner gleich. `kMaxFootprintIn` bleibt für beide 24; `config::*::footprint_in` (15 beim Runner) ist die Startgröße und wird vom Guard nicht benutzt. (VAIRM1 im Abschnitt VEX AI sagt Ähnliches, ist hier nicht die Grundlage.)
 - **Matchende 0:00:** alle Motoren auf Halt ist eine Festlegung des Teams (CLAUDE.md, plan.md MID-05), kein Manual-Satz, der sich hier zitieren ließe.
 
 ## Entscheidung
@@ -31,3 +31,14 @@ Status: angenommen (3. Nov 2026), Ticket M-07. Der Advisor (Opus) hat vorgegeben
 
 ## Am Roboter zu prüfen
 - Nichts in M-07 selbst; die Messungen (Höhenversatz, Footprint beim Ausfahren) stehen in M-09.
+
+## Nachtrag M-09: SG2/SG3 aus der Geometrie (Software-Teil)
+Der Advisor (Opus) hat vorgegeben: dieselbe Form wie beim Lift-SG3, Arm-Befehle sind Teil des Guards, unbekannt oder nicht gemessen heißt sperren.
+- `GuardCommand` bekommt `arm_v` **hinter** `brake` (bestehende Initialisierungen mit vier Werten bleiben gültig); alle Halt-Befehle im Filter sind jetzt mit benannten Feldern gebaut, damit ein neues Feld den Halt nie still verfälscht. `arm_v != 0` zählt bei Disabled und Matchende als Eingriff; der Arm steht dann auch (inkl. Latch bei 0:00).
+- `GuardInput` bekommt `arm_ok` und `arm_deg` (NaN = unbekannt). Konvention: **positive `arm_v` erhöht `arm_deg`**; die physische Richtung liegt in HAL/config (TODO(HW)), der Guard kennt sie nicht.
+- **Arm-Grenzen** `arm_min_deg` .. `arm_max_deg` (Bereich, in dem Footprint <= 24" und Höhe <= 50" bleiben): bei oder jenseits einer Grenze wird nur die Richtung nach außen gesperrt, zurück in den Bereich bleibt frei (wie Lift nach unten). Unbekannter Armzustand (`!arm_ok`, NaN-Winkel) oder nicht gemessene Grenzen (NaN, Standard) sperren beide Richtungen. Gemeldet werden `kRuleSg2 | kRuleSg3`, weil der Bereich beide Regeln zusammen abdeckt.
+- **Lift-SG2:** neue Größe `lift_footprint_ceiling_in` (Lifthöhe, ab der der Footprint 24" überschreitet). `hard_lift_ceiling_in()` ist jetzt das Minimum aus SG3-Decke (`sg3_lift_ceiling_in()`) und SG2-Decke (`sg2_lift_ceiling_in()`), also folgt `soft_lift_ceiling_in()` automatisch; sonst arbeitete die Sperre gegen den Lageregler des Lifts. Gemeldet wird die Regel, deren Decke erreicht ist (beide, wenn beide).
+- **NaN gegen +inf:** NaN = nicht gemessen = Lift nach oben gesperrt (Standard). `+inf` = gemessen, der Lift verlässt den Footprint nie. (Deshalb `isnan` statt `isfinite`.) Die Testkonfigurationen setzen `+inf`; `config::*::rule_guard` bleibt bis zur Messung (M-11) NaN, der Lift also nach oben gesperrt.
+- **Grenzen des Modells:** getrennte Grenzen je Achse sind nur richtig, wenn jede der Worst Case über die andere Achse ist: Armbereich bei ungünstigster Lifthöhe gemessen, `lift_top_offset_in` mit dem Arm an seinem höchsten Punkt. Zeigt die Messung (M-11), dass das zu streng wird, kommt eine Kurve (MonotoneTable) statt der Zahlen.
+- **Simulation unverändert:** `sim/` baut keinen `RuleGuard`, es benutzt nur `rule_violations()` und die Konstanten. Kein Einfluss auf A-04 und die Referenztests.
+- Der Runner hat keine eigene Größengrenze nach dem Start (VUR1b/c, siehe oben).
