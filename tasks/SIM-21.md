@@ -2,8 +2,8 @@
 id: SIM-21
 phase: "1b"
 titel: Kamera: Verschieben mit gedrücktem Mausrad, R setzt die Kamera zurück
-status: todo
-owner:
+status: in_progress
+owner: arjanssen
 branch: ticket/sim-21
 depends: [SIM-18]
 hw: nein
