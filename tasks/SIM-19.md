@@ -25,8 +25,9 @@ Gleiche Dateien wie SIM-18 (tools/viewer/), erst nach SIM-18 beginnen, um Konfli
 —
 
 ## Übergabe
-—
+Fertig: restartLog() zeichnet nur bei stepNo % logEvery === 0 auf; Node-Test in livesim_test.js (Leeren einen Schritt hinter dem Raster); ADR-025 ergänzt. Node fehlt lokal, Test lief mit macOS-jsc (80 ok, 0 fail; ohne Fix 2 fail). CI führt ihn mit Node aus. Am Roboter nichts zu prüfen (nur Browser-Viewer).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-03 · arjanssen (KI) · Ticket angelegt aus offenem Review-Punkt von PR #45 · –
+2026-11-03 · arjanssen (KI) · Fix restartLog + Test + ADR-Satz
