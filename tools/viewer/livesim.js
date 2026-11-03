@@ -252,7 +252,7 @@ var FBLive = (function () {
       });
       return out.join('\n') + '\n';
     }
-    function restartLog() { rows.stacker.length = 0; rows.runner.length = 0; pending.stacker.length = 0; pending.runner.length = 0; record(); }
+    function restartLog() { rows.stacker.length = 0; rows.runner.length = 0; pending.stacker.length = 0; pending.runner.length = 0; if (stepNo % logEvery === 0) record(); }
 
     // Reihenfolge wie sim/world.cpp: Roboter untereinander (je zur Hälfte), dann Feldrand; Feldelemente zuletzt.
     function collide() {
