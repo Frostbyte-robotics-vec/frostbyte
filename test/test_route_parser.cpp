@@ -4,6 +4,7 @@
 #include <string>
 
 #include "doctest/doctest.h"
+#include "gen/test_square_route.hpp"
 #include "sim/route_parser.hpp"
 
 using namespace frostbyte;
@@ -170,7 +171,7 @@ TEST_CASE("route: fehlerhafte Routen melden Zeilennummer und Grund") {
         {"start P_START\nturn 90 91\nend hold\n", 2, "turn"},
         {"start P_START\nwait\nend hold\n", 2, "wait"},
         {"start P_START\nparallel\nwait 1\nend hold\n", 2, "{"},
-        {"start P_START\ngoto L_A tol\nend hold\n", 2, "erwartet goto"},
+        {"start P_START\ngoto L_A tol\nend hold\n", 2, "Schlüssel 'tol' ohne Wert"},
         {"start P_START\nsignal ein_viel_zu_langer_ereignisname_der_nicht_mehr_passt\nend hold\n", 2, "zu lang"},
         {"start P_START\nsignal GROSS\nend hold\n", 2, "Ereignisname"},
         {"", 1, "start"},
@@ -222,4 +223,39 @@ TEST_CASE("route: C++-Ausgabe enthält jeden Befehl und ist bei gleicher Eingabe
     CHECK(a.find("RouteOp::goto_name") != std::string::npos);
     CHECK(a.find("\"L_A\"") != std::string::npos);
     CHECK(a.find("RouteOp::end_hold") != std::string::npos);
+}
+
+// Der von route2cpp erzeugte Header (CMake erzeugt ihn aus routes/test_square.route) stimmt Feld für Feld mit dem Parser überein.
+TEST_CASE("route: erzeugter Header entspricht dem Parser-Ergebnis") {
+    const RouteNames n = route_names_from_field(std::string(FB_ROOT_DIR) + "/field/field.json");
+    std::ifstream in(std::string(FB_ROOT_DIR) + "/routes/test_square.route", std::ios::binary);
+    REQUIRE(in);
+    std::stringstream ss;
+    ss << in.rdbuf();
+    const auto r = parse_route(ss.str(), n);
+    REQUIRE_MESSAGE(r.ok(), r.error);
+    REQUIRE(routes::kRouteTestSquareLen == static_cast<int>(r.cmds.size()));
+    for (int i = 0; i < routes::kRouteTestSquareLen; ++i) {
+        INFO("Befehl " << i);
+        const RouteCmd& g = routes::kRouteTestSquare[i];
+        const RouteCmd& p = r.cmds[static_cast<std::size_t>(i)];
+        CHECK(g.op == p.op);
+        CHECK(g.line == p.line);
+        CHECK(std::string(g.name) == std::string(p.name));
+        CHECK(g.has_pose == p.has_pose);
+        CHECK(g.x_in == p.x_in);
+        CHECK(g.y_in == p.y_in);
+        CHECK(g.h_deg == p.h_deg);
+        CHECK(g.value == p.value);
+        CHECK(g.tol_in == p.tol_in);
+        CHECK(g.timeout_s == p.timeout_s);
+        CHECK(g.level == p.level);
+        CHECK(g.body_len == p.body_len);
+        CHECK(g.source == p.source);
+        CHECK(g.on_timeout == p.on_timeout);
+        CHECK(g.robot == p.robot);
+    }
+    CHECK(routes::kRouteTestSquare[0].has_pose);  // start pose x=0 y=0 h=0
+    CHECK(routes::kRouteTestSquare[1].x_in == doctest::Approx(48));
+    CHECK(routes::kRouteTestSquare[1].h_deg == doctest::Approx(90));
 }

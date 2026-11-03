@@ -22,3 +22,13 @@ Namen (Goals, Loader, Toggles, Posen) müssen in field/field.json existieren, so
 | `end hold` | Ende, alle Mechanismen halten |
 
 Jede Anweisung mit `timeout` akzeptiert `on_timeout=skip|retry|abort` (Standard `skip`).
+
+## Festlegungen (ADR-023)
+- `start` ist Pflicht und die erste Anweisung (davor höchstens `target_p10`, einmal). `end hold` ist Pflicht und die letzte Anweisung, auf oberster Ebene.
+- `turn <deg>` ist eine absolute Richtung im Feldrahmen.
+- `at <t>s <anweisung>`: nur auf oberster Ebene, `s` hinter der Zahl, genau eine Einzelanweisung (kein Block).
+- `on_timeout=` nur zusammen mit `timeout=`. `timeout`, `tol`, `wait`, Zeiten und `target_p10` müssen größer als 0 sein; `repeat` 1–100; `level` ganze Zahl 0–5 oder `auto`.
+- Ereignisnamen (`signal`, `wait_for`): `a-z`, `0-9`, `_`, höchstens 31 Zeichen; `wait_for stacker.<name>` oder `runner.<name>`.
+- `goto <NAME>` nimmt jeden Feldpunkt; `cycle goal=` nur Goals, `toggle` nur Toggles, `start` nur Posen.
+- Fehler: `Zeile N: Meldung` (erster Fehler). Prüfen: `python3 tools/route2cpp.py <route> <ausgabe.hpp>` (nach `cmake --build build-test`).
+

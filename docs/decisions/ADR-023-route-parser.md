@@ -5,7 +5,7 @@ Status: angenommen (3. Nov 2026), Ticket A-02. Der Advisor (Opus) hat vorgegeben
 ## Entscheidung
 - `lib/match/route.hpp`: flache, speicherfreie Befehlstypen (`RouteCmd`, Namen als `char[32]`). Blöcke (`parallel`, `repeat`) und `at` sind eigene Befehle; die folgenden `body_len` Befehle (verschachtelte mitgezählt) gehören dazu. Das spielt der RoutePlayer (A-03) auf dem Roboter ab.
 - `sim/route_parser.{hpp,cpp}`: `parse_route(text, RouteNames)` (nur Laptop, benutzt `std::string`), `route_names_from_field`, `route_to_cpp`. Erster Fehler bricht ab: `Zeile N: Meldung`, bei nicht geschlossenem Block die Zeile der öffnenden Klammer. Der ältere `sim::load_route` (nur Zeilen lesen) bleibt bis A-04 stehen.
-- `tools/route_export.cpp` (`frostbyte_route_export`) + `tools/route2cpp.py`: erzeugt aus einer Route einen Header mit einem `constexpr RouteCmd`-Feld. Das Python-Skript ruft nur das Programm auf; es gibt keine zweite Grammatik.
+- `tools/route_export.cpp` (`frostbyte_route_export`) + `tools/route2cpp.py`: erzeugt aus einer Route einen Header mit einem `constexpr RouteCmd`-Feld, mit benannten Feldern (`.op = …`, C++20; der Roboter baut mit gnu++26): Ein umsortiertes oder neues Feld in `RouteCmd` bricht den Build statt stillschweigend falsche Werte zu liefern. CMake erzeugt daraus `routes/test_square.route` und `test_route_parser.cpp` vergleicht jedes Feld mit dem Parser. Das Python-Skript ruft nur das Programm auf; es gibt keine zweite Grammatik.
 - Geprüft werden Namen nach Kategorie (Goal, Loader, Toggle, Pose); **Koordinaten werden nicht aufgelöst** (null-Posen wie `MIDFIELD_S` dürfen die Prüfung nicht beeinflussen). `level` ist eine ganze Zahl 0–5 oder `auto` (ADR-022); `auto` löst der Aufrufer auf.
 
 ## Festlegungen, wo das Format offen war
@@ -18,5 +18,6 @@ Status: angenommen (3. Nov 2026), Ticket A-02. Der Advisor (Opus) hat vorgegeben
 - `goto <NAME>` akzeptiert jeden Feldpunkt (Goal, Loader, Toggle, Pose); `cycle goal=` nur Goals, `toggle` nur Toggles, `start` nur Posen.
 
 ## Grenzen / offen
+- Der Python-Test (`tools/test_route2cpp.py`) überspringt sich, wenn `build-test` fehlt; der CI-Job „board“ baut nicht und führt ihn daher nicht aus. Die Prüfung des Headers läuft in den Laptop-Tests (ctest).
 - Der erste Fehler genügt; eine Liste aller Fehler gibt es nicht.
 - Die erzeugten Header (`out/routes/…`) werden noch nirgends in den Roboter-Build eingebunden (A-03).

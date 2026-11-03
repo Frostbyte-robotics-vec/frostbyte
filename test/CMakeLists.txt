@@ -38,8 +38,18 @@ add_executable(frostbyte_sim "${FB_ROOT}/sim/main.cpp")
 target_link_libraries(frostbyte_sim PRIVATE frostbyte_simlib)
 target_compile_definitions(frostbyte_sim PRIVATE FB_BUILD="${FB_BUILD}")
 
+# Erzeugter Routen-Header für test_route_parser.cpp (ADR-023); #include "gen/test_square_route.hpp"
+set(FB_GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/gen_include")
+add_custom_command(
+    OUTPUT "${FB_GEN_DIR}/gen/test_square_route.hpp"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${FB_GEN_DIR}/gen"
+    COMMAND frostbyte_route_export "${FB_ROOT}/field/field.json" "${FB_ROOT}/routes/test_square.route" kRouteTestSquare
+            "${FB_GEN_DIR}/gen/test_square_route.hpp"
+    DEPENDS frostbyte_route_export "${FB_ROOT}/routes/test_square.route" "${FB_ROOT}/field/field.json"
+    VERBATIM)
 file(GLOB FB_TESTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
-add_executable(frostbyte_tests main.cpp ${FB_TESTS})
+add_executable(frostbyte_tests main.cpp ${FB_TESTS} "${FB_GEN_DIR}/gen/test_square_route.hpp")
+target_include_directories(frostbyte_tests PRIVATE "${FB_GEN_DIR}")
 target_include_directories(frostbyte_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/third_party" "${FB_ROOT}/tools")
 target_link_libraries(frostbyte_tests PRIVATE frostbyte_lib frostbyte_simlib)
 target_compile_definitions(frostbyte_tests PRIVATE FB_TEST_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/fixtures"

@@ -94,6 +94,8 @@ Args split_args(const Tokens& t, std::size_t from, const std::vector<std::string
         if (eq == 0)
             throw Fail{"'" + t[i] + "': erwartet Schlüssel=Wert"};
         if (eq == std::string::npos) {
+            if (std::find(allowed.begin(), allowed.end(), t[i]) != allowed.end())
+                throw Fail{"Schlüssel '" + t[i] + "' ohne Wert (" + t[i] + "=<wert>)"};
             a.pos.push_back(t[i]);
             continue;
         }
@@ -475,15 +477,17 @@ std::string route_to_cpp(const std::vector<RouteCmd>& cmds, const std::string& s
       << "#pragma once\n\n#include \"match/route.hpp\"\n\nnamespace frostbyte::routes {\n\n"
       << "inline constexpr RouteCmd " << symbol << "[" << cmds.size() << "] = {\n";
     for (const RouteCmd& c : cmds) {
-        o << "    {RouteOp::" << op_name(c.op) << ", " << c.line << ", \"" << c.name << "\", "
-          << (c.has_pose ? "true" : "false") << ", " << num(c.x_in) << ", " << num(c.y_in) << ", " << num(c.h_deg)
-          << ", " << num(c.value) << ", " << num(c.tol_in) << ", " << num(c.timeout_s) << ", " << c.level << ", "
-          << c.body_len << ", RouteSource::" << (c.source == RouteSource::quiver ? "quiver" : "preload")
-          << ", RouteOnTimeout::"
+        o << "    {.op = RouteOp::" << op_name(c.op) << ", .line = " << c.line << ", .name = \"" << c.name
+          << "\", .has_pose = " << (c.has_pose ? "true" : "false") << ", .x_in = " << num(c.x_in)
+          << ", .y_in = " << num(c.y_in) << ", .h_deg = " << num(c.h_deg) << ", .value = " << num(c.value)
+          << ", .tol_in = " << num(c.tol_in) << ", .timeout_s = " << num(c.timeout_s) << ", .level = " << c.level
+          << ", .body_len = " << c.body_len
+          << ", .source = RouteSource::" << (c.source == RouteSource::quiver ? "quiver" : "preload")
+          << ", .on_timeout = RouteOnTimeout::"
           << (c.on_timeout == RouteOnTimeout::retry   ? "retry"
               : c.on_timeout == RouteOnTimeout::abort ? "abort"
                                                       : "skip")
-          << ", RouteRobot::"
+          << ", .robot = RouteRobot::"
           << (c.robot == RouteRobot::stacker  ? "stacker"
               : c.robot == RouteRobot::runner ? "runner"
                                               : "none")

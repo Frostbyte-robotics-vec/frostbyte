@@ -4,8 +4,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-EXPORTER = ROOT / "build-test" / "frostbyte_route_export"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import route2cpp  # noqa: E402
+
+ROOT = route2cpp.ROOT
+EXPORTER = route2cpp.find_exporter()
 
 
 @unittest.skipUnless(EXPORTER.exists(), "frostbyte_route_export nicht gebaut (cmake -S test -B build-test)")
