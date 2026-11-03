@@ -2,7 +2,7 @@
 id: SIM-17
 phase: "1b"
 titel: Abgleich Browser-Livesim gegen frostbyte_sim (gleicher Eingabeverlauf → gleiche Posen)
-status: review
+status: done
 owner: arjanssen
 branch: ticket/sim-17
 depends: [SIM-15]
