@@ -2,7 +2,8 @@
   "_hinweis": "Alle Werte mit quelle=schaetzung sind Startwerte. SIM-08 ersetzt die Fahrwerte per Systemidentifikation, die Ereigniswerte aus echten Logs.",
   "version": 1,
   "welt": { "schritt_ms": 1, "steuer_ms": 10, "log_ms": 20, "g_in_s2": 386.1 },
-  "live": { "langsam_faktor": 0.35, "ersatzpose_in": { "stacker": { "x_in": -48, "y_in": 0, "h_deg": 0 }, "runner": { "x_in": -48, "y_in": 24, "h_deg": 0 } }, "quelle": "schaetzung (nur Handsteuerung im Browser, SIM-14; Startposen echt erst mit A-08)" },
+  "live": { "langsam_faktor": 0.35, "ersatzpose_in": { "stacker": { "x_in": -48, "y_in": 0, "h_deg": 0 }, "runner": { "x_in": -62, "y_in": 40, "h_deg": 0 } }, "quelle": "schaetzung (nur Handsteuerung im Browser, SIM-14; Startposen echt erst mit A-08)",
+    "kollision": { "radius_in": { "goals": 4.0 }, "quelle": "schaetzung (SIM-15: Goal-Radius nicht gemessen; nur Browser-Handsteuerung, C++-Simulation kollidiert nicht mit Goals)" } },
   "rauschen_profile": {
     "none": { "skala": 0.0 },
     "realistic": { "skala": 1.0 },
