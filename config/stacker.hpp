@@ -2,6 +2,7 @@
 
 #include "control/motion_controller.hpp"
 #include "match/driver_map.hpp"
+#include "tasks/cycle_controller.hpp"
 #include "util/rule_guard.hpp"
 
 namespace config::stacker {
@@ -68,5 +69,10 @@ inline constexpr bool tuning_enabled = false;
 // Lifthoehe (bei jeder Lifthoehe konstant, sonst Kurve noetig); Messung in M-09. NaN (Standard) sperrt den Lift
 // nach oben immer. Geraten wird nichts.
 inline constexpr frostbyte::RuleGuardConfig rule_guard{};
+
+// Zyklus (C-01, ADR-028). Die Zustands-Timeouts sind Startwerte (Software-Entscheidung), am Roboter pruefen.
+// TODO(HW): grip_offset_in = Hoehe des Greifers ueber der gemessenen Lifthoehe (und retreat_lift_in = Lifthoehe beim Rueckzug).
+// NaN (Standard) lehnt jeden Zyklus ab bzw. haelt beim Rueckzug die Hoehe. Geraten wird nichts.
+inline constexpr frostbyte::CycleConfig cycle{};
 
 }  // namespace config::stacker
