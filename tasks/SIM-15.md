@@ -2,8 +2,8 @@
 id: SIM-15
 phase: "1b"
 titel: Live-Kollisionen im Browser (Feldrand, Feldelemente, Roboter–Roboter) mit COLLISION-Ereignis
-status: todo
-owner:
+status: in_progress
+owner: arjanssen
 branch: ticket/sim-15
 depends: [SIM-14]
 hw: nein
