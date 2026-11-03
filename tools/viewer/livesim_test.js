@@ -274,6 +274,17 @@ function runLivesimTests(FBLive, FBLog) {
     live.clearLog();
     L = FBLog.parseLog(live.exportCsv().stacker);
     check('Log leeren: nur noch eine Zeile (aktuelle Zeit)', L.robots.stacker.n === 1 && Math.abs(L.robots.stacker.num.t_s[0] - 0.2) < 1e-9, L.robots.stacker.n);
+    // SIM-19: Log leeren mitten im Raster → keine Zeile abseits des 20-ms-Rasters (nur die Schlusszeile darf abweichen)
+    live = FBLive.create(params, fld);
+    for (let k = 0; k < 10; k++) live.advance(0.02);
+    live.advance(0.005);   // ein Schritt hinter dem Raster
+    live.clearLog();
+    L = FBLog.parseLog(live.exportCsv().stacker);
+    check('Log leeren zwischen Rasterpunkten: keine Zeile', L.robots.stacker === undefined || L.robots.stacker.n === 0, L.robots.stacker && L.robots.stacker.n);
+    for (let k = 0; k < 5; k++) live.advance(0.02);
+    L = FBLog.parseLog(live.exportCsv().stacker);
+    const tt = Array.from(L.robots.stacker.num.t_s);
+    check('nach Leeren mitten im Raster liegen alle Zeilen auf dem Raster', tt.length === 5 && tt.every(t => Math.abs(t / 0.02 - Math.round(t / 0.02)) < 1e-6), tt.join());
     live.reset();
     L = FBLog.parseLog(live.exportCsv().stacker);
     check('R: neue Aufnahme ab t = 0', L.robots.stacker.n === 1 && L.robots.stacker.num.t_s[0] === 0);
