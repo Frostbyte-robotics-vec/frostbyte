@@ -2,7 +2,7 @@
 id: SIM-13
 phase: "1b"
 titel: Eigene Simulationsseite <Pages-URL>/sim/ – nur 3D-Ansicht und Ereignis-Log
-status: in_progress
+status: review
 owner: DAVIDCOPCOP
 branch: ticket/sim-13
 depends: [SIM-12]
