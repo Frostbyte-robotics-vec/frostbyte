@@ -82,6 +82,8 @@ class SimPageTest(unittest.TestCase):
         i = src.index("function updateLive()")
         body = src[i:src.index("async function startLive", i)]
         self.assertIn("SIM ? head :", body)
+        head = body[body.index("const head = "):body.index("$('liveinfo').textContent")]
+        self.assertNotIn("\\n", head)
         # Tastenhilfe und Ersatzpose-Hinweise stehen nur noch in der Viewer-Variante
         self.assertLess(body.index("SIM ? head :"), body.index("W/S fahren"))
 

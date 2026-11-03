@@ -733,7 +733,7 @@ renderLogList();
 const q = new URLSearchParams(location.search);
 const fetchText = u => fetch(u).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); });
 // /sim/ startet ohne Zeitleiste direkt im Live-Modus (nach dem Feld, damit die Startposen stimmen)
-const autoLive = () => { if (SIM) startLive().catch(e => alert('Live: ' + e.message)); };
+const autoLive = () => { if (SIM) startLive().catch(e => console.warn('Live-Autostart: ' + e.message)); };
 if (location.protocol !== 'file:') {
   // Lokal liegt das Feld zwei Ordner höher, auf der Veröffentlichung (Pages) neben dem Viewer.
   fetchText(q.get('field') || '../../field/field.json').catch(() => fetchText('field.json')).then(t => loadField(t, 'field.json')).catch(() => {}).then(autoLive);
