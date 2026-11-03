@@ -10,10 +10,11 @@ function runLivesimTests(FBLive) {
 
   const drive = (spur) => ({ kS_V: 0.5, kV_V_per_in_s: 0.2, kA_V_per_in_s2: 0.05, spurbreite_in: spur, mu: 0.9,
     motor_max_V: 10.0 });
+  const outline = { laenge: 10, breite: 10 };
   const params = {
     welt: { schritt_ms: 1, steuer_ms: 10, g_in_s2: 386.1 },
     live: { langsam_faktor: 0.4, ersatzpose_in: { stacker: { x_in: -30, y_in: 10, h_deg: 90 }, runner: { x_in: 30, y_in: -10, h_deg: 0 } } },
-    roboter: { stacker: { antrieb: drive(14), akku: { spannung_V: 12.8 } }, runner: { antrieb: drive(11), akku: { spannung_V: 8.0 } } }
+    roboter: { stacker: { antrieb: drive(14), akku: { spannung_V: 12.8 }, umriss_in: outline }, runner: { antrieb: drive(11), akku: { spannung_V: 8.0 }, umriss_in: outline } }
   };
   const press = (keys) => Object.assign({ w: false, a: false, s: false, d: false, shift: false }, keys);
   const run = (live, seconds, chunkMs) => { for (let t = 0; t < seconds * 1000; t += chunkMs) live.advance(chunkMs / 1000); };
@@ -128,14 +129,96 @@ function runLivesimTests(FBLive) {
   check('R: Tempo null', live.speed('stacker') === 0 && live.speed('runner') === 0);
 
   // 8 Startposen aus field.json; null → Ersatzpose mit Hinweis
-  const field = { posen: [{ id: 'START_STACKER', x_in: 5, y_in: 6, h_deg: 45 }, { id: 'START_RUNNER', x_in: null, y_in: null, h_deg: null }] };
+  const field = { feld_in: 144, posen: [{ id: 'START_STACKER', x_in: 5, y_in: 6, h_deg: 45 }, { id: 'START_RUNNER', x_in: null, y_in: null, h_deg: null }] };
   live = FBLive.create(params, field);
   const q1 = live.pose('stacker'), q2 = live.pose('runner');
   check('Startpose aus field.json', q1.x_in === 5 && q1.y_in === 6 && q1.h_deg === 45);
   check('null-Pose → Ersatzpose', q2.x_in === 30 && q2.y_in === -10 && q2.h_deg === 0);
   check('Hinweis nur für die Ersatzpose', live.notes.length === 1 && /START_RUNNER/.test(live.notes[0]), live.notes.join('|'));
   live = FBLive.create(params);
-  check('ohne field.json: zwei Hinweise', live.notes.length === 2);
+  check('ohne field.json: zwei Hinweise zu Startposen', live.notes.filter(n => /START_/.test(n)).length === 2);
+
+
+  // 10 Kollisionsgeometrie: dieselben Fälle wie test/test_sim_collision.cpp (SIM-05)
+  const box = (x, y, h) => ({ x_in: x, y_in: y, length_in: 10, width_in: 10, h_deg: h });
+  const pbb = FBLive.penetrationBoxBox, pbc = FBLive.penetrationBoxCircle, pif = FBLive.pushInsideField;
+  const near = (a, b) => Math.abs(a - b) < 1e-6;
+  check('Box/Box: getrennt', pbb(box(0, 0, 0), box(11, 0, 0)) === null && pbb(box(0, 0, 45), box(0, 20, 45)) === null);
+  check('Box/Box: Berührung der Kanten = kein Kontakt', pbb(box(0, 0, 0), box(10, 0, 0)) === null);
+  let m = pbb(box(0, 0, 0), box(8, 0, 0));
+  check('Box/Box: Überlappung 2 Zoll, a geht nach −x', m && near(m.x, -2) && near(m.y, 0), JSON.stringify(m));
+  check('Box/Box: 45°-Box nur bei echtem Kontakt', pbb(box(0, 0, 0), box(11.5, 0, 45)) !== null && pbb(box(0, 0, 0), box(12.5, 0, 45)) === null
+    && pbb(box(0, 0, 0), box(11, 11, 45)) === null);
+  const ab = pbb(box(0, 0, 10), box(7, 3, 30)), ba = pbb(box(7, 3, 30), box(0, 0, 10));
+  check('Box/Box: Verschiebung symmetrisch', ab && ba && near(ab.x, -ba.x) && near(ab.y, -ba.y));
+  m = pif(box(0, 0, 0), 144);
+  check('Rand: Box innen → (0, 0)', m.x === 0 && m.y === 0);
+  m = pif(box(70, 0, 0), 144);
+  check('Rand: Box über die Wand → −3', near(m.x, -3) && near(m.y, 0), JSON.stringify(m));
+  m = pif(box(66, 0, 45), 144);
+  check('Rand: gedrehte Box zählt mit der Ecke', near(m.x, -(66 + 7.0710678 - 72)) || Math.abs(m.x + (66 + 7.0710678 - 72)) < 1e-6, m.x);
+  m = pif(box(70, -70, 0), 144);
+  check('Rand: Ecke → beide Achsen', near(m.x, -3) && near(m.y, 3));
+  const circ = { x_in: 20, y_in: 0, r_in: 3 };
+  m = pbc(box(0, 0, 0), circ);
+  check('Kreis: kein Kontakt', m === null);
+  m = pbc(box(14, 0, 0), circ);
+  check('Kreis: 2 Zoll zurück', m && near(m.x, -2) && Math.abs(m.y) < 1e-9, JSON.stringify(m));
+  check('Kreis: Ecke trifft, Kante nicht', pbc(box(0, 0, 0), { x_in: 8, y_in: 8, r_in: 3 }) === null && pbc(box(2, 2, 0), { x_in: 8, y_in: 8, r_in: 3 }) !== null);
+  m = pbc(box(0, 0, 0), { x_in: 3, y_in: 0, r_in: 1 });
+  check('Kreis: Mittelpunkt in der Box → über die nächste Seite', m && near(m.x, -3) && near(m.y, 0), JSON.stringify(m));
+
+  // 11 Kollisionen im Live-Lauf: Pose bleibt im Feld, Ereignis nur beim Kontaktbeginn
+  const cField = (extra) => Object.assign({ feld_in: 144, posen: [{ id: 'START_STACKER', x_in: 50, y_in: 0, h_deg: 0 }, { id: 'START_RUNNER', x_in: 0, y_in: -50, h_deg: 0 }] }, extra);
+  live = FBLive.create(params, cField());
+  live.setKeys(press({ w: true }));
+  run(live, 3, 10);
+  let ev = live.takeEvents();
+  const ps2 = live.pose('stacker');
+  check('Wand: Pose bleibt im Feld', ps2.x_in <= 72 - 5 + 1e-6 && ps2.x_in > 60, JSON.stringify(ps2));
+  check('Wand: genau ein COLLISION:wall (nicht jeder Takt)', ev.filter(e => e.text === 'COLLISION:wall' && e.robot === 'stacker').length === 1, JSON.stringify(ev));
+  check('Wand: BLOCKED nach > 0,5 s Fahreingabe, einmal', ev.filter(e => e.text === 'BLOCKED').length === 1 && ev.length === 2, JSON.stringify(ev));
+  check('takeEvents leert die Liste', live.takeEvents().length === 0);
+  live.setKeys(press({ s: true }));
+  run(live, 1, 10);
+  live.setKeys(press({ w: true }));
+  run(live, 2, 10);
+  ev = live.takeEvents();
+  check('nach Lösen vom Rand und erneutem Anfahren: neuer Kontakt, neues Ereignis', ev.filter(e => e.text === 'COLLISION:wall').length === 1, JSON.stringify(ev));
+  check('Rückwärts-Lösen erzeugt keine Ereignisse außer dem neuen Kontakt', ev.every(e => e.text === 'COLLISION:wall' || e.text === 'BLOCKED'), JSON.stringify(ev));
+
+  live = FBLive.create(params, cField({ posen: [{ id: 'START_STACKER', x_in: 0, y_in: 0, h_deg: 0 }, { id: 'START_RUNNER', x_in: 25, y_in: 0, h_deg: 180 }] }));
+  live.setKeys(press({ w: true }));
+  run(live, 1.5, 10);
+  ev = live.takeEvents();
+  check('Roboter–Roboter: beide bekommen ein Ereignis mit dem Namen des anderen',
+    ev.filter(e => e.robot === 'stacker' && e.text === 'COLLISION:runner').length === 1 && ev.filter(e => e.robot === 'runner' && e.text === 'COLLISION:stacker').length === 1, JSON.stringify(ev));
+  const pa = live.pose('stacker'), pb = live.pose('runner');
+  check('Roboter durchdringen sich nicht', Math.abs(pa.x_in - pb.x_in) >= 10 - 1e-6, JSON.stringify([pa, pb]));
+
+  // 12 Feldelemente: nur mit Radius in den Parametern, null-Koordinaten übersprungen
+  const pEl = Object.assign({}, params, { live: Object.assign({}, params.live, { kollision: { radius_in: { goals: 3 } } }) });
+  const fEl = cField({ goals: [{ id: 'G1', x_in: 60, y_in: 0 }, { id: 'G_NULL', x_in: null, y_in: null }] });
+  live = FBLive.create(pEl, fEl);
+  check('Elemente: null-Koordinaten übersprungen', live.elements().length === 1 && live.elements()[0].id === 'G1');
+  live.setKeys(press({ w: true }));
+  run(live, 2, 10);
+  ev = live.takeEvents();
+  check('Element: COLLISION:G1, Roboter bleibt davor', ev.filter(e => e.text === 'COLLISION:G1').length === 1 && live.pose('stacker').x_in <= 60 - 3 - 5 + 1e-6, JSON.stringify([ev, live.pose('stacker')]));
+  live = FBLive.create(params, fEl);
+  check('Ohne Radius in den Parametern: keine Feldelemente', live.elements().length === 0);
+
+  // 13 Umriss für die Anzeige und Reset
+  live = FBLive.create(params, cField());
+  const ol = live.outline('stacker');
+  check('Umriss: 4 Ecken um die Pose', ol.length === 4 && near(ol[0].x + ol[2].x, 100) && near(ol[1].x + ol[3].x, 100));
+  live.setKeys(press({ w: true }));
+  run(live, 3, 10);
+  live.reset();
+  check('R: Ereignisse und Kontakte zurückgesetzt', live.takeEvents().length === 0);
+  live.setKeys(press({ w: true }));
+  run(live, 3, 10);
+  check('nach R kann dieselbe Wand wieder ein Ereignis erzeugen', live.takeEvents().filter(e => e.text === 'COLLISION:wall').length === 1);
 
   // 9 Fehlende Parameter melden sich laut
   let threw = false;

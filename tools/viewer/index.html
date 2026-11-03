@@ -607,10 +607,15 @@ function updateLive(){
   ['stacker', 'runner'].forEach(n => {
     const p = L.sim.pose(n);
     placeOnField(L.models[n], p.x_in, p.y_in, p.h_deg);
+    const pts = L.sim.outline(n).map(c => new THREE.Vector3(c.x_in, 0.3, -c.y_in));
+    L.outlines[n].geometry.setFromPoints(pts); L.outlines[n].visible = L.showOutline;
   });
+  L.sim.takeEvents().forEach(e => { L.log.push(`${e.t_s.toFixed(2)} s ${e.robot}: ${e.text}`); });
+  if (L.log.length > 4) L.log.splice(0, L.log.length - 4);
   const p = L.sim.pose(a);
   $('liveinfo').textContent = `Live · ${a === 'stacker' ? 'Stacker' : 'Runner'} aktiv · ${fmt(L.sim.speed(a))} in/s · x ${fmt(p.x_in)} y ${fmt(p.y_in)} h ${fmt(p.h_deg, 0)}°`
-    + (liveHeld.shift ? ' · langsam' : '') + '\nW/S fahren · A/D drehen · Shift langsam · Tab Roboter wechseln · R zurücksetzen'
+    + (liveHeld.shift ? ' · langsam' : '') + '\nW/S fahren · A/D drehen · Shift langsam · Tab Roboter wechseln · R zurücksetzen · C Kollisionsumriss'
+    + (L.log.length ? '\n' + L.log.join('\n') : '')
     + (L.sim.notes.length ? '\n' + L.sim.notes.join('\n') : '');
 }
 async function startLive(){
@@ -621,7 +626,12 @@ async function startLive(){
   const models = {};
   ['stacker', 'runner'].forEach(n => { const m = makeModel(n, null); m.userData.fbLog = false; scene.add(m); models[n] = m; });
   S.playing = false; syncPlay();
-  S.live = { sim, models };
+  const outlines = {};
+  ['stacker', 'runner'].forEach(n => {
+    const l = new THREE.LineLoop(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: n === 'stacker' ? 0xff5a4e : 0x4e9bff }));
+    l.frustumCulled = false; l.visible = false; scene.add(l); outlines[n] = l;
+  });
+  S.live = { sim, models, outlines, showOutline: false, log: [] };
   $('bLive').setAttribute('aria-pressed', true); $('liveinfo').hidden = false;
   document.body.dataset.live = '1';
   liveSend(); S.dirty = true;
@@ -629,6 +639,7 @@ async function startLive(){
 function stopLive(){
   if (!S.live) return;
   Object.values(S.live.models).forEach(m => scene.remove(m));
+  Object.values(S.live.outlines).forEach(l => scene.remove(l));
   S.live = null; document.body.dataset.live = '';
   $('bLive').setAttribute('aria-pressed', false); $('liveinfo').hidden = true; S.dirty = true;
 }
@@ -637,7 +648,8 @@ window.addEventListener('keydown', e => {
   if (!S.live || e.target.tagName === 'INPUT' && e.target.type !== 'range' || e.target.tagName === 'SELECT') return;
   if (e.code in LIVE_KEYS) { liveHeld[LIVE_KEYS[e.code]] = true; e.preventDefault(); }
   else if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) S.live.sim.toggle(); }
-  else if (e.code === 'KeyR') { if (!e.repeat) S.live.sim.reset(); }
+  else if (e.code === 'KeyR') { if (!e.repeat) { S.live.sim.reset(); S.live.log.length = 0; } }
+  else if (e.code === 'KeyC') { if (!e.repeat) S.live.showOutline = !S.live.showOutline; }
   liveHeld.shift = e.shiftKey; liveSend();
 });
 window.addEventListener('keyup', e => {
