@@ -10,6 +10,7 @@
 
 #include "sim/collision.hpp"
 #include "sim/drive.hpp"
+#include "sim/game_state.hpp"
 #include "sim/rng.hpp"
 #include "sim/sensor_models.hpp"
 
@@ -42,6 +43,7 @@ struct SimConfig {
     std::string build = "-";
     std::string noise_profile = "realistic";  // none | realistic | harsh (rauschen_profile in sim_params.json)
     double field_in = 144.0;                  // Kantenlänge des Feldquadrats; load_config nimmt feld_in aus field.json
+    GameSetup game;  // Spielzustand und Szenarioereignisse (SIM-20); leer = keine Punkte im Log
     RobotSetup stacker;
     RobotSetup runner;
 };

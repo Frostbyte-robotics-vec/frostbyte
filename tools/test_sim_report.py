@@ -165,6 +165,19 @@ class OutputTest(unittest.TestCase):
             self.assertIn("<table", html)
             self.assertIn("stacker", html)
             self.assertNotIn("<script", html)
+            self.assertNotIn("SIM-10", html)  # Hinweis auf den fehlenden Scorer ist weg (SIM-20)
+
+    def test_html_hint_only_without_score(self):
+        with tempfile.TemporaryDirectory() as d:
+            write_run(d, 0, "stacker", [row(0.0, "stacker", est=(0, 0, 0), truth=(0, 0, 0))])
+            sim_report.main([d, "--html", os.path.join(d, "r.html")])
+            with open(os.path.join(d, "r.html"), encoding="utf-8") as f:
+                self.assertIn("kein Punktestand im Log", f.read())
+        with tempfile.TemporaryDirectory() as d:
+            write_run(d, 0, "stacker", [row(0.0, "stacker", est=(0, 0, 0), truth=(0, 0, 0), score=25)])
+            sim_report.main([d, "--html", os.path.join(d, "r.html")])
+            with open(os.path.join(d, "r.html"), encoding="utf-8") as f:
+                self.assertNotIn("kein Punktestand im Log", f.read())
 
 
 if __name__ == "__main__":

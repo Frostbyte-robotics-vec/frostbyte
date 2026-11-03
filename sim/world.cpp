@@ -61,7 +61,7 @@ public:
     // truth: wahre Pose aus dem Fahrmodell; leer, solange die Startpose null ist (keine Pose erfinden).
     // est: Pose aus Odometrie und IMU; gps: letzte GPS-Messung (nur wenn gültig); event: Ereignisse seit der letzten Zeile.
     void row(int t_ms, const std::optional<Pose>& truth, const std::optional<Pose>& est, const GpsSample* gps,
-             const std::string& event) {
+             const std::string& event, const GameState* game = nullptr, int robot_index = 0, int team_score = 0) {
         logfmt::Row r;
         r.t_s = t_ms / 1000.0;
         r.robot = robot_.name.c_str();
@@ -80,6 +80,11 @@ public:
             r.gy_in = gps->y_in;
             r.gh_deg = gps->heading_deg;
             r.g_err_in = gps->error_in;
+        }
+        if (game) {
+            r.score = team_score;
+            r.has_pin = game->pins(robot_index);
+            r.has_cup = game->cups(robot_index);
         }
         if (!event.empty())
             r.event = event.c_str();
@@ -167,6 +172,7 @@ SimConfig load_config(const std::string& params_path, const std::string& field_p
         throw std::runtime_error("sim_params welt: log_ms muss die Matchdauer (" + std::to_string(match_ms) +
                                  " ms) ohne Rest teilen");
     cfg.field_in = field.at("feld_in").as_number();
+    cfg.game = load_game_setup(field);
 
     const auto robot = [&](const char* name, const char* start_id, const std::string& route) {
         RobotSetup r;
@@ -231,6 +237,10 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
             ++result.rule_violations;
         }
     }
+    std::optional<GameState> game;
+    std::size_t next_event = 0;
+    if (!cfg.game.empty())
+        game.emplace(cfg.game);
     const double dt_s = cfg.schritt_ms / 1000.0;
     const auto truth_of = [](const RobotRun& r) {
         return r.drive ? std::optional<Pose>(r.drive->pose()) : std::nullopt;
@@ -275,13 +285,30 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
         }
 
         if (t_ms % cfg.log_ms == 0) {
+            // Spielzustand: fällige Ereignisse anwenden, Punktestand als "wäre das Match jetzt zu Ende" (ADR-026).
+            int team_score = 0;
+            if (game) {
+                for (; next_event < cfg.game.events.size() && cfg.game.events[next_event].t_ms <= t_ms; ++next_event) {
+                    const GameEvent& e = cfg.game.events[next_event];
+                    for (const std::string& v : game->apply(e)) {
+                        runs[e.robot].add_event(v);
+                        ++result.rule_violations;
+                    }
+                }
+                std::vector<Box> boxes;
+                for (const RobotRun& r : runs)
+                    if (r.drive)
+                        boxes.push_back(r.box());
+                team_score = game->score(robots_in_midfield(cfg.game.midfield, boxes));
+            }
             for (int i = 0; i < 2; ++i) {
                 RobotRun& r = runs[i];
                 if (r.drive) {
                     const Pose p = r.drive->pose();
                     r.gps_sample = r.gps->measure(p.x_in, p.y_in, p.h_deg, r.speed_in_s());
                 }
-                logs[i]->row(t_ms, truth_of(r), r.est, r.drive ? &r.gps_sample : nullptr, r.events);
+                logs[i]->row(t_ms, truth_of(r), r.est, r.drive ? &r.gps_sample : nullptr, r.events,
+                             game ? &*game : nullptr, i, team_score);
                 r.events.clear();
             }
             ++result.log_rows;

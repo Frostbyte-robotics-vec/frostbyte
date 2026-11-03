@@ -26,8 +26,9 @@ Hängt praktisch an einer Quelle für Spielzustandsänderungen: Das Demo bewegt 
 —
 
 ## Übergabe
-—
+Fertig (ADR-026): sim/game_state.* (Goals, Toggles, Besitz SG6, Ereignisse), run_match schreibt score/has_cup/has_pin (Teamstand in beiden Logs, Raster log_ms), Midfield-Roboter per 45°-Quadrat, Startpins aus field.json; sim_report-Hinweistext angepasst. Tests: test/test_sim_game_state.cpp (11 Fälle, eigene Goals/Posen, Handrechnungen 2–4), tools/test_sim_report.py. Advisor-Rat: Szenario-Ereignisse statt Routenspieler (A-03 offen), Tests unabhängig von Platzhaltern. Lokal: Laptop-Tests grün (PATH mit /c/msys64/ucrt64/bin nötig, sonst 0xc0000139), Format ok, board validate ok. PROS-Build (make ROBOT=…) scheitert hier schon auf main an „Cannot create temporary file in C:\WINDOWS“ (Umgebung); die Änderung berührt nur sim/, test/, tools/, CI baut. Nicht erledigt: Demo (apply_demo) liefert keine Ereignisse; echte Punkte erst mit A-03 (Routenspieler). Am Roboter nichts zu prüfen (nur Simulation).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-03 · arjanssen (KI) · Ticket angelegt: SIM-10 lieferte nur die Funktion, kein Einhängen (Hinweis von arjanssen zu report.html) · –
+2026-11-03 · DAVIDCOPCOP (KI) · Spielzustand, score-Spalte, Bericht, ADR-026 · –

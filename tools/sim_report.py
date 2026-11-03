@@ -6,7 +6,7 @@
 
 Liest DIR/run<NNN>_<roboter>.csv (Log-Format v1, docs/log_format.md), schreibt summary.json und einen HTML-Bericht
 (P10/Median/P90 je Kennzahl und Roboter). Exit-Code 1 bei Regelverstoß (RULE:… im Log) oder wenn der P10 der Punkte unter
-target_p10 der Route liegt. Fehlt der Punktestand im Log (Scorer: SIM-10), wird target_p10 ausdrücklich als „nicht geprüft“
+target_p10 der Route liegt. Fehlt der Punktestand im Log (Spielzustand: SIM-20, ohne Szenario oder Routenspieler A-03 gibt es keinen), wird target_p10 ausdrücklich als „nicht geprüft“
 gemeldet, nicht als bestanden gezählt.
 """
 import argparse
@@ -137,7 +137,7 @@ def acceptance(summary, targets):
     for robot, target in targets.items():
         score = summary["robots"].get(robot, {}).get("score")
         if score is None:
-            msgs.append(f"target_p10 {target:g} für {robot} nicht geprüft (kein Punktestand im Log, Scorer: SIM-10)")
+            msgs.append(f"target_p10 {target:g} für {robot} nicht geprüft (kein Punktestand im Log: Spielzustand nötig, SIM-20)")
         elif score["p10"] < target:
             ok = False
             msgs.append(f"{robot}: P10 der Punkte {score['p10']:g} liegt unter target_p10 {target:g}")
@@ -175,7 +175,10 @@ def html_report(summary, msgs):
             out.append("</table>")
         else:
             out.append("<p>Keine Timeouts in den Läufen.</p>")
-    out.append("<p>Punkte erscheinen, sobald der Scorer (SIM-10) im Log steht; bis dahin „–“.</p></body></html>")
+    if any(m.get("score") is None for m in summary["robots"].values()):
+        out.append("<p>Punkte: „–“, kein Punktestand im Log (der Spielzustand liefert ihn, SIM-20; ohne Szenario oder "
+                   "Routenspieler A-03 bleibt die Spalte leer).</p>")
+    out.append("</body></html>")
     return "".join(out)
 
 
