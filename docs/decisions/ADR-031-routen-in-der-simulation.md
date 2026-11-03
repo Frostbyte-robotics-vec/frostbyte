@@ -1,4 +1,4 @@
-# ADR-030: Routen in der Simulation
+# ADR-031: Routen in der Simulation
 
 Status: angenommen (3. Nov 2026), Ticket A-04. Der Advisor (Opus) hat vorgegeben: A-04 ist nicht A-10 (kein Roboter-Adapter) und kein Spielzustand aus Routen; Sim-Executor in `sim/`, eine Bewegung zur Zeit, Signalbus über beide Roboter, `toggle` am Stacker beim Laden ablehnen, Gegenprobe ohne Kollision, Tests unabhängig von Platzhaltern.
 

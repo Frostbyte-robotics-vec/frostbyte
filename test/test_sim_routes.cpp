@@ -6,7 +6,7 @@
 #include "doctest/doctest.h"
 #include "sim/world.hpp"
 
-// Routen in der Simulation (A-04, ADR-030): beide Roboter spielen ihre Route gleichzeitig durch den RoutePlayer.
+// Routen in der Simulation (A-04, ADR-031): beide Roboter spielen ihre Route gleichzeitig durch den RoutePlayer.
 // Testfeld test/fixtures/field_route.json und Testwerte statt config/ und field/field.json (Platzhalter).
 namespace {
 

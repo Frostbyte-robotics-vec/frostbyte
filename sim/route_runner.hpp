@@ -14,7 +14,7 @@
 #include "sim/drive.hpp"
 #include "sim/json.hpp"
 
-// Routen in der Simulation (A-04, ADR-030): der RoutePlayer (A-03) spielt eine geparste Route ab, ein Sim-Executor setzt goto
+// Routen in der Simulation (A-04, ADR-031): der RoutePlayer (A-03) spielt eine geparste Route ab, ein Sim-Executor setzt goto
 // und turn in MotionController-Befehle um. Das ist kein Vorgriff auf A-10 (Roboter-Adapter): intake, cycle und toggle sind
 // hier Platzhalter ohne Modell und enden sofort mit done. Zoll, Grad, Sekunden.
 namespace frostbyte::sim {

@@ -10,7 +10,7 @@ hw: nein
 ---
 
 ## Ziel
-In der Simulation lösen `cycle` und `intake` der Route den Spielzustand aus (ADR-026, ADR-030): `Game` bekommt einen Aufruf `start_cycle`, der `SimRouteExecutor` meldet `done` erst nach der Zyklusdauer aus `ObjectModel::run_cycle` (Fehlschlag → `failed`), Besitz (`has_pin`/`has_cup`) und Punktestand (`score`) entstehen aus den Routen statt aus festen Demo-Zyklen. Entstanden aus A-04, dort sind diese Befehle Platzhalter, die sofort `done` melden.
+In der Simulation lösen `cycle` und `intake` der Route den Spielzustand aus (ADR-026, ADR-031): `Game` bekommt einen Aufruf `start_cycle`, der `SimRouteExecutor` meldet `done` erst nach der Zyklusdauer aus `ObjectModel::run_cycle` (Fehlschlag → `failed`), Besitz (`has_pin`/`has_cup`) und Punktestand (`score`) entstehen aus den Routen statt aus festen Demo-Zyklen. Entstanden aus A-04, dort sind diese Befehle Platzhalter, die sofort `done` melden.
 
 ## Fertig, wenn …
 - Ein Zyklus der Route erscheint nach seiner Dauer im Stapel des Goals und im `score` beider Logs; ein fehlgeschlagener Zyklus meldet `failed` (on_timeout greift)
@@ -19,7 +19,7 @@ In der Simulation lösen `cycle` und `intake` der Route den Spielzustand aus (AD
 - Laptop-Tests grün, beide Roboter bauen, `python tools/board.py validate` grün
 
 ## Kontext
-ADR-026 (Spielzustand), ADR-030 (Routen in der Simulation), `sim/route_runner.cpp` (`SimRouteExecutor::start`, Platzhalter).
+ADR-026 (Spielzustand), ADR-031 (Routen in der Simulation), `sim/route_runner.cpp` (`SimRouteExecutor::start`, Platzhalter).
 
 ## Hardware-Prüfung
 —

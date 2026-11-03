@@ -96,7 +96,7 @@ void SimRouteExecutor::start(int lane, const RouteCmd& cmd, double now_s) {
             l.wait_name = cmd.name;
             l.status = StepStatus::running;
             break;
-        default:  // start, intake, cycle, toggle: Platzhalter ohne Modell (ADR-030)
+        default:  // start, intake, cycle, toggle: Platzhalter ohne Modell (ADR-031)
             l.status = StepStatus::done;
             break;
     }
