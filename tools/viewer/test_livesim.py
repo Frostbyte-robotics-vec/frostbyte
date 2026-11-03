@@ -14,6 +14,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
+POS_TOL_IN = 0.1     # Toleranz laut SIM-17
+HEAD_TOL_DEG = 0.5
 
 
 def run_node(body):
@@ -54,6 +56,24 @@ for (let i = 0; i < 100; i++) live.advance(0.01);
 console.log(JSON.stringify({{ notes: live.notes.length, pose: live.pose('stacker') }}));""")
         self.assertLessEqual(res["notes"], 2)
         self.assertTrue(all(abs(v) < 1e6 for v in res["pose"].values()))
+
+    def test_abgleich_mit_frostbyte_sim(self):
+        """Gleicher Eingabeverlauf wie frostbyte_sim (test/fixtures): wahre Pose ≤ 0,1 in / 0,5°, gleiche Kollisionen."""
+        fx = ROOT / "test" / "fixtures"
+        params = json.loads((fx / "sim_params_min.json").read_text(encoding="utf-8"))
+        # Nur der Browser-Block fehlt in der Fixture; kein live.kollision: das C++-Modell kennt keine Feldelemente.
+        params["live"] = {"langsam_faktor": 0.4, "ersatzpose_in": {"stacker": {"x_in": 0, "y_in": 0, "h_deg": 0},
+                                                                   "runner": {"x_in": 0, "y_in": 0, "h_deg": 0}}}
+        data = {
+            "params": params,
+            "field": json.loads((fx / "field_two.json").read_text(encoding="utf-8")),
+            "input": (fx / "livesim_input.csv").read_text(encoding="utf-8"),
+            "reference": (fx / "livesim_reference.csv").read_text(encoding="utf-8"),
+        }
+        res = run_node(f"console.log(JSON.stringify(runLivesimReferenceTest(FBLive, {json.dumps(data)}, {POS_TOL_IN}, {HEAD_TOL_DEG})));")
+        self.assertEqual(res["fail"], 0, "\n".join(res["msgs"][:10]))
+        self.assertGreater(res["ok"], 1000)
+        print(f"\nSIM-17 größte Abweichung: {res['maxPos_in']:.6f} in, {res['maxHead_deg']:.6f}°")
 
 
 if __name__ == "__main__":

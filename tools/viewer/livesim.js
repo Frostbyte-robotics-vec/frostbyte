@@ -191,7 +191,10 @@ var FBLive = (function () {
     return { x_in: e.x_in, y_in: e.y_in, h_deg: wrap(e.h_deg) };
   }
 
-  function create(params, field) {
+  /* opts.voltsAt(name, t_ms) → {left_V, right_V}: ersetzt die Tasten durch einen Eingabeverlauf für beide Roboter
+     (SIM-17: gleicher Verlauf wie frostbyte_sim --input; gilt am Steuertakt, t_ms = Zeit seit Start/Reset). */
+  function create(params, field, opts) {
+    var voltsAt = opts && opts.voltsAt;
     var stepMs = need(params.welt, 'schritt_ms', 'welt', true);
     var ctlMs = need(params.welt, 'steuer_ms', 'welt', true);
     var slow = need(params.live, 'langsam_faktor', 'live', true);
@@ -253,6 +256,7 @@ var FBLive = (function () {
     function control() {
       ROBOTS.forEach(function (n) {
         var r = robots[n];
+        if (voltsAt) { var u = voltsAt(n, stepNo * stepMs); r.volts = { left_V: u.left_V + 0, right_V: u.right_V + 0 }; return; }
         r.volts = n === active ? keysToVolts(keys, Math.min(r.p.motor_max_V, r.p.akku_V), slow) : { left_V: 0, right_V: 0 };
       });
     }
