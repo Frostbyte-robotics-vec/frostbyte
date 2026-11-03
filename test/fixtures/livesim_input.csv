@@ -1,0 +1,13 @@
+# Eingabeverlauf für den Abgleich Browser-Livesim gegen frostbyte_sim (SIM-17).
+# Passt zu field_two.json (Stacker (-20, 0, 0°) und Runner (20, 0, 180°) einander zugewandt) und sim_params_min.json.
+# Stacker: geradeaus bis zum stehenden Runner (Roboter-Roboter), zurück, drehen, gegen die Wand.
+# Runner: später im Bogen und dann gegen den Rand.
+t_ms,robot,left_V,right_V
+0,stacker,6,6
+1500,stacker,-6,-6
+2500,stacker,-4,4
+3300,stacker,9,9
+8000,stacker,0,0
+4000,runner,5,8
+7000,runner,10,10
+9500,runner,0,0

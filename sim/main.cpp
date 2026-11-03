@@ -1,6 +1,8 @@
 // frostbyte_sim: Kommandozeile der Simulation.
 //   frostbyte_sim --stacker <route> --runner <route> [--runs N] [--seed S] [--out DIR]
 //                 [--params sim/sim_params.json] [--field field/field.json] [--noise none|realistic|harsh]
+//   frostbyte_sim --input <verlauf.csv> [--runs N] [--seed S] [--out DIR] [--params ...] [--field ...] [--noise ...]
+//                 feste Motorspannungen statt Routen (SIM-17, sim/input_script.hpp); Startposen in field.json nötig
 //   frostbyte_sim --demo [--runs N] [--seed S] [--out DIR] [--noise ...]   Demo ohne Routen (Platzhalter-Posen, build=demo)
 // Schreibt je Lauf i: DIR/run<NNN>_stacker.csv und DIR/run<NNN>_runner.csv, Seed = S + i.
 
@@ -13,6 +15,7 @@
 #include <string>
 
 #include "sim/demo.hpp"
+#include "sim/input_script.hpp"
 #include "sim/world.hpp"
 
 #ifndef FB_BUILD
@@ -24,14 +27,17 @@ namespace {
 int usage() {
     std::fprintf(stderr,
                  "Aufruf: frostbyte_sim --stacker <route> --runner <route> [--runs N] [--seed S] [--out DIR]\n"
-                 "                     [--params sim/sim_params.json] [--field field/field.json]\n");
+                 "                     [--params sim/sim_params.json] [--field field/field.json] [--noise "
+                 "none|realistic|harsh]\n"
+                 "       frostbyte_sim --input <verlauf.csv> [--runs N] [--seed S] [--out DIR] ...\n"
+                 "       frostbyte_sim --demo [--runs N] ...\n");
     return 2;
 }
 
 }  // namespace
 
 int main(int argc, char** argv) {
-    std::string stacker, runner, out = "out/sim", params = "sim/sim_params.json", field = "field/field.json";
+    std::string stacker, runner, input, out = "out/sim", params = "sim/sim_params.json", field = "field/field.json";
     std::string noise = "realistic";
     bool demo = false;
     long long runs = 1, seed = 1;
@@ -48,6 +54,8 @@ int main(int argc, char** argv) {
             stacker = v;
         else if (a == "--runner")
             runner = v;
+        else if (a == "--input")
+            input = v;
         else if (a == "--out")
             out = v;
         else if (a == "--params")
@@ -70,7 +78,9 @@ int main(int argc, char** argv) {
         } else
             return usage();
     }
-    if ((!demo && (stacker.empty() || runner.empty())) || runs < 1 || seed < 0)
+    if (demo && !input.empty())
+        return usage();
+    if ((!demo && input.empty() && (stacker.empty() || runner.empty())) || runs < 1 || seed < 0)
         return usage();
 
     try {
@@ -78,6 +88,11 @@ int main(int argc, char** argv) {
         cfg.build = FB_BUILD;
         if (demo)
             frostbyte::sim::apply_demo(cfg);
+        if (!input.empty()) {
+            const frostbyte::sim::InputScript script = frostbyte::sim::load_input_script(input, cfg.steuer_ms);
+            cfg.stacker.open_loop = frostbyte::sim::input_open_loop(script.stacker);
+            cfg.runner.open_loop = frostbyte::sim::input_open_loop(script.runner);
+        }
         if (!demo && !cfg.stacker.start)
             std::fprintf(stderr, "Hinweis: START_STACKER in field.json ist null (A-01) - Pose bleibt leer.\n");
         if (!demo && !cfg.runner.start)

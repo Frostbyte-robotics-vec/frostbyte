@@ -227,4 +227,65 @@ function runLivesimTests(FBLive) {
 
   return { ok, fail, msgs };
 }
+
+/* SIM-17: Abgleich gegen frostbyte_sim. fx = {params, field, input, reference} (Fixture-Dateien aus test/fixtures, Text bzw. JSON).
+   Spielt den Eingabeverlauf (t_ms,robot,left_V,right_V) im Livesim ab und vergleicht die wahre Pose alle 20 ms und die
+   COLLISION-Ereignisse mit der Referenz, die frostbyte_sim schreibt. Liefert zusätzlich die gemessene größte Abweichung. */
+function runLivesimReferenceTest(FBLive, fx, tolPos_in, tolHead_deg) {
+  const msgs = [];
+  let ok = 0, fail = 0, maxPos = 0, maxHead = 0, collisions = 0;
+  function check(name, cond, info) {
+    if (cond) ok++; else { fail++; msgs.push('FEHLER ' + name + (info !== undefined ? ': ' + info : '')); }
+  }
+  const lines = (t) => t.split(/\r?\n/).map((l) => l.trim()).filter((l) => l !== '' && l[0] !== '#');
+  const sched = { stacker: [], runner: [] };
+  lines(fx.input).slice(1).forEach((l) => {
+    const c = l.split(',');
+    sched[c[1]].push({ t_ms: Number(c[0]), left_V: Number(c[2]), right_V: Number(c[3]) });
+  });
+  const voltsAt = (name, t_ms) => {
+    let cur = { left_V: 0, right_V: 0 };
+    sched[name].forEach((r) => { if (r.t_ms <= t_ms) cur = r; });
+    return cur;
+  };
+  const live = FBLive.create(fx.params, fx.field, { voltsAt });
+  check('Startposen kommen aus der Fixture-field.json (keine Ersatzpose)', live.notes.length === 0, live.notes.join('|'));
+
+  const ref = { stacker: [], runner: [] };
+  lines(fx.reference).slice(1).forEach((l) => {
+    const c = l.split(',');
+    ref[c[1]].push({ t_ms: Math.round(Number(c[0]) * 1000), x: Number(c[2]), y: Number(c[3]), h: Number(c[4]), event: c[5] || '' });
+  });
+  const total = ref.stacker[ref.stacker.length - 1].t_ms;
+  const got = { stacker: {}, runner: {} };
+  const events = { stacker: [], runner: [] };
+  for (let t = 0; t <= total; t++) {
+    if (t > 0) {
+      const n = live.advance(0.001);
+      if (n !== 1) { check('ein Schritt je ms', false, 't=' + t + ' n=' + n); break; }
+    }
+    if (t % 20 === 0) ['stacker', 'runner'].forEach((n) => { got[n][t] = live.pose(n); });
+    live.takeEvents().forEach((e) => {
+      if (/^COLLISION:/.test(e.text)) events[e.robot].push({ row_ms: Math.ceil((Math.round(e.t_s * 1000) + 1) / 20) * 20, text: e.text });
+    });
+  }
+  ['stacker', 'runner'].forEach((n) => {
+    ref[n].forEach((r) => {
+      const g = got[n][r.t_ms];
+      if (!g) { check(n + ' t=' + r.t_ms + ' ms fehlt', false); return; }
+      const dp = Math.hypot(g.x_in - r.x, g.y_in - r.y), dh = Math.abs(FBLive.wrap(g.h_deg - r.h));
+      maxPos = Math.max(maxPos, dp); maxHead = Math.max(maxHead, dh);
+      if (dp > tolPos_in || dh > tolHead_deg) check(n + ' t=' + r.t_ms + ' ms', false, 'Δpos=' + dp.toFixed(4) + ' in, Δh=' + dh.toFixed(4) + '°');
+      else ok++;
+      const want = r.event.split(';').filter((e) => /^COLLISION:/.test(e));
+      const have = events[n].filter((e) => e.row_ms === r.t_ms).map((e) => e.text);
+      if (want.join() !== have.join()) check(n + ' Ereignis t=' + r.t_ms + ' ms', false, 'Referenz [' + want + '] Livesim [' + have + ']');
+      collisions += want.length;
+    });
+  });
+  check('Referenz enthält Kollisionen (Roboter und Rand)', collisions === 4, collisions);
+  check('Livesim erzeugt keine zusätzlichen Kollisionsereignisse', events.stacker.length + events.runner.length === collisions,
+    JSON.stringify(events));
+  return { ok, fail, msgs, maxPos_in: maxPos, maxHead_deg: maxHead };
+}
 if (typeof module !== 'undefined') module.exports = runLivesimTests;
