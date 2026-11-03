@@ -3,7 +3,7 @@
 Status: angenommen (3. Nov 2026), Ticket C-02. Der Advisor (Opus) hat vorgegeben: erst klären, was eine „Ebene“ physisch ist; keine Höhen erfinden; offene Werte als `null` mit Folgeticket sichtbar machen; Feldhöhe und Roboterversatz getrennt halten.
 
 ## Entscheidung
-- `lib/match/goal_book.hpp` (`GoalBook`), reine Logik ohne PROS, kein dynamischer Speicher. Gefüllt wird sie mit `std::array<GoalEntry, 9>` (Name, Goal-Höhe) plus Ebenenstufe; die Laptop-Tests lesen dafür `field/field.json`. Auf dem Roboter erzeugt `tools/route2cpp.py` (A-02) die Daten; JSON wird dort nicht geparst.
+- `lib/util/goal_book.hpp` (`GoalBook`, bewusst in der untersten Schicht: der CycleController (tasks, C-01) und der RoutePlayer (match, A-03) rufen es beide nach unten auf), reine Logik ohne PROS, kein dynamischer Speicher. Gefüllt wird sie mit `std::array<GoalEntry, 9>` (Name, Goal-Höhe) plus Ebenenstufe; die Laptop-Tests lesen dafür `field/field.json`. Der Roboter parst kein JSON; wie die Goal-Daten auf den Roboter kommen (z. B. Erzeugung aus field.json zur Build-Zeit), ist offen und wird mit C-06 bzw. beim ersten Aufrufer entschieden.
 - `place_height_in(goal, level)` (Index oder Name) liefert die Höhe über dem Boden im Feldrahmen: **Ebene 0 = `hoehe_in` des Goals, jede weitere Ebene `+ stufe_in`**, Ebenen 0–5. Außerhalb von 0–5 oder bei ungültigem Goal: `std::nullopt`.
 - **Der Greifer-Versatz (Greifer ↔ gemessene Lifthöhe) steckt nicht im GoalBook.** Er ist roboterspezifisch (`config/`, `TODO(HW)`); der Aufrufer rechnet ihn dazu, bevor er `LiftSubsystem::request_move` ruft.
 - `field/field.json` bekommt `ebenen: {anzahl: 6, stufe_in: null}`.

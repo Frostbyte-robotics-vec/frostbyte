@@ -4,8 +4,8 @@
 #include <string>
 
 #include "doctest/doctest.h"
-#include "match/goal_book.hpp"
 #include "sim/json.hpp"
+#include "util/goal_book.hpp"
 
 using namespace frostbyte;
 using frostbyte::sim::Json;
