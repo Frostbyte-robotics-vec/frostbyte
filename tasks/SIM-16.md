@@ -2,8 +2,8 @@
 id: SIM-16
 phase: "1b"
 titel: Log-Tab für die Live-Fahrt: laufende Ereignisliste, Filter, CSV-Export im Log-Format v1
-status: todo
-owner:
+status: in_progress
+owner: DAVIDCOPCOP
 branch: ticket/sim-16
 depends: [SIM-13, SIM-15]
 hw: nein
