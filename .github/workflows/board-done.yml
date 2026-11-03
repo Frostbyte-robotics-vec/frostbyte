@@ -18,7 +18,8 @@ jobs:
         with: { ref: main, token: "${{ secrets.BOARD_TOKEN }}" }
       - name: Ticket-Status nach dem Merge setzen
         run: |
-          ID=$(echo "${{ github.event.pull_request.head.ref }}" | sed 's#ticket/##' | tr '[:lower:]' '[:upper:]')
+          # Branch ticket/a-04-v2 -> A-04 (Suffix wie -v2 wird ignoriert)
+          ID=$(echo "${{ github.event.pull_request.head.ref }}" | sed -E 's#ticket/([a-z]+-[0-9]+).*#\1#' | tr '[:lower:]' '[:upper:]')
           python3 tools/board.py merged "$ID"
           git config user.name "frostbyte-board"
           git config user.email "board@users.noreply.github.com"
