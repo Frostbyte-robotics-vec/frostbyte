@@ -28,8 +28,11 @@ Vom Menschen gewünscht (3.11.): „Simulation mit Mausrad-Klick verschieben, R 
 —
 
 ## Übergabe
-—
+Stand: umgesetzt in tools/viewer/index.html (gilt für /viewer/ und /sim/, eine Datei): `controls.mouseButtons` mit MIDDLE = PAN, `mousedown` mit `button === 1` ruft preventDefault (kein Auto-Scroll), R setzt die Kamera zurück (`setView` mit der aktuellen Ansicht oben/schräg, Folgen aus, `!e.repeat`, im selben keydown-Handler wie Leertaste, also in Live-Modus und Wiedergabe; Eingabefelder ausgenommen), Roboter-Zurücksetzen im Live-Modus liegt auf Backspace (Vorschlag aus dem Ticket, nicht vom Menschen festgelegt), Tastenhilfe in .hint, #liveinfo und title von #bLive angepasst. Tests: 5 neue statische Prüfungen in tools/test_sim_page.py (zuerst rot, dann grün); JS-Syntax per JavaScriptCore geprüft.
+**Nicht erfüllt:** das Kriterium „Browser-Test (Playwright)“. Im Repo und auf diesem Rechner gibt es weder Playwright noch node noch einen Browser; wie bei SIM-18 prüfen die Tests nur den Quelltext. Das Verhalten im Browser (Mausrad-Taste schiebt, R setzt cam.position und controls.target zurück, Backspace setzt die Roboter zurück) ist nicht ausgeführt worden und gehört vor dem Merge von einem Menschen kurz ausprobiert; ein Playwright-Test wäre ein eigenes Ticket (Paket: ADR nötig).
+Offene Frage an den Menschen: Backspace für „Roboter zurücksetzen“ okay?
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-03 · DAVIDCOPCOP (KI) · Ticket angelegt · –
+2026-11-03 · arjanssen (KI) · Kamera: Mausrad-Taste schiebt, R setzt Kamera zurück, Backspace setzt Roboter zurück; statische Tests; kein Browser-Test möglich · SIM-21

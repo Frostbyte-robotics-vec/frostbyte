@@ -133,11 +133,11 @@ body[data-ansicht="sim"] #livectl{display:flex}
     <div class="side">
       <div class="viewer" id="viewer">
         <div class="overlay" id="empty"><div><b>Keine Logs geladen</b>CSV-Dateien hierher ziehen oder „Logs laden“.<br>Mehrere Logs werden über t_s übereinandergelegt.</div></div>
-        <div class="hint">Ziehen: drehen · Rechts ziehen: schieben · Mausrad: zoomen · Leertaste: Start/Pause · ← →: ±0,2 s</div>
+        <div class="hint">Ziehen: drehen · Rechts oder Mittlere Taste ziehen: schieben · Mausrad: zoomen · R: Kamera zurück · Leertaste: Start/Pause · ← →: ±0,2 s</div>
         <div class="fieldinfo" id="fieldinfo"></div>
         <div class="stats" id="stats" hidden></div>
         <div class="liveinfo" id="liveinfo" hidden></div>
-        <div class="livebar"><button class="btn" id="bLive" aria-pressed="false" title="Roboter mit der Tastatur fahren: W/S vor/zurück, A/D drehen, Shift langsam, Tab Roboter wechseln, R zurücksetzen">Live</button></div>
+        <div class="livebar"><button class="btn" id="bLive" aria-pressed="false" title="Roboter mit der Tastatur fahren: W/S vor/zurück, A/D drehen, Shift langsam, Tab Roboter wechseln, Rücktaste zurücksetzen, R Kamera zurück">Live</button></div>
       </div>
       <div class="time">
         <button class="btn" id="bPlay" aria-label="Abspielen">▶</button>
@@ -240,6 +240,9 @@ if (HAS3D) {
   models = FBRobots(renderer);
   controls = new THREE.OrbitControls(cam, renderer.domElement);
   controls.enableDamping = true; controls.minDistance = 20; controls.maxDistance = 600; controls.maxPolarAngle = Math.PI / 2.05;
+  // Wie in CAD-Programmen: mittlere Taste ziehen = schieben (three.js-Standard wäre zoomen)
+  controls.mouseButtons = {LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.PAN};
+  renderer.domElement.addEventListener('mousedown', e => { if (e.button === 1) e.preventDefault(); });  // kein Auto-Scroll des Browsers
   setView(false);
   new ResizeObserver(resize).observe(viewer); resize();
 } else {
@@ -628,6 +631,7 @@ window.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' && e.target.type !== 'range' || e.target.tagName === 'SELECT') return;
   if (e.code === 'Space') { e.preventDefault(); $('bPlay').click(); }
   else if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') { e.preventDefault(); setTime(S.t + (e.code === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 2 : .2)); }
+  else if (e.code === 'KeyR') { if (!e.repeat) { setView($('bTop').getAttribute('aria-pressed') === 'true'); S.follow = false; $('bFollow').setAttribute('aria-pressed', false); } }
 });
 window.addEventListener('resize', drawStrip);
 function readFiles(files){
@@ -666,7 +670,7 @@ function updateLive(){
   const p = L.sim.pose(a);
   const head = `Live · ${a === 'stacker' ? 'Stacker' : 'Runner'} aktiv · ${fmt(L.sim.speed(a))} in/s · x ${fmt(p.x_in)} y ${fmt(p.y_in)} h ${fmt(p.h_deg, 0)}°`
     + (liveHeld.shift ? ' · langsam' : '');
-  $('liveinfo').textContent = SIM ? head : head + '\nW/S fahren · A/D drehen · Shift langsam · Tab Roboter wechseln · R zurücksetzen · C Kollisionsumriss'
+  $('liveinfo').textContent = SIM ? head : head + '\nW/S fahren · A/D drehen · Shift langsam · Tab Roboter wechseln · Rücktaste zurücksetzen · R Kamera zurück · C Kollisionsumriss'
     + (L.log.length ? '\n' + L.log.join('\n') : '')
     + (L.sim.notes.length ? '\n' + L.sim.notes.join('\n') : '');
 }
@@ -715,7 +719,7 @@ window.addEventListener('keydown', e => {
   if (!S.live || e.target.tagName === 'INPUT' && !['range', 'checkbox'].includes(e.target.type) || e.target.tagName === 'SELECT') return;
   if (e.code in LIVE_KEYS) { liveHeld[LIVE_KEYS[e.code]] = true; e.preventDefault(); }
   else if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) S.live.sim.toggle(); }
-  else if (e.code === 'KeyR') { if (!e.repeat) { S.live.sim.reset(); S.live.log.length = 0; S.live.entries.length = 0; liveSeed(); renderLiveEvents(); } }
+  else if (e.code === 'Backspace') { e.preventDefault(); if (!e.repeat) { S.live.sim.reset(); S.live.log.length = 0; S.live.entries.length = 0; liveSeed(); renderLiveEvents(); } }
   else if (e.code === 'KeyC') { if (!e.repeat) S.live.showOutline = !S.live.showOutline; }
   liveHeld.shift = e.shiftKey; liveSend();
 });
