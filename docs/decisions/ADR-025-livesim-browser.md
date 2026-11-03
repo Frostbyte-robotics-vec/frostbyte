@@ -8,6 +8,7 @@ Status: angenommen (3. Nov 2026), Ticket SIM-14.
 - **Feste Schritte**: Akkumulator in ms, ein Schritt = `welt.schritt_ms`, Steuerung (Tasten → Volt) alle `welt.steuer_ms`. Ein Bild darf höchstens 100 ms nachholen (Tab im Hintergrund: Pause via `visibilitychange`, danach kein Aufholen). Gleicher Tastenverlauf ergibt dieselbe Pose, unabhängig von der Bildrate (Node-Test).
 - **Eingabe → Volt in einer Funktion** (`FBLive.keysToVolts`): Arcade, W/S vor/zurück, A/D drehen (A = gegen den Uhrzeigersinn, passend zur Heading-Konvention aus ADR-008), Shift = Langsam-Modus (`live.langsam_faktor`). Später durch Gamepad ersetzbar, ohne das Modell anzufassen.
 - Tab wechselt den gesteuerten Roboter (der andere bekommt 0 V und rollt aus), R setzt beide auf die Startpose zurück. Startposen aus `field.json` (`START_STACKER`, `START_RUNNER`); bei `null` die Ersatzpose aus `live.ersatzpose_in`, im Overlay als Hinweis gezeigt.
+- **CI**: Node führt die JS-Tests (`tools/viewer/test_livesim.py`, eigener CI-Schritt, weil `tools/viewer` kein Paket ist); bisher liefen JS-Tests nur unter macOS (osascript). In der CI schlägt ein fehlendes Node fehl statt zu überspringen.
 - **Kein WebAssembly jetzt**: Das C++-Modell hängt an Json-Loader, Welt und Collision; ein Wasm-Build brächte Toolchain (Emscripten) und ein neues Paket in die CI für ein Modell mit drei Gleichungen. Die Kopie ist klein und per Test gesichert.
 
 ## Folgen / offen

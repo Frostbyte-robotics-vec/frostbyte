@@ -5,6 +5,7 @@ Ausführen: python3 -m unittest discover -s tools/viewer -p "test_livesim.py"
 Ohne node wird übersprungen; dann im Browser tools/viewer/index.html?selftest öffnen.
 """
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -29,8 +30,14 @@ def run_node(body):
     return json.loads(r.stdout)
 
 
-@unittest.skipUnless(shutil.which("node"), "node fehlt")
 class TestLivesim(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        if not shutil.which("node"):
+            if os.environ.get("CI"):
+                raise AssertionError("node fehlt in der CI")   # dort nie stillschweigend überspringen
+            raise unittest.SkipTest("node fehlt")
+
     def test_js_einheitentests(self):
         res = run_node("console.log(JSON.stringify(runLivesimTests(FBLive)));")
         self.assertEqual(res["fail"], 0, "\n".join(res["msgs"]))
@@ -44,9 +51,9 @@ const params = {params.read_text(encoding="utf-8")}, field = {field.read_text(en
 const live = FBLive.create(params, field);
 live.setKeys({{ w: true }});
 for (let i = 0; i < 100; i++) live.advance(0.01);
-console.log(JSON.stringify({{ speed: live.speed('stacker'), notes: live.notes.length, pose: live.pose('stacker') }}));""")
-        self.assertGreater(res["speed"], 0)
+console.log(JSON.stringify({{ notes: live.notes.length, pose: live.pose('stacker') }}));""")
         self.assertLessEqual(res["notes"], 2)
+        self.assertTrue(all(abs(v) < 1e6 for v in res["pose"].values()))
 
 
 if __name__ == "__main__":

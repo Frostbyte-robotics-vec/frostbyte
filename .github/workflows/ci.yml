@@ -100,3 +100,5 @@ jobs:
         run: python3 tools/board.py validate
       - name: Board-Werkzeug testen
         run: python3 -m unittest discover -s tools -p "test_*.py"
+      - name: Live-Handsteuerung testen (Node)
+        run: python3 -m unittest discover -s tools/viewer -p "test_livesim.py" -v
