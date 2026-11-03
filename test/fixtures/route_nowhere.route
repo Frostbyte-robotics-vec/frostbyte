@@ -1,0 +1,4 @@
+start START_STACKER
+goto NOWHERE timeout=2.0
+goto pose x=-20 y=20 h=0 timeout=10.0
+end hold

@@ -1,0 +1,17 @@
+{
+  "_hinweis": "Testfeld für Routen in der Simulation (A-04): zwei einander zugewandte Startposen, ein vermessener Ladepunkt, ein Toggle und eine Pose ohne Koordinaten. Unabhängig von field/field.json.",
+  "version": 1,
+  "feld_in": 144,
+  "goals": [],
+  "loader": [
+    { "id": "LOADER_T", "x_in": 0.0, "y_in": 40.0 }
+  ],
+  "toggles": [
+    { "id": "TOGGLE_T", "x_in": 30.0, "y_in": 30.0 }
+  ],
+  "posen": [
+    { "id": "START_STACKER", "x_in": -20.0, "y_in": 0.0, "h_deg": 0 },
+    { "id": "START_RUNNER", "x_in": 20.0, "y_in": 0.0, "h_deg": 180 },
+    { "id": "NOWHERE", "x_in": null, "y_in": null, "h_deg": null }
+  ]
+}
