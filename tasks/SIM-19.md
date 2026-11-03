@@ -30,4 +30,4 @@ Fertig: restartLog() zeichnet nur bei stepNo % logEvery === 0 auf; Node-Test in 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-03 · arjanssen (KI) · Ticket angelegt aus offenem Review-Punkt von PR #45 · –
-2026-11-03 · arjanssen (KI) · Fix restartLog + Test + ADR-Satz
+2026-11-03 · arjanssen (KI) · Fix restartLog + Test + ADR-Satz · 1e37bc2
