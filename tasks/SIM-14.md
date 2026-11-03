@@ -30,8 +30,10 @@ Vom Menschen gewünscht (3.11.): manuelle Grundsimulation bis 4.11. Modellwerte 
 —
 
 ## Übergabe
-—
+Stand: alles umgesetzt (livesim.js, Tests, Live-Modus in index.html, ADR-025, CI/Dashboard kopieren livesim.js + sim_params.json). Python-Tests, Format, Board validate, ctest grün. Roboter-Build lokal nicht möglich (ARM-Toolchain: „Cannot create temporary file in C:\WINDOWS\“, Umgebungsproblem, kein C++ geändert) – CI prüft. Nicht im echten Browser ausprobiert (nur `node --check` des Inline-Skripts): bitte /sim/ öffnen, „Live“ drücken, WASD/Tab/R/Shift testen.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-03 · DAVIDCOPCOP (KI) · Ticket angelegt · –
+2026-11-03 · DAVIDCOPCOP (KI) · livesim.js, Tests (Node), live-Block in sim_params.json · –
+2026-11-03 · DAVIDCOPCOP (KI) · Live-Modus in index.html, ADR-025, Workflows · –
