@@ -275,6 +275,16 @@ TEST_CASE("Aus FEHLER startet ein neuer Befehl; cancel führt nach BEREIT") {
     REQUIRE(r.start(CycleSource::preload) == CycleRefusal::none);
     CHECK(r.cc.state() == CycleState::grasping);
     CHECK_FALSE(r.cc.result().finished);  // altes Ergebnis ist gelöscht
+    r.cc.cancel(r.t);
+
+    // Auch ein Quiver-Befehl startet aus FEHLER, in AUFNEHMEN.
+    Rig r3;
+    REQUIRE(r3.start() == CycleRefusal::none);
+    r3.run(4.1);
+    REQUIRE(r3.cc.state() == CycleState::error);
+    REQUIRE(r3.start(CycleSource::quiver) == CycleRefusal::none);
+    CHECK(r3.cc.state() == CycleState::picking);
+    CHECK_FALSE(r3.cc.result().finished);
 
     Rig r2;
     REQUIRE(r2.start() == CycleRefusal::none);
@@ -313,7 +323,11 @@ TEST_CASE("Timeout für den ganzen Zyklus") {
         r.run(2.0);                         // einzelne Zustände bleiben unter ihrem eigenen Timeout
         r.pulse(&CycleInputs::lift_at_target);
         REQUIRE(r.cc.state() == CycleState::at_goal);
-        r.run(5.0);  // approach_timeout_s = 5.0, aber der Gesamt-Timeout (6 s) trifft vorher
+        // AM_GOAL beginnt bei t ~ 2,03 s; sein eigenes Timeout (5 s) liefe erst bei ~ 7,03 s ab. Bei ~ 5,93 s steht noch alles,
+        // bei ~ 6,13 s erklärt nur der Gesamt-Timeout (6 s) den Fehler.
+        r.run(3.9);
+        CHECK(r.cc.state() == CycleState::at_goal);
+        r.run(0.2);
         CHECK(r.cc.state() == CycleState::error);
         CHECK(r.cc.result().timed_out);
         CHECK(r.cc.result().timeout_state == CycleState::at_goal);

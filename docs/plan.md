@@ -56,6 +56,7 @@ frostbyte-code/
 │   ├── control/            # PID, Bewegungsprofile, Filter
 │   ├── estimation/         # Odometrie, Sensorfusion
 │   ├── planning/           # Pfade, Pfadfolger
+│   ├── tasks/              # Schicht 2: CycleController (Zyklus aus Aufnehmen, Heben, Setzen)
 │   ├── subsystems/         # Zustandsautomaten Intake, Lift, Toggle
 │   ├── match/              # Phasen-Automat, Befehls-Queue, Regelwächter
 │   └── util/               # Zeit, Einheiten, Ringpuffer
