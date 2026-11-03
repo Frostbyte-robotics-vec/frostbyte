@@ -29,6 +29,8 @@ jobs:
         run: |
           cp tools/viewer/index.html tools/viewer/logparse.js tools/viewer/robots.js site/viewer/
           cp field/field.json site/viewer/field.json
+      - name: Simulationsseite /sim/ aus dem Viewer erzeugen
+        run: python3 tools/sim_page.py tools/viewer/index.html site/sim/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -27,8 +27,9 @@ Vom Menschen gewünscht (3.11.): eine eigene Seite nur für die Simulation, inte
 —
 
 ## Übergabe
-—
+Stand: Umsetzung fertig, wartet auf /finish (Advisor-Review, PR). tools/sim_page.py erzeugt site/sim/index.html aus dem Viewer (setzt <base href="../viewer/"> und body data-ansicht="sim"); lokal geht ?ansicht=sim. CSS blendet Kopf, Zustand, Logs, Posen-Quelle, Hinweis aus; Ereignis-Karte heißt "Log". dashboard.yml-Schritt und Board-Link "Simulation (intern)" ergänzt. Tests: python3 -m unittest discover -s tools -p "test_*.py" (tools/test_sim_page.py). ctest ist grün, wenn der msys64-ucrt64-bin-Ordner im PATH steht (Stolperfalle in docs/notes.md, S-03). Advisor-Review gemacht, Ansatz ok. PR #42. Im Browser nicht angesehen.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-03 · DAVIDCOPCOP (KI) · Ticket angelegt · –
+2026-11-03 · DAVIDCOPCOP (KI) · SIM-13 umgesetzt: sim_page.py, Viewer-Modus, Workflow, Board-Link, Tests · –
