@@ -167,6 +167,35 @@ bool track_contact(bool touching, bool& flag, int& free_steps) {
     return false;
 }
 
+// Goals aus field.json als Anfangszustand des Spielzustands (leere Stapel). Zone aus dem Quadranten (RED_*, BLUE_*,
+// MIDFIELD), nicht aus typ. Der Toggle-Anfangszustand steht nicht in field.json: Annahme spiel.toggle_anfang.
+void add_route_goals(const Json& params, const Json& field, GameSetup& g) {
+    load_game_params(params, g);
+    const std::string toggle_start = params.at("spiel").at("toggle_anfang").as_string();
+    if (toggle_start != "zielfarbe" && toggle_start != "neutral")
+        throw std::runtime_error("sim_params spiel.toggle_anfang: 'zielfarbe' oder 'neutral' erwartet");
+    const Json& goals = field.at("goals");
+    for (std::size_t i = 0; i < goals.size(); ++i) {
+        const Json& j = goals[i];
+        const std::string q = j.at("quadrant").as_string();
+        GoalState s;
+        if (q.rfind("RED_", 0) == 0)
+            s.zone = Zone::red_quadrant;
+        else if (q.rfind("BLUE_", 0) == 0)
+            s.zone = Zone::blue_quadrant;
+        else if (q == "MIDFIELD")
+            s.zone = Zone::midfield;
+        else
+            throw std::runtime_error("field.json goals: Quadrant '" + q + "' unbekannt");
+        if (toggle_start == "zielfarbe" && s.zone != Zone::midfield)
+            s.toggle = s.zone == Zone::red_quadrant ? ToggleColor::red : ToggleColor::blue;
+        g.goals.push_back(std::move(s));
+        g.goal_names.push_back(j.at("id").as_string());
+    }
+    if (g.goals.empty())
+        throw std::runtime_error("field.json: Routen mit cycle/intake brauchen Goals");
+}
+
 }  // namespace
 
 SimConfig load_config(const std::string& params_path, const std::string& field_path, const std::string& stacker_route,
@@ -221,6 +250,16 @@ SimConfig load_config(const std::string& params_path, const std::string& field_p
     };
     cfg.stacker = robot("stacker", RouteRobot::stacker, "START_STACKER", stacker_route);
     cfg.runner = robot("runner", RouteRobot::runner, "START_RUNNER", runner_route);
+    // Spielzustand (SIM-22, ADR-032) nur, wenn eine Route Aufnahme oder Zyklen hat und das Feld Goals kennt: sonst bleiben
+    // intake/cycle Platzhalter und sim_params.json braucht weder ereignisse noch spiel.
+    const auto uses_game = [](const RobotSetup& r) {
+        for (const RouteCmd& c : r.cmds)
+            if (c.op == RouteOp::cycle || c.op == RouteOp::intake)
+                return true;
+        return false;
+    };
+    if (uses_game(cfg.stacker) || uses_game(cfg.runner))
+        add_route_goals(params, field, cfg.game);
     return cfg;
 }
 
@@ -281,7 +320,8 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
     SignalBus bus;
     for (RobotRun& r : runs)
         if (r.drive && !r.setup.cmds.empty() && !r.setup.closed_loop)
-            r.route = std::make_unique<RouteRunner>(r.setup.cmds, cfg.points, bus, r.setup.self, r.setup.control);
+            r.route = std::make_unique<RouteRunner>(r.setup.cmds, cfg.points, bus, r.setup.self, r.setup.control,
+                                                    game ? &*game : nullptr);
     const double dt_s = cfg.schritt_ms / 1000.0;
     const auto truth_of = [](const RobotRun& r) {
         return r.drive ? std::optional<Pose>(r.drive->pose()) : std::nullopt;

@@ -1,0 +1,4 @@
+start START_STACKER
+intake until=unit timeout=4.0 on_timeout=skip
+cycle goal=GOAL_RED level=auto source=preload
+end hold

@@ -1,0 +1,8 @@
+start START_STACKER
+cycle goal=GOAL_RED level=auto source=preload
+goto LOADER_T timeout=3.0
+intake until=unit timeout=4.0
+cycle goal=GOAL_RED level=auto timeout=6.0
+intake until=unit timeout=4.0
+cycle goal=GOAL_RED level=auto timeout=6.0
+end hold

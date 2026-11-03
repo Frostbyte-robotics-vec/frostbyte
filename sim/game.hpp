@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
+#include <string>
 #include <vector>
 
 #include "sim/collision.hpp"
@@ -15,7 +17,8 @@
 // nirgends hin: Ort und Zeit der Zyklen sind Vorgaben des Szenarios, nicht aus der Physik abgeleitet.
 namespace frostbyte::sim {
 
-constexpr int game_max_level = 5;  // Ebenen 0..5 (ADR-022)
+constexpr int game_max_level = 5;    // Ebenen 0..5 (ADR-022)
+constexpr int game_level_auto = -1;  // Ebene = Zahl der Teile, die schon auf dem Goal liegen (field.json "ebenen")
 
 struct GameCycle {
     int t_ms = 0;   // Start, Matchzeit
@@ -34,7 +37,8 @@ struct MidfieldSpec {
 };
 
 struct GameSetup {
-    std::vector<GoalState> goals;  // Anfangszustand (leere Stapel); leer = kein Spielzustand
+    std::vector<GoalState> goals;         // Anfangszustand (leere Stapel); leer = kein Spielzustand
+    std::vector<std::string> goal_names;  // je Goal der Name aus field.json (für Routen, SIM-22); sonst leer
     std::vector<GameCycle> cycles;
     EventParams events;
     MechanismParams mech[2];
@@ -55,6 +59,14 @@ MidfieldSpec load_midfield(const Json& field);
 // Zahl der Roboter (höchstens max_scored_robots), deren Umriss das Midfield berührt (RSC3b: zumindest teilweise).
 int robots_in_midfield(const MidfieldSpec& m, const std::vector<Box>& robots);
 
+// Antwort auf einen Routenbefehl (SIM-22): accepted = false: der Befehl ist nicht möglich (Roboter beschäftigt, nichts in
+// der Hand, Ebene passt nicht), es läuft nichts. Sonst endet er bei done_ms (Matchzeit); ok = false: er scheitert dann.
+struct CycleTicket {
+    bool accepted = false;
+    bool ok = false;
+    int done_ms = 0;
+};
+
 class Game {
 public:
     // seed_stacker/seed_runner: eigene Zufallsströme der beiden ObjectModel (nicht die der Sensoren). end_ms: Matchende;
@@ -63,6 +75,18 @@ public:
 
     // Zeit t_ms (aufsteigend): schließt fällige Zyklen ab, startet fällige Zyklen. Pro ms höchstens einmal aufrufen.
     void step(int t_ms);
+
+    // Routenbefehle (SIM-22, ADR-032); t_ms ist die Matchzeit des Aufrufs.
+    // Aufnahme einer Einheit vom Loader oder Boden (ObjectModel::pick). Der Roboter hält höchstens eine Einheit.
+    CycleTicket start_intake(int t_ms, int robot, Source src);
+    // Rest des Zyklus auf Goal goal: Greifer, Lift, Setzen. Die Einheit kommt von der Aufnahme davor, sonst vom Preload
+    // (preload = true, nur einmal je Roboter). level: game_level_auto oder genau die Zahl der Teile auf dem Goal.
+    CycleTicket start_cycle(int t_ms, int robot, int goal, int level, bool preload);
+    // Bricht laufende Aufnahme und laufenden Zyklus des Roboters ab (Timeout): nichts landet im Stapel.
+    void cancel(int t_ms, int robot);
+    // Index des Goals mit diesem Namen (GameSetup::goal_names), -1 wenn unbekannt.
+    int goal_index(const std::string& name) const;
+    int rejected_cycles() const { return rejected_; }  // von Routen abgelehnte Befehle
 
     // Punktestand, wenn das Match jetzt endete, mit so vielen Robotern im Midfield (0..max_scored_robots, sonst begrenzt).
     int score(int robots_in_midfield = 0) const;
@@ -86,7 +110,18 @@ private:
         int cups = 0;
     };
 
+    struct Hand {
+        bool unit = false;  // eine aufgenommene Einheit (ab unit_ready_ms verfügbar)
+        int unit_ready_ms = 0;
+        bool unit_yellow_up = false;
+        bool preload_used = false;
+    };
+
     void rescore();
+    int pieces_on(int goal) const;  // Teile auf dem Goal, die unterwegs mitgezählt
+    // Zyklus starten (gemeinsam für Szenario und Route); pick_src leer = Einheit ist schon in der Hand.
+    CycleTicket launch(int t_ms, int robot, int goal, int level, const std::optional<Source>& pick_src,
+                       bool yellow_up_in_hand);
 
     GameSetup setup_;
     ObjectModel models_[2];
@@ -100,6 +135,8 @@ private:
     int completed_ = 0;
     int failed_ = 0;
     int skipped_ = 0;
+    int rejected_ = 0;
+    Hand hand_[2];
 };
 
 }  // namespace frostbyte::sim

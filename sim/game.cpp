@@ -92,25 +92,102 @@ void Game::step(int t_ms) {
             ++skipped_;
             continue;
         }
-        const MechanismParams& m = setup_.mech[c.robot];
-        const Joint lift(m.lift, m.lift.min);
-        const double target = m.lift.min + (m.lift.max - m.lift.min) * c.level / game_max_level;
-        const Claw claw(m.claw);
-        const CycleResult r = models_[c.robot].run_cycle(c.source, c.level, lift, target, claw);
-        const int done_ms = c.t_ms + static_cast<int>(std::ceil(r.time_s * 1000.0));
-        busy_until_[c.robot] = done_ms;
-        if (r.outcome == CycleOutcome::ok) {
-            // Pin oder Cup wie beim Ablegen: nach der Stapelfolge, die Teile auf dem Weg zum Goal mitgezählt.
-            std::size_t on_goal = goals_[static_cast<std::size_t>(c.goal)].stack.size();
-            for (const Pending& p : pending_)
-                on_goal += p.goal == c.goal;
-            (on_goal % 2 == 0 ? held_[c.robot].pins : held_[c.robot].cups) = 1;
-            pending_.push_back({done_ms, c.goal, r.yellow_up, c.robot});
-        } else
-            ++failed_;
+        launch(t_ms, c.robot, c.goal, c.level, c.source, false);
     }
     if (changed)
         rescore();
+}
+
+int Game::pieces_on(int goal) const {
+    std::size_t n = goals_[static_cast<std::size_t>(goal)].stack.size();
+    for (const Pending& p : pending_)
+        n += p.goal == goal;
+    return static_cast<int>(n);
+}
+
+CycleTicket Game::launch(int t_ms, int robot, int goal, int level, const std::optional<Source>& pick_src,
+                         bool yellow_up_in_hand) {
+    const MechanismParams& m = setup_.mech[robot];
+    const Joint lift(m.lift, m.lift.min);
+    const double target = m.lift.min + (m.lift.max - m.lift.min) * level / game_max_level;
+    const Claw claw(m.claw);
+    const CycleResult r = pick_src ? models_[robot].run_cycle(*pick_src, level, lift, target, claw)
+                                   : models_[robot].place_unit(yellow_up_in_hand, 0.0, level, lift, target, claw);
+    const int done_ms = t_ms + static_cast<int>(std::ceil(r.time_s * 1000.0));
+    busy_until_[robot] = done_ms;
+    if (r.outcome == CycleOutcome::ok) {
+        // Pin oder Cup wie beim Ablegen: nach der Stapelfolge, die Teile auf dem Weg zum Goal mitgezählt.
+        (pieces_on(goal) % 2 == 0 ? held_[robot].pins : held_[robot].cups) = 1;
+        pending_.push_back({done_ms, goal, r.yellow_up, robot});
+    } else
+        ++failed_;
+    return {true, r.outcome == CycleOutcome::ok, done_ms};
+}
+
+int Game::goal_index(const std::string& name) const {
+    for (std::size_t i = 0; i < setup_.goal_names.size(); ++i)
+        if (setup_.goal_names[i] == name)
+            return static_cast<int>(i);
+    return -1;
+}
+
+CycleTicket Game::start_intake(int t_ms, int robot, Source src) {
+    Hand& h = hand_[robot];
+    if (busy_until_[robot] > t_ms || h.unit) {
+        ++rejected_;
+        return {};
+    }
+    const PickResult p = models_[robot].pick(src);
+    const int done_ms = t_ms + static_cast<int>(std::ceil(p.time_s * 1000.0));
+    busy_until_[robot] = done_ms;
+    h.unit = p.success;
+    h.unit_ready_ms = done_ms;
+    h.unit_yellow_up = p.yellow_up;
+    return {true, p.success, done_ms};
+}
+
+CycleTicket Game::start_cycle(int t_ms, int robot, int goal, int level, bool preload) {
+    Hand& h = hand_[robot];
+    if (goal < 0 || goal >= static_cast<int>(goals_.size()) || busy_until_[robot] > t_ms) {
+        ++rejected_;
+        return {};
+    }
+    const int on_goal = pieces_on(goal);
+    if (on_goal > game_max_level || (level != game_level_auto && level != on_goal)) {
+        ++rejected_;
+        return {};
+    }
+    bool yellow_up = false;
+    if (h.unit && t_ms >= h.unit_ready_ms) {
+        yellow_up = h.unit_yellow_up;
+        h.unit = false;
+    } else if (!h.unit && preload && !h.preload_used) {
+        h.preload_used = true;
+        yellow_up = models_[robot].preload_yellow_up();
+    } else {
+        ++rejected_;
+        return {};
+    }
+    return launch(t_ms, robot, goal, on_goal, std::nullopt, yellow_up);
+}
+
+void Game::cancel(int t_ms, int robot) {
+    bool dropped = false;
+    for (std::size_t i = 0; i < pending_.size();) {
+        if (pending_[i].robot == robot && pending_[i].done_ms > t_ms) {
+            pending_.erase(pending_.begin() + static_cast<std::ptrdiff_t>(i));
+            dropped = true;
+        } else
+            ++i;
+    }
+    Hand& h = hand_[robot];
+    if (h.unit && h.unit_ready_ms > t_ms) {
+        h.unit = false;
+        dropped = true;
+    }
+    if (dropped)
+        held_[robot] = Held{};
+    busy_until_[robot] = std::min(busy_until_[robot], t_ms);  // auch ein fehlgeschlagener Befehl gibt den Roboter frei
 }
 
 }  // namespace frostbyte::sim

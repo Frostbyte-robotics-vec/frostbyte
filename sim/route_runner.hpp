@@ -12,17 +12,20 @@
 #include "match/route.hpp"
 #include "match/route_player.hpp"
 #include "sim/drive.hpp"
+#include "sim/game.hpp"
 #include "sim/json.hpp"
 
 // Routen in der Simulation (A-04, ADR-031): der RoutePlayer (A-03) spielt eine geparste Route ab, ein Sim-Executor setzt goto
 // und turn in MotionController-Befehle um. Das ist kein Vorgriff auf A-10 (Roboter-Adapter): intake, cycle und toggle sind
-// hier Platzhalter ohne Modell und enden sofort mit done. Zoll, Grad, Sekunden.
+// hier Platzhalter ohne Modell und enden sofort mit done, solange kein Spielzustand läuft. Mit Spielzustand (SIM-22,
+// ADR-032) lösen intake und cycle Aufnahme und Zyklus im Game aus. Zoll, Grad, Sekunden.
 namespace frostbyte::sim {
 
 // Koordinate eines Feldpunkts aus field.json; leer = null (noch nicht vermessen: nie nach (0, 0) fahren).
 struct FieldPoint {
     std::string id;
     std::optional<std::pair<double, double>> xy_in;
+    bool loader = false;  // steht in field.json unter loader (Quelle der Aufnahme: loader, sonst Boden)
 };
 
 // goals, loader, toggles und posen aus field.json mit ihren Koordinaten (fehlende Blöcke zählen als leer).
@@ -43,9 +46,10 @@ using SignalBus = std::set<std::string>;
 // Routenbefehle für die Simulation. Eine Bewegung zur Zeit: startet eine zweite Lane goto/turn, scheitert die erste.
 class SimRouteExecutor : public RouteExecutor {
 public:
+    // game: Spielzustand der Simulation oder nullptr (dann sind intake und cycle Platzhalter); self wählt den Roboter darin.
     SimRouteExecutor(MotionController& motion, const std::vector<FieldPoint>& points, SignalBus& bus, RouteRobot self,
-                     const RoutePlayerConfig& cfg)
-        : motion_(motion), points_(points), bus_(bus), self_(self), cfg_(cfg) {}
+                     const RoutePlayerConfig& cfg, Game* game = nullptr)
+        : motion_(motion), points_(points), bus_(bus), self_(self), cfg_(cfg), game_(game) {}
 
     void start(int lane, const RouteCmd& cmd, double now_s) override;
     StepStatus poll(int lane, double now_s) override;
@@ -60,15 +64,23 @@ private:
         RouteRobot wait_robot = RouteRobot::none;
         std::string wait_name;
         bool waiting = false;
+        bool game_op = false;  // intake/cycle im Game läuft bis done_ms
+        bool game_ok = false;
+        int done_ms = 0;
     };
 
     void begin_motion(int lane, const MotionCommand& cmd, double now_s);
+    void begin_game_op(int lane, const CycleTicket& t);
+    int robot_index() const { return self_ == RouteRobot::runner ? 1 : 0; }
 
     MotionController& motion_;
     const std::vector<FieldPoint>& points_;
     SignalBus& bus_;
     RouteRobot self_;
     RoutePlayerConfig cfg_;
+    Game* game_;
+    bool last_goto_loader_ =
+        false;  // letztes goto-Ziel war ein Ladepunkt: intake nimmt dann vom Loader, sonst vom Boden
     LaneRec lanes_[RoutePlayer::kMaxLanes];
     int motion_lane_ = -1;
 };
@@ -77,7 +89,7 @@ private:
 class RouteRunner {
 public:
     RouteRunner(std::vector<RouteCmd> cmds, const std::vector<FieldPoint>& points, SignalBus& bus, RouteRobot self,
-                const RouteControl& ctl);
+                const RouteControl& ctl, Game* game = nullptr);
     RouteRunner(const RouteRunner&) = delete;
     RouteRunner& operator=(const RouteRunner&) = delete;
 

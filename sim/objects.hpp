@@ -62,6 +62,12 @@ public:
     // Ganzer Zyklus: aufnehmen, Greifer schließt (mit Pin), Lift fährt zur Zielhöhe, setzen. Zeiten addieren sich;
     // bei einem Fehlschlag endet der Zyklus dort (time_s bis dahin). lift darf nicht null sein.
     CycleResult run_cycle(Source src, int level, const Joint& lift, double lift_target_deg, const Claw& claw);
+    // Der Rest eines Zyklus ohne Aufnahme (SIM-22, ADR-032): Greifer schließt, Lift fährt, setzen. time_s startet bei
+    // time_before_s (Dauer der Aufnahme davor). run_cycle ruft genau das nach pick() auf: gleiche Ziehungen, gleiche Zeit.
+    CycleResult place_unit(bool yellow_up, double time_before_s, int level, const Joint& lift, double lift_target_deg,
+                           const Claw& claw);
+    // Ausrichtung eines Preloads (kein pick): wie ein Pin vom Loader (Annahme, ADR-032).
+    bool preload_yellow_up();
 
 private:
     EventParams p_;
