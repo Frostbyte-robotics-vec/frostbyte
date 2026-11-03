@@ -65,7 +65,7 @@ void control_task(void*) {
             last_phase = phase;
         }
         // TODO: Sensoren lesen, Odometrie, Logik, Regler, Motoren schreiben (je nach phase).
-        // TODO(RuleGuard): in Phase Disabled alle Motoren auf Halt; alle Motorausgaben durch g_rule_guard.filter() (M-07).
+        // TODO(RuleGuard): alle Motorausgaben durch g_rule_guard.filter() (M-07), mit GuardInput.disabled = (Phase == Disabled).
         loop.end(pros::millis(), micros_u32());
         g_cycle_stats.publish(loop.stats());
         std::uint32_t base_ms = frostbyte::delay_until_base_ms(loop.wake_ms(), control_period_ms);

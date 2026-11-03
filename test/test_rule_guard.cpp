@@ -165,3 +165,20 @@ TEST_CASE("SG6: Überbesitz wird gemeldet, der Befehl bleibt (Abbauen macht der 
     CHECK((r.intervened & kRuleSg6) != 0);
     CHECK(r.cmd.left_v == 6.0);
 }
+
+TEST_CASE("Disabled: alles 0 V mit Bremse, ohne Latch; nach Enable läuft es wieder") {
+    RuleGuard g(cfg());
+    GuardInput in = ok_input();
+    in.disabled = true;
+    GuardResult r = g.filter(moving(), in);
+    CHECK(r.cmd.left_v == 0.0);
+    CHECK(r.cmd.right_v == 0.0);
+    CHECK(r.cmd.lift_v == 0.0);
+    CHECK(r.cmd.brake);
+    CHECK((r.intervened & kRuleDisabled) != 0);
+    in.disabled = false;
+    r = g.filter(moving(), in);
+    CHECK(r.cmd.left_v == 6.0);
+    CHECK(r.intervened == 0);
+    CHECK_FALSE(g.match_ended());
+}

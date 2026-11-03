@@ -18,7 +18,7 @@ constexpr int kMaxPins = 1;
 constexpr int kMaxCups = 1;
 
 // Verletzte bzw. eingreifende Regel als Bitmaske; in der Simulation zu RULE:SG2 usw. abgebildet.
-enum RuleBit : std::uint8_t { kRuleSg2 = 1, kRuleSg3 = 2, kRuleSg6 = 4, kRuleMatchEnd = 8 };
+enum RuleBit : std::uint8_t { kRuleSg2 = 1, kRuleSg3 = 2, kRuleSg6 = 4, kRuleMatchEnd = 8, kRuleDisabled = 16 };
 
 // Zustand gegen die Regeln prüfen (reine Funktion, ohne Eingriff). pins/cups < 0 = unbekannt: keine Meldung.
 inline std::uint8_t rule_violations(double length_in, double width_in, double height_in, int pins, int cups) {
@@ -45,7 +45,8 @@ struct GuardInput {
     double remaining_s = std::numeric_limits<double>::quiet_NaN();  // Restzeit des Matches; NaN = unbekannt
     bool lift_ok = false;                                           // Lift gehomed und Sensor ok
     double lift_height_in = 0.0;
-    int pins = -1;  // Besitz; < 0 = unbekannt
+    bool disabled = false;  // Phase Disabled (Feld oder Competition-Schalter): Halt, aber ohne Latch
+    int pins = -1;          // Besitz; < 0 = unbekannt
     int cups = -1;
 };
 
@@ -81,13 +82,19 @@ public:
         return what == Grab::pin ? in.pins < kMaxPins : in.cups < kMaxCups;
     }
 
-    // Letzter Filter vor der HAL. Ab Restzeit <= 0 sind alle Ausgaben 0 V mit Bremse, und das bleibt so (Latch), auch
+    // Letzter Filter vor der HAL. Disabled: alles 0 V mit Bremse, ohne Latch (nach Enable läuft es wieder). Ab Restzeit <= 0 sind alle Ausgaben 0 V mit Bremse, und das bleibt so (Latch), auch
     // wenn die Restzeit später wieder größer gemeldet wird. Lift nach oben nur bei gehomtem Lift unter der harten Grenze.
     GuardResult filter(const GuardCommand& want, const GuardInput& in) {
         GuardResult r;
         r.cmd = want;
         if (std::isfinite(in.remaining_s) && in.remaining_s <= 0.0)
             ended_ = true;
+        if (!ended_ && in.disabled) {
+            r.cmd = GuardCommand{0.0, 0.0, 0.0, true};
+            if (want.left_v != 0.0 || want.right_v != 0.0 || want.lift_v != 0.0 || !want.brake)
+                r.intervened |= kRuleDisabled;
+            return r;
+        }
         if (ended_) {
             r.cmd = GuardCommand{0.0, 0.0, 0.0, true};
             if (want.left_v != 0.0 || want.right_v != 0.0 || want.lift_v != 0.0 || !want.brake)

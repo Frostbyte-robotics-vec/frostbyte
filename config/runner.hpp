@@ -64,7 +64,7 @@ inline constexpr bool motion_uses_lemlib_pid = false;
 inline constexpr bool tuning_enabled = false;
 
 // RuleGuard (M-07, ADR-027). TODO(HW): lift_top_offset_in = Hoehe der hoechsten Roboterstelle ueber dem Boden minus gemessene
-// Lifthoehe (bei jeder Lifthoehe konstant, sonst Kurve noetig); Messanleitung in tasks/M-07.md. NaN (Standard) sperrt den Lift
+// Lifthoehe (bei jeder Lifthoehe konstant, sonst Kurve noetig); Messung in M-09. NaN (Standard) sperrt den Lift
 // nach oben immer. Geraten wird nichts.
 inline constexpr frostbyte::RuleGuardConfig rule_guard{};
 
