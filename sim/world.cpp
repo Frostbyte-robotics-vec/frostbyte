@@ -2,11 +2,13 @@
 
 #include <cmath>
 #include <fstream>
+#include <memory>
 #include <ostream>
 #include <stdexcept>
 
 #include "core/log_format.hpp"
 #include "sim/json.hpp"
+#include "sim/route_parser.hpp"
 #include "sim/rules.hpp"
 
 namespace frostbyte::sim {
@@ -69,7 +71,7 @@ public:
     // game: Punktestand des Teams aus dem Scorer und Besitz dieses Roboters; leer, solange die Simulation keinen
     // Spielzustand führt.
     void row(int t_ms, const std::optional<Pose>& truth, const std::optional<Pose>& est, const GpsSample* gps,
-             const std::string& event, const std::optional<GameCols>& game) {
+             const std::string& event, const std::string& route_step, const std::optional<GameCols>& game) {
         logfmt::Row r;
         r.t_s = t_ms / 1000.0;
         r.robot = robot_.name.c_str();
@@ -94,6 +96,8 @@ public:
             r.has_cup = game->has_cup;
             r.has_pin = game->has_pin;
         }
+        if (!route_step.empty())
+            r.route_step = route_step.c_str();
         if (!event.empty())
             r.event = event.c_str();
         char buf[512];
@@ -124,6 +128,8 @@ struct RobotRun {
     double last_measured_in = 0.0;
     std::pair<double, double> held_cmd{0.0, 0.0};  // letzte Ausgabe von closed_loop
     std::string events;                            // seit dem letzten Log-Takt, mit ';' getrennt
+    std::unique_ptr<RouteRunner> route;            // nur mit Route (A-04) und Startpose
+    std::string route_step;                        // Stand beim letzten Steuertakt
     bool wall_contact = false;
     bool robot_contact = false;
     int wall_free_steps = 0;
@@ -182,11 +188,30 @@ SimConfig load_config(const std::string& params_path, const std::string& field_p
     cfg.field_in = field.at("feld_in").as_number();
     cfg.game.midfield = load_midfield(field);
 
-    const auto robot = [&](const char* name, const char* start_id, const std::string& route) {
+    std::optional<RouteNames> names;  // erst, wenn eine Route Zeilen hat (field_min.json u. ä. haben nicht alle Blöcke)
+    cfg.points = load_field_points(field);
+    const auto robot = [&](const char* name, RouteRobot self, const char* start_id, const std::string& route) {
         RobotSetup r;
         r.name = name;
+        r.self = self;
         r.start = start_pose(field, start_id);
         r.route = load_route(route);
+        if (!r.route.empty()) {
+            std::string text;
+            for (const std::string& line : r.route)
+                text += line + '\n';
+            if (!names)
+                names = route_names_from_field(field_path);
+            RouteResult parsed = parse_route(text, *names);
+            if (!parsed.ok())
+                throw std::runtime_error(route + ": " + parsed.error);
+            // Der Parser kennt den Roboter nicht (ADR-023): toggle gibt es nur am Runner.
+            for (const RouteCmd& c : parsed.cmds)
+                if (c.op == RouteOp::toggle && self != RouteRobot::runner)
+                    throw std::runtime_error(route + ": Zeile " + std::to_string(c.line) +
+                                             ": toggle gibt es nur am Runner");
+            r.cmds = std::move(parsed.cmds);
+        }
         r.drive = load_drive_params(params, name);
         r.sensors = load_sensor_params(params, name, cfg.noise_profile);
         const Json& umriss = params.at("roboter").at(name).at("umriss_in");
@@ -194,8 +219,8 @@ SimConfig load_config(const std::string& params_path, const std::string& field_p
         r.width_in = umriss.at("breite").as_number();
         return r;
     };
-    cfg.stacker = robot("stacker", "START_STACKER", stacker_route);
-    cfg.runner = robot("runner", "START_RUNNER", runner_route);
+    cfg.stacker = robot("stacker", RouteRobot::stacker, "START_STACKER", stacker_route);
+    cfg.runner = robot("runner", RouteRobot::runner, "START_RUNNER", runner_route);
     return cfg;
 }
 
@@ -252,6 +277,11 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
             ++result.rule_violations;
         }
     }
+    // Routen (A-04): ein Spieler je Roboter mit Startpose; beide teilen den Signalbus. Handsteuerung und Regelung gehen vor.
+    SignalBus bus;
+    for (RobotRun& r : runs)
+        if (r.drive && !r.setup.cmds.empty() && !r.setup.closed_loop)
+            r.route = std::make_unique<RouteRunner>(r.setup.cmds, cfg.points, bus, r.setup.self, r.setup.control);
     const double dt_s = cfg.schritt_ms / 1000.0;
     const auto truth_of = [](const RobotRun& r) {
         return r.drive ? std::optional<Pose>(r.drive->pose()) : std::nullopt;
@@ -274,16 +304,20 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
                 const double h_deg = r.imu->measure_deg(r.drive->pose().h_deg, t_ms / 1000.0);
                 const double h_rad = h_deg * pi / 180.0;
                 r.est = Pose{r.est->x_in + step_in * std::cos(h_rad), r.est->y_in + step_in * std::sin(h_rad), h_deg};
-                if (r.setup.closed_loop)
+                if (r.setup.closed_loop) {
                     r.held_cmd = r.setup.closed_loop(t_ms, *r.est);
+                } else if (r.route) {
+                    r.held_cmd = r.route->step(t_ms, *r.est);
+                    r.route_step = r.route->step_text();
+                }
             }
         }
         double volts[2][2] = {{0.0, 0.0}, {0.0, 0.0}};  // ohne Regler und Handsteuerung 0 V (Haftreibung hält)
         for (int i = 0; i < 2; ++i) {
             RobotRun& r = runs[i];
-            if (!r.drive || (!r.setup.closed_loop && !r.setup.open_loop))
+            if (!r.drive || (!r.setup.closed_loop && !r.route && !r.setup.open_loop))
                 continue;
-            const auto cmd = r.setup.closed_loop ? r.held_cmd : r.setup.open_loop(t_ms);
+            const auto cmd = (r.setup.closed_loop || r.route) ? r.held_cmd : r.setup.open_loop(t_ms);
             volts[i][0] = cmd.first;
             volts[i][1] = cmd.second;
             if (t_ms >= match_ms) {  // Matchende 0:00: alle Motoren Halt, sonst Regelverstoß
@@ -312,7 +346,7 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
                     const Pose p = r.drive->pose();
                     r.gps_sample = r.gps->measure(p.x_in, p.y_in, p.h_deg, r.speed_in_s());
                 }
-                logs[i]->row(t_ms, truth_of(r), r.est, r.drive ? &r.gps_sample : nullptr, r.events,
+                logs[i]->row(t_ms, truth_of(r), r.est, r.drive ? &r.gps_sample : nullptr, r.events, r.route_step,
                              game ? std::optional<GameCols>(GameCols{game->score(mid), game->cups(i), game->pins(i)})
                                   : std::nullopt);
                 r.events.clear();
