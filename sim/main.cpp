@@ -14,6 +14,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "config/runner.hpp"
+#include "config/stacker.hpp"
 #include "sim/demo.hpp"
 #include "sim/input_script.hpp"
 #include "sim/world.hpp"
@@ -86,6 +88,11 @@ int main(int argc, char** argv) {
     try {
         frostbyte::sim::SimConfig cfg = frostbyte::sim::load_config(params, field, stacker, runner, noise);
         cfg.build = FB_BUILD;
+        // Regler und Standard-Timeouts der Routen wie am Roboter (config/, A-04).
+        cfg.stacker.control = {config::stacker::motion, config::stacker::lateral_pid, config::stacker::angular_pid,
+                               config::stacker::route_player};
+        cfg.runner.control = {config::runner::motion, config::runner::lateral_pid, config::runner::angular_pid,
+                              config::runner::route_player};
         if (demo)
             frostbyte::sim::apply_demo(cfg, params);
         if (!input.empty()) {

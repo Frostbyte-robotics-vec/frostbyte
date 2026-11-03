@@ -12,6 +12,7 @@
 #include "sim/drive.hpp"
 #include "sim/game.hpp"
 #include "sim/rng.hpp"
+#include "sim/route_runner.hpp"
 #include "sim/sensor_models.hpp"
 
 // Welt der Simulation: fester 1-ms-Schritt, Steuerung und Log auf ganzzahligen ms-Rastern aus sim_params.json.
@@ -24,10 +25,13 @@ constexpr int match_ms = 60000;
 struct RobotSetup {
     std::string name;                // "stacker" oder "runner"
     std::optional<Pose> start;       // leer, solange field.json null-Koordinaten hat (A-01)
-    std::vector<std::string> route;  // Routenzeilen ohne Kommentare; interpretiert erst ab dem Routen-Ticket
-    DriveParams drive;               // roboter.<name> aus sim_params.json (SIM-02)
-    SensorParams sensors;            // roboter.<name>.sensoren, skaliert mit dem Rauschprofil (SIM-03)
-    double length_in = 0.0;          // roboter.<name>.umriss_in (Kollision, SG2)
+    std::vector<std::string> route;  // Routenzeilen ohne Kommentare (Text, wie gelesen)
+    std::vector<RouteCmd> cmds;      // dieselbe Route geparst (A-04); leer = keine Route
+    RouteRobot self = RouteRobot::none;
+    RouteControl control;    // Regler und Standard-Timeouts; frostbyte_sim setzt sie aus config/<roboter>.hpp
+    DriveParams drive;       // roboter.<name> aus sim_params.json (SIM-02)
+    SensorParams sensors;    // roboter.<name>.sensoren, skaliert mit dem Rauschprofil (SIM-03)
+    double length_in = 0.0;  // roboter.<name>.umriss_in (Kollision, SG2)
     double width_in = 0.0;
     // Handsteuerung bis zum Routen-Ticket: Spannung links/rechts zur Zeit t_ms. Leer = 0 V.
     std::function<std::pair<double, double>(int t_ms)> open_loop;
@@ -45,6 +49,7 @@ struct SimConfig {
     double field_in = 144.0;                  // Kantenlänge des Feldquadrats; load_config nimmt feld_in aus field.json
     RobotSetup stacker;
     RobotSetup runner;
+    std::vector<FieldPoint> points;  // Feldpunkte mit Koordinaten (null = leer), für goto <NAME>
     // Spielzustand und Punktestand (SIM-20). Leer (kein Goal) = Spalte score bleibt leer; gefüllt nur vom Demo.
     GameSetup game;
 };
