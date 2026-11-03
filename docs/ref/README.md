@@ -5,3 +5,5 @@
 
 Rechte am Inhalt: VEX / REC Foundation. Die Dateien liegen auf Entscheidung des Teams im Repo.
 Bei einer neuen Manual-Version beide Dateien ersetzen und die Versionsnummer hier und in docs/notes.md nachziehen.
+
+**Achtung:** Diese Kopie ist ein Safari-Ausdruck und am rechten Seitenrand abgeschnitten (Sätze enden mitten im Wort). Nicht als vollständige Regelquelle behandeln; Ersatz durch das offizielle PDF: Ticket C-08.
