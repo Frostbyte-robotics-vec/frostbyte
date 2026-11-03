@@ -2,9 +2,9 @@
 id: SIM-10
 phase: "1b"
 titel: Scorer nach RSC3 (Punktewertung der Simulation)
-status: blocked
-owner:
-branch:
+status: in_progress
+owner: arjanssen
+branch: ticket/sim-10
 depends: [SIM-05]
 hw: nein
 ---
