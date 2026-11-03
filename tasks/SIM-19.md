@@ -2,7 +2,7 @@
 id: SIM-19
 phase: "1b"
 titel: Log leeren (restartLog) zeichnet nur auf dem log_ms-Raster auf
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-19
 depends: [SIM-16, SIM-18]
