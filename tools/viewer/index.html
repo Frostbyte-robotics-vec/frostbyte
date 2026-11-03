@@ -86,6 +86,10 @@ body.dragging .drop{display:flex}
 #selftest.ok{background:var(--ok-soft);color:var(--ok)}
 #selftest.bad{background:var(--bad-soft);color:var(--bad);white-space:pre-wrap}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* Simulationsseite (SIM-13, tools/sim_page.py): nur 3D-Ansicht, Zeitleiste und Log-Tab */
+body[data-ansicht="sim"] header, body[data-ansicht="sim"] #selftest, body[data-ansicht="sim"] #poseSrc,
+body[data-ansicht="sim"] #stateCard, body[data-ansicht="sim"] #logsCard, body[data-ansicht="sim"] .hint{display:none}
+body[data-ansicht="sim"] .time{grid-template-columns:auto auto minmax(0,1fr) auto}
 </style>
 </head>
 <body>
@@ -131,7 +135,7 @@ body.dragging .drop{display:flex}
           <option value="odom">Odometrie</option><option value="gps">GPS</option><option value="wahr">wahre Pose (Sim)</option>
         </select>
       </div>
-      <section class="card">
+      <section class="card" id="stateCard">
         <h2>Zustand <small id="deltas"></small></h2>
         <div class="tbl"><table>
           <thead><tr><th></th><th>Roboter</th><th>Zyklus</th><th>Routenschritt</th><th class="n">Punkte</th><th>Cup/Pin</th>
@@ -142,12 +146,12 @@ body.dragging .drop{display:flex}
     </div>
 
     <div class="side">
-      <section class="card">
+      <section class="card" id="logsCard">
         <h2>Logs <small>je Roboter: erstes Log = Modell, weitere = Geist</small></h2>
         <ul class="logs" id="logs"><li class="empty">–</li></ul>
       </section>
       <section class="card">
-        <h2>Ereignisse <small id="evcount"></small></h2>
+        <h2><span id="evtitle">Ereignisse</span> <small id="evcount"></small></h2>
         <div class="chips" id="evfilter"></div>
         <ul class="events" id="events"></ul>
       </section>
@@ -163,6 +167,8 @@ body.dragging .drop{display:flex}
 (function(){
 'use strict';
 const $ = id => document.getElementById(id);
+if (new URLSearchParams(location.search).get('ansicht') === 'sim') document.body.dataset.ansicht = 'sim';
+if (document.body.dataset.ansicht === 'sim') $('evtitle').textContent = 'Log';
 const DEG = Math.PI / 180;
 const LOG_COLORS = ['#1E6BAE', '#E0703A', '#2F7D4F', '#6A4FC8', '#B3261E', '#8A6D1C'];
 // Kleinteil-Ebenen aus robots.js: ~1600 Zeichenaufrufe je Stacker, deshalb nur mit „Details“
