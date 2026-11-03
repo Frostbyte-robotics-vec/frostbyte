@@ -8,8 +8,6 @@
 // priorisierten Task, wenn TuningMode::take_save_request() true war, nie im 10-ms-Steuer-Task.
 namespace frostbyte {
 
-enum class LoadResult { loaded, missing, invalid };
-
 // Bei missing oder invalid bleibt `values` unverändert (Standardwerte aus config/).
 inline LoadResult load_tuning(const hal::Storage& store, TuningSet& values) {
     char buf[512];

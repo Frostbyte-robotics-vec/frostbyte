@@ -4,7 +4,12 @@
 
 // Eine kleine Datei auf dem Speicher des Roboters (SD-Karte), z. B. die getunten Reglerwerte (D-06, ADR-020).
 // Nur außerhalb des Steuer-Tasks benutzen: Lesen in initialize(), Schreiben im niedrig priorisierten Task.
-namespace frostbyte::hal {
+namespace frostbyte {
+
+// Ergebnis beim Laden einer Datei aus dem Speicher (Tuning-Werte, gewählte Routine).
+enum class LoadResult { loaded, missing, invalid };
+
+namespace hal {
 
 class Storage {
 public:
@@ -18,4 +23,5 @@ public:
     virtual bool write(const char* data, std::size_t n) = 0;
 };
 
-}  // namespace frostbyte::hal
+}  // namespace hal
+}  // namespace frostbyte
