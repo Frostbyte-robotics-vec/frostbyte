@@ -246,8 +246,8 @@ var FBLive = (function () {
         else list.push({ t_s: now, x_in: r.x_in, y_in: r.y_in, h_deg: r.h_deg, event: pending[n].join(';') });
       }
       list.forEach(function (w) {
-        var c = { t_s: w.t_s.toFixed(3), robot: n, x_in: w.x_in.toFixed(3), y_in: w.y_in.toFixed(3), h_deg: w.h_deg.toFixed(2),
-          tx_in: w.x_in.toFixed(3), ty_in: w.y_in.toFixed(3), th_deg: w.h_deg.toFixed(2), event: w.event };
+        var c = { t_s: w.t_s.toFixed(3), robot: n, x_in: w.x_in.toFixed(3), y_in: w.y_in.toFixed(3), h_deg: w.h_deg.toFixed(3),
+          tx_in: w.x_in.toFixed(3), ty_in: w.y_in.toFixed(3), th_deg: w.h_deg.toFixed(3), event: w.event };
         out.push(LOG_COLUMNS.map(function (k) { return c[k] === undefined ? '' : c[k]; }).join(','));
       });
       return out.join('\n') + '\n';
@@ -333,7 +333,7 @@ var FBLive = (function () {
       pose: function (n) { var r = robots[n]; return { x_in: r.x_in, y_in: r.y_in, h_deg: r.h_deg }; },
       // Ereignisse seit dem letzten Aufruf: [{t_s, robot, text}] (COLLISION:<mit>, BLOCKED).
       // Eigene Ereignisse ins Log (z. B. später Ausgaben); Komma und Semikolon werden zu Leerzeichen.
-      logEvent: function (name, text) { if (rows[name]) logEvent(name, text); },
+      logEvent: function (name, text) { if (rows[name]) emit(name, text); },
       clearLog: function () { restartLog(); },
       // Aufnahme als CSV je Roboter (Log-Format v1): {stacker: text, runner: text}
       exportCsv: function () { return { stacker: csvOf('stacker'), runner: csvOf('runner') }; },

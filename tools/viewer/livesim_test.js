@@ -225,7 +225,10 @@ function runLivesimTests(FBLive, FBLog) {
     live = FBLive.create(params);   // ohne field.json: zwei START_-Hinweise + kein Feldrand → nur NOTE-Token
     const poses = [live.pose('stacker')];
     live.setKeys(press({ w: true }));
-    for (let k = 0; k < 40; k++) { live.advance(0.02); poses.push(live.pose('stacker')); }
+    for (let k = 0; k < 20; k++) { live.advance(0.02); poses.push(live.pose('stacker')); }
+    live.setKeys(press({ w: true, d: true }));   // Kurve: Heading ändert sich
+    for (let k = 0; k < 20; k++) { live.advance(0.02); poses.push(live.pose('stacker')); }
+    check('Kurve ändert das Heading', Math.abs(FBLive.wrap(poses[40].h_deg - poses[0].h_deg)) > 1);
     let csv = live.exportCsv();
     const head = csv.stacker.split('\n')[0];
     check('Kopfzeile v1', /^# frostbyte-log v1 robot=stacker source=sim seed=- build=\S+$/.test(head), head);
@@ -235,7 +238,7 @@ function runLivesimTests(FBLive, FBLog) {
     const tr = L.robots.stacker;
     check('Raster 20 ms, eine Zeile mehr als Bilder', tr.n === 41 && Math.abs(tr.num.t_s[1] - 0.02) < 1e-9 && Math.abs(tr.num.t_s[40] - 0.8) < 1e-9, tr.n);
     let maxErr = 0;
-    for (let k = 0; k < 41; k++) maxErr = Math.max(maxErr, Math.abs(tr.num.x_in[k] - poses[k].x_in), Math.abs(tr.num.y_in[k] - poses[k].y_in), Math.abs(tr.num.th_deg[k] - poses[k].h_deg));
+    for (let k = 0; k < 41; k++) maxErr = Math.max(maxErr, Math.abs(tr.num.x_in[k] - poses[k].x_in), Math.abs(tr.num.y_in[k] - poses[k].y_in), Math.abs(FBLive.wrap(tr.num.th_deg[k] - poses[k].h_deg)), Math.abs(FBLive.wrap(tr.num.h_deg[k] - poses[k].h_deg)));
     check('Posen des Exports = Posen der Live-Fahrt', maxErr < 1e-3, maxErr);
     check('wahre Pose und Odometrie-Spalte gleich', Math.abs(tr.num.tx_in[40] - tr.num.x_in[40]) < 1e-9);
     const ev0 = FBLog.events(L).filter(e => e.robot === 'stacker');
@@ -252,13 +255,14 @@ function runLivesimTests(FBLive, FBLog) {
     L = FBLog.parseLog(csv.stacker);
     const evs = FBLog.events(L).filter(e => e.robot === 'stacker' && e.kind !== 'NOTE').map(e => e.text);
     check('Ereignisse im Export = Ereignisse der Fahrt (COLLISION:wall, BLOCKED)',
-      evs.join() === seen.filter((t, i) => true).join() && evs.indexOf('COLLISION:wall') >= 0 && evs.indexOf('BLOCKED') >= 0, evs.join() + ' | ' + seen.join());
+      evs.join() === seen.join() && evs.indexOf('COLLISION:wall') >= 0 && evs.indexOf('BLOCKED') >= 0, evs.join() + ' | ' + seen.join());
     check('Pose im Export bleibt im Feld', Array.from(L.robots.stacker.num.y_in).every(y => y <= 72 + 1e-6));
 
     // Unbekannte Token und Sonderzeichen werden nicht verworfen und zerstören das CSV nicht
     live = FBLive.create(params, fld);
     live.logEvent('stacker', 'OUTPUT:motor,links;rechts');
     live.advance(0.04);
+    check('logEvent erscheint auch in takeEvents (Anzeige)', live.takeEvents().some(e => /^OUTPUT:motor/.test(e.text)));
     L = FBLog.parseLog(live.exportCsv().stacker);
     const un = FBLog.events(L).filter(e => e.kind === 'OUTPUT');
     check('unbekannter Token bleibt erhalten, Komma/Semikolon entschärft', un.length === 1 && L.warnings.length === 0 && /^OUTPUT:motor/.test(un[0].text), JSON.stringify(un));

@@ -163,7 +163,8 @@ body[data-ansicht="sim"] #livectl{display:flex}
         <div class="chips" id="livectl">
           <button class="btn" id="bLogClear" disabled>Log leeren</button>
           <button class="btn" id="bLogCsv" disabled title="Je Roboter eine CSV im Log-Format v1; lässt sich im Viewer und hier wieder laden">CSV speichern</button>
-          <label class="btn" for="fileLogs">Log laden</label>
+          <label class="btn" for="fileLogsLive">Log laden</label>
+          <input class="sr" type="file" id="fileLogsLive" accept=".csv,.txt,text/csv" multiple>
           <label class="chip"><input type="checkbox" id="cScroll" checked>Mitscrollen</label>
         </div>
         <div class="chips" id="evfilter"></div>
@@ -626,6 +627,7 @@ function readFiles(files){
     .catch(name => alert(name + ': konnte nicht gelesen werden'));
 }
 $('fileLogs').onchange = e => { readFiles(e.target.files); e.target.value = ''; };
+$('fileLogsLive').onchange = e => { readFiles(e.target.files); e.target.value = ''; };
 $('fileField').onchange = e => { readFiles(e.target.files); e.target.value = ''; };
 let dragDepth = 0;
 window.addEventListener('dragenter', e => { e.preventDefault(); dragDepth++; document.body.classList.add('dragging'); });
@@ -684,8 +686,10 @@ function stopLive(){
   $('bLive').setAttribute('aria-pressed', false); $('liveinfo').hidden = true; S.dirty = true;
 }
 $('bLive').onclick = () => { if (S.live) stopLive(); else startLive().catch(e => alert('Live: ' + e.message)); $('bLive').blur(); };
-$('bLogClear').onclick = () => { if (!S.live) return; S.live.sim.clearLog(); S.live.log.length = 0; S.live.entries.length = 0; renderLiveEvents(); };
+$('cScroll').onchange = e => e.target.blur();
+$('bLogClear').onclick = () => { $('bLogClear').blur(); if (!S.live) return; S.live.sim.clearLog(); S.live.log.length = 0; S.live.entries.length = 0; renderLiveEvents(); };
 $('bLogCsv').onclick = () => {
+  $('bLogCsv').blur();
   if (!S.live) return;
   const csv = S.live.sim.exportCsv();
   Object.keys(csv).forEach((rn, i) => setTimeout(() => {
@@ -695,7 +699,7 @@ $('bLogCsv').onclick = () => {
   }, i * 300));
 };
 window.addEventListener('keydown', e => {
-  if (!S.live || e.target.tagName === 'INPUT' && e.target.type !== 'range' || e.target.tagName === 'SELECT') return;
+  if (!S.live || e.target.tagName === 'INPUT' && !['range', 'checkbox'].includes(e.target.type) || e.target.tagName === 'SELECT') return;
   if (e.code in LIVE_KEYS) { liveHeld[LIVE_KEYS[e.code]] = true; e.preventDefault(); }
   else if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) S.live.sim.toggle(); }
   else if (e.code === 'KeyR') { if (!e.repeat) { S.live.sim.reset(); S.live.log.length = 0; S.live.entries.length = 0; liveSeed(); renderLiveEvents(); } }
