@@ -90,6 +90,17 @@ body.dragging .drop{display:flex}
 body[data-ansicht="sim"] header, body[data-ansicht="sim"] #selftest, body[data-ansicht="sim"] #poseSrc,
 body[data-ansicht="sim"] #stateCard, body[data-ansicht="sim"] #logsCard, body[data-ansicht="sim"] .hint{display:none}
 body[data-ansicht="sim"] .time{grid-template-columns:auto auto minmax(0,1fr) auto}
+/* SIM-18: maximal schlicht – nur 3D-Feld, eine Statuszeile und der Live-Knopf, weiß auch im dunklen Design.
+   Nur Ausblenden: Zeitleiste, Log und Feldinfo bleiben im DOM, die Ereignisse werden intern weiter erfasst. */
+body[data-ansicht="sim"]{--paper:#FFFFFF; --viewer:#FFFFFF; --panel:#FFFFFF; --ink:#13202B; --muted:#566673; --line:#C7D1D8;
+  --accent:#1E6BAE; --accent-soft:#DCEAF6; color-scheme:light; padding:0}
+body[data-ansicht="sim"] .wrap{max-width:none;gap:0}
+body[data-ansicht="sim"] .main{grid-template-columns:minmax(0,1fr);gap:0}
+body[data-ansicht="sim"] .main > .side:last-child{display:none}
+body[data-ansicht="sim"] #fieldinfo, body[data-ansicht="sim"] .time, body[data-ansicht="sim"] #evCard,
+body[data-ansicht="sim"] #empty{display:none}
+body[data-ansicht="sim"] .viewer{border:0;border-radius:0;box-shadow:none;height:100vh;min-height:360px}
+body[data-ansicht="sim"] .liveinfo{background:transparent;border:0;box-shadow:none;padding:0;top:10px;bottom:auto}
 /* Live-Handsteuerung (SIM-14) */
 #livectl{display:none;align-items:center}
 body[data-ansicht="sim"] #livectl{display:flex}
@@ -158,7 +169,7 @@ body[data-ansicht="sim"] #livectl{display:flex}
         <h2>Logs <small>je Roboter: erstes Log = Modell, weitere = Geist</small></h2>
         <ul class="logs" id="logs"><li class="empty">–</li></ul>
       </section>
-      <section class="card">
+      <section class="card" id="evCard">
         <h2><span id="evtitle">Ereignisse</span> <small id="evcount"></small></h2>
         <div class="chips" id="livectl">
           <button class="btn" id="bLogClear" disabled>Log leeren</button>
@@ -184,7 +195,8 @@ body[data-ansicht="sim"] #livectl{display:flex}
 'use strict';
 const $ = id => document.getElementById(id);
 if (new URLSearchParams(location.search).get('ansicht') === 'sim') document.body.dataset.ansicht = 'sim';
-if (document.body.dataset.ansicht === 'sim') $('evtitle').textContent = 'Log';
+const SIM = document.body.dataset.ansicht === 'sim';
+if (SIM) $('evtitle').textContent = 'Log';
 const DEG = Math.PI / 180;
 const LOG_COLORS = ['#1E6BAE', '#E0703A', '#2F7D4F', '#6A4FC8', '#B3261E', '#8A6D1C'];
 // Kleinteil-Ebenen aus robots.js: ~1600 Zeichenaufrufe je Stacker, deshalb nur mit „Details“
@@ -652,8 +664,9 @@ function updateLive(){
   if (fresh.length) { renderFilter(); $('evcount').textContent = `${L.entries.filter(x => S.kinds.has(kindOf(x))).length} von ${L.entries.length}`; }
   if (L.log.length > 4) L.log.splice(0, L.log.length - 4);
   const p = L.sim.pose(a);
-  $('liveinfo').textContent = `Live · ${a === 'stacker' ? 'Stacker' : 'Runner'} aktiv · ${fmt(L.sim.speed(a))} in/s · x ${fmt(p.x_in)} y ${fmt(p.y_in)} h ${fmt(p.h_deg, 0)}°`
-    + (liveHeld.shift ? ' · langsam' : '') + '\nW/S fahren · A/D drehen · Shift langsam · Tab Roboter wechseln · R zurücksetzen · C Kollisionsumriss'
+  const head = `Live · ${a === 'stacker' ? 'Stacker' : 'Runner'} aktiv · ${fmt(L.sim.speed(a))} in/s · x ${fmt(p.x_in)} y ${fmt(p.y_in)} h ${fmt(p.h_deg, 0)}°`
+    + (liveHeld.shift ? ' · langsam' : '');
+  $('liveinfo').textContent = SIM ? head : head + '\nW/S fahren · A/D drehen · Shift langsam · Tab Roboter wechseln · R zurücksetzen · C Kollisionsumriss'
     + (L.log.length ? '\n' + L.log.join('\n') : '')
     + (L.sim.notes.length ? '\n' + L.sim.notes.join('\n') : '');
 }
@@ -719,17 +732,19 @@ renderLogList();
 // Über http (nicht file://) gehen auch URL-Parameter: ?log=a.csv&log=b.csv&field=../../field/field.json&t=12
 const q = new URLSearchParams(location.search);
 const fetchText = u => fetch(u).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); });
+// /sim/ startet ohne Zeitleiste direkt im Live-Modus (nach dem Feld, damit die Startposen stimmen)
+const autoLive = () => { if (SIM) startLive().catch(e => alert('Live: ' + e.message)); };
 if (location.protocol !== 'file:') {
   // Lokal liegt das Feld zwei Ordner höher, auf der Veröffentlichung (Pages) neben dem Viewer.
-  fetchText(q.get('field') || '../../field/field.json').catch(() => fetchText('field.json')).then(t => loadField(t, 'field.json')).catch(() => {});
+  fetchText(q.get('field') || '../../field/field.json').catch(() => fetchText('field.json')).then(t => loadField(t, 'field.json')).catch(() => {}).then(autoLive);
   // Ohne ?log=… lädt die Veröffentlichung die Demo (demo/run000_*.csv, falls vorhanden).
-  const logUrls = q.getAll('log').length ? q.getAll('log') : (q.has('nodemo') ? [] : ['demo/run000_stacker.csv', 'demo/run000_runner.csv']);
+  const logUrls = q.getAll('log').length ? q.getAll('log') : (SIM || q.has('nodemo') ? [] : ['demo/run000_stacker.csv', 'demo/run000_runner.csv']);
   Promise.all(logUrls.map(u => fetchText(u).then(t => [u, t]))).then(list => {
     list.forEach(([u, t]) => addLog(t, u.split('/').pop()));
     if (q.has('t')) setTime(+q.get('t'));
     document.body.dataset.ready = '1';
   }).catch(e => { document.body.dataset.ready = q.getAll('log').length ? 'fehler ' + e.message : '1'; });
-} else document.body.dataset.ready = '1';
+} else { document.body.dataset.ready = '1'; autoLive(); }
 if (q.has('selftest')) {
   const showTest = (name, r) => {
     const el = $('selftest'), bad = r.fail || el.className === 'bad';
