@@ -2,7 +2,7 @@
 id: SIM-14
 phase: "1b"
 titel: Live-Handsteuerung im Browser mit WASD (Fahrmodell aus sim_params.json)
-status: in_progress
+status: review
 owner: DAVIDCOPCOP
 branch: ticket/sim-14
 depends: [SIM-13]
