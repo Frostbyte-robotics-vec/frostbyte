@@ -97,6 +97,11 @@
       "owner": "stacker"
     }
   ],
+  "ebenen": {
+    "anzahl": 6,
+    "stufe_in": null,
+    "_hinweis": "Ebene n = n Objekte liegen schon auf dem Goal (nicht zu verwechseln mit `ebene` bei objekte_start, dort 0 = am Boden): Ebene 0 = hoehe_in des Goals, jede weitere Ebene + stufe_in. stufe_in ist noch nicht vermessen (null): Höhe von Cup/Pin im Stapel aus CAD/Game Manual messen, Ticket C-06. Bis dahin liefert GoalBook nur Ebene 0."
+  },
   "toggles": [
     {
       "id": "TOGGLE_RED_1",
