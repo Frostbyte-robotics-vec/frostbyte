@@ -90,6 +90,9 @@ body.dragging .drop{display:flex}
 body[data-ansicht="sim"] header, body[data-ansicht="sim"] #selftest, body[data-ansicht="sim"] #poseSrc,
 body[data-ansicht="sim"] #stateCard, body[data-ansicht="sim"] #logsCard, body[data-ansicht="sim"] .hint{display:none}
 body[data-ansicht="sim"] .time{grid-template-columns:auto auto minmax(0,1fr) auto}
+/* Live-Handsteuerung (SIM-14) */
+.livebar{position:absolute;right:12px;bottom:10px;display:flex;gap:8px;align-items:center}
+.liveinfo{position:absolute;left:12px;bottom:10px;font:12px var(--f-mono);color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 8px;max-width:calc(100% - 140px);white-space:pre-line}
 </style>
 </head>
 <body>
@@ -119,6 +122,8 @@ body[data-ansicht="sim"] .time{grid-template-columns:auto auto minmax(0,1fr) aut
         <div class="hint">Ziehen: drehen · Rechts ziehen: schieben · Mausrad: zoomen · Leertaste: Start/Pause · ← →: ±0,2 s</div>
         <div class="fieldinfo" id="fieldinfo"></div>
         <div class="stats" id="stats" hidden></div>
+        <div class="liveinfo" id="liveinfo" hidden></div>
+        <div class="livebar"><button class="btn" id="bLive" aria-pressed="false" title="Roboter mit der Tastatur fahren: W/S vor/zurück, A/D drehen, Shift langsam, Tab Roboter wechseln, R zurücksetzen">Live</button></div>
       </div>
       <div class="time">
         <button class="btn" id="bPlay" aria-label="Abspielen">▶</button>
@@ -163,6 +168,7 @@ body[data-ansicht="sim"] .time{grid-template-columns:auto auto minmax(0,1fr) aut
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="logparse.js"></script>
 <script src="robots.js"></script>
+<script src="livesim.js"></script>
 <script>
 (function(){
 'use strict';
@@ -189,7 +195,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;', '<':'&lt;', '>
 
 /* ---------- Zustand ---------- */
 const S = { logs: [], t: 0, tMin: 0, tMax: 60, playing: false, speed: 1, src: 'odom', field: null, kinds: new Set(EV_KINDS),
-  events: [], follow: false, detail: false, dirty: true };
+  events: [], follow: false, detail: false, dirty: true, live: null };
 
 /* ---------- 3D (optional: ohne three.js nur Tabellen) ---------- */
 const HAS3D = typeof THREE !== 'undefined' && THREE.OrbitControls;
@@ -423,12 +429,14 @@ function setTime(t){
 function kindOf(e){ return EV_KINDS.includes(e.kind) ? e.kind : 'andere'; }
 function update(){
   $('tOut').textContent = fmt(S.t, 2) + ' s';
+  const live = !!S.live;
+  if (live) updateLive();
   S.logs.forEach((L, li) => {
     const t = S.t - L.offset;
     Object.entries(L.tracks).forEach(([rn, k]) => {
       const tr = k.tr, i = FBLog.indexAt(tr, t);
       if (HAS3D) {
-        k.obj.visible = L.visible; k.trail.visible = L.visible;
+        k.obj.visible = L.visible && !live; k.trail.visible = L.visible && !live;
         let p = FBLog.pose(tr, t, S.src);
         if (Number.isNaN(p.x) || Number.isNaN(p.y)) { k.obj.visible = false; }
         else placeOnField(k.obj, p.x, p.y, Number.isNaN(p.h) ? 0 : p.h);
@@ -466,7 +474,10 @@ function update(){
     }
   });
   $('deltas').textContent = d.join(' · ');
-  if (S.follow && HAS3D) {
+  if (S.follow && HAS3D && live) {
+    const o = S.live.models[S.live.sim.active()];
+    const dp = o.position.clone().sub(controls.target); controls.target.add(dp); cam.position.add(dp);
+  } else if (S.follow && HAS3D) {
     const k = S.logs.length && Object.values(S.logs[0].tracks)[0];
     if (k && k.obj.visible) { const dp = k.obj.position.clone().sub(controls.target); controls.target.add(dp); cam.position.add(dp); }
   }
@@ -587,6 +598,55 @@ window.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth =
 window.addEventListener('dragover', e => e.preventDefault());
 window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; document.body.classList.remove('dragging'); readFiles(e.dataTransfer.files); });
 
+/* ---------- Live-Handsteuerung (SIM-14, livesim.js) ---------- */
+const LIVE_KEYS = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd' };
+const liveHeld = { w: false, a: false, s: false, d: false, shift: false };
+function liveSend(){ if (S.live) S.live.sim.setKeys(liveHeld); }
+function updateLive(){
+  const L = S.live, a = L.sim.active();
+  ['stacker', 'runner'].forEach(n => {
+    const p = L.sim.pose(n);
+    placeOnField(L.models[n], p.x_in, p.y_in, p.h_deg);
+  });
+  const p = L.sim.pose(a);
+  $('liveinfo').textContent = `Live · ${a === 'stacker' ? 'Stacker' : 'Runner'} aktiv · ${fmt(L.sim.speed(a))} in/s · x ${fmt(p.x_in)} y ${fmt(p.y_in)} h ${fmt(p.h_deg, 0)}°`
+    + (liveHeld.shift ? ' · langsam' : '') + '\nW/S fahren · A/D drehen · Shift langsam · Tab Roboter wechseln · R zurücksetzen'
+    + (L.sim.notes.length ? '\n' + L.sim.notes.join('\n') : '');
+}
+async function startLive(){
+  if (typeof FBLive === 'undefined') { alert('livesim.js konnte nicht geladen werden'); return; }
+  if (!HAS3D) { alert('Live braucht die 3D-Ansicht (three.js)'); return; }
+  const paramsText = await fetchText(q.get('params') || '../../sim/sim_params.json').catch(() => fetchText('sim_params.json'));
+  const sim = FBLive.create(JSON.parse(paramsText), S.field);
+  const models = {};
+  ['stacker', 'runner'].forEach(n => { const m = makeModel(n, null); m.userData.fbLog = false; scene.add(m); models[n] = m; });
+  S.playing = false; syncPlay();
+  S.live = { sim, models };
+  $('bLive').setAttribute('aria-pressed', true); $('liveinfo').hidden = false;
+  document.body.dataset.live = '1';
+  liveSend(); S.dirty = true;
+}
+function stopLive(){
+  if (!S.live) return;
+  Object.values(S.live.models).forEach(m => scene.remove(m));
+  S.live = null; document.body.dataset.live = '';
+  $('bLive').setAttribute('aria-pressed', false); $('liveinfo').hidden = true; S.dirty = true;
+}
+$('bLive').onclick = () => { if (S.live) stopLive(); else startLive().catch(e => alert('Live: ' + e.message)); $('bLive').blur(); };
+window.addEventListener('keydown', e => {
+  if (!S.live || e.target.tagName === 'INPUT' && e.target.type !== 'range' || e.target.tagName === 'SELECT') return;
+  if (e.code in LIVE_KEYS) { liveHeld[LIVE_KEYS[e.code]] = true; e.preventDefault(); }
+  else if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) S.live.sim.toggle(); }
+  else if (e.code === 'KeyR') { if (!e.repeat) S.live.sim.reset(); }
+  liveHeld.shift = e.shiftKey; liveSend();
+});
+window.addEventListener('keyup', e => {
+  if (e.code in LIVE_KEYS) liveHeld[LIVE_KEYS[e.code]] = false;
+  liveHeld.shift = e.shiftKey; liveSend();
+});
+window.addEventListener('blur', () => { Object.keys(liveHeld).forEach(k => { liveHeld[k] = false; }); liveSend(); });
+document.addEventListener('visibilitychange', () => { if (S.live) S.live.sim.pause(document.hidden); });
+
 /* ---------- Start ---------- */
 buildField();
 renderLogList();
@@ -605,13 +665,16 @@ if (location.protocol !== 'file:') {
   }).catch(e => { document.body.dataset.ready = q.getAll('log').length ? 'fehler ' + e.message : '1'; });
 } else document.body.dataset.ready = '1';
 if (q.has('selftest')) {
-  const s = document.createElement('script'); s.src = 'logparse_test.js';
-  s.onload = () => {
-    const r = runLogparseTests(FBLog), el = $('selftest');
-    el.hidden = false; el.className = r.fail ? 'bad' : 'ok';
-    el.textContent = `Selbsttest logparse: ${r.ok} ok, ${r.fail} Fehler` + (r.msgs.length ? '\n' + r.msgs.join('\n') : '');
+  const showTest = (name, r) => {
+    const el = $('selftest'), bad = r.fail || el.className === 'bad';
+    el.textContent = (el.hidden ? '' : el.textContent + '\n') + `Selbsttest ${name}: ${r.ok} ok, ${r.fail} Fehler` + (r.msgs.length ? '\n' + r.msgs.join('\n') : '');
+    el.className = bad ? 'bad' : 'ok'; el.hidden = false;
   };
-  document.head.appendChild(s);
+  [['logparse_test.js', () => runLogparseTests(FBLog), 'logparse'], ['livesim_test.js', () => runLivesimTests(FBLive), 'livesim']].forEach(([src, run, name]) => {
+    const s = document.createElement('script'); s.src = src;
+    s.onload = () => showTest(name, run());
+    document.head.appendChild(s);
+  });
 }
 // ?stats: Bilder/s und Zeichenaufrufe, um „läuft flüssig“ am eigenen Rechner zu prüfen
 const stats = q.has('stats') && HAS3D ? { el: $('stats'), frames: 0, t0: performance.now() } : null;
@@ -619,7 +682,8 @@ if (stats) stats.el.hidden = false;
 let last = performance.now();
 (function loop(now){
   const dt = Math.min(.1, (now - last) / 1000); last = now;
-  if (S.playing) { setTime(S.t + dt * S.speed); if (S.t >= S.tMax) { S.playing = false; syncPlay(); } }
+  if (S.live) { S.live.sim.advance(dt); S.dirty = true; }
+  else if (S.playing) { setTime(S.t + dt * S.speed); if (S.t >= S.tMax) { S.playing = false; syncPlay(); } }
   if (S.dirty) { update(); S.dirty = false; }
   if (HAS3D) { controls.update(); renderer.render(scene, cam); }
   if (stats && ++stats.frames && now - stats.t0 >= 1000) {
