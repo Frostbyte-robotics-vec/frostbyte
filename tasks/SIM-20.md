@@ -2,7 +2,7 @@
 id: SIM-20
 phase: "1b"
 titel: Scorer in die Simulation einhängen (Spielzustand, score-Spalte im Log, Punkte im Bericht)
-status: in_progress
+status: review
 owner: DAVIDCOPCOP
 branch: ticket/sim-20
 depends: [SIM-10, SIM-05]
