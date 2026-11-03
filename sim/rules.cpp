@@ -5,12 +5,14 @@
 namespace frostbyte::sim {
 
 std::vector<RuleViolation> check_rules(const RobotRuleState& s) {
+    // Eine Quelle für die Vergleiche: lib/util/rule_guard.hpp (ADR-027); hier nur Bits in Text übersetzen.
+    const std::uint8_t bits = rule_violations(s.length_in, s.width_in, s.height_in, s.pins, s.cups);
     std::vector<RuleViolation> v;
-    if (s.length_in > max_footprint_in || s.width_in > max_footprint_in)
+    if (bits & kRuleSg2)
         v.push_back({"SG2", "Footprint größer als 24 x 24 Zoll"});
-    if (s.height_in > max_height_in)
+    if (bits & kRuleSg3)
         v.push_back({"SG3", "Höhe über 50 Zoll"});
-    if (s.pins > max_pins || s.cups > max_cups)
+    if (bits & kRuleSg6)
         v.push_back({"SG6", "mehr als 1 Pin oder 1 Cup im Besitz"});
     return v;
 }

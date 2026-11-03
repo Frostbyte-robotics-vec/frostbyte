@@ -9,6 +9,7 @@
 #include "hal/pros/pros_storage.hpp"  // SD-Karte fuer die Tuning-Werte (D-06)
 #include "lemlib/api.hpp"             // prueft nur, dass LemLib einbindbar ist; Aufrufe erst hinter hal/ (ADR-001)
 #include "lemlib_regulator.hpp"
+#include "util/rule_guard.hpp"
 
 namespace {
 
@@ -42,6 +43,11 @@ frostbyte::MotionController g_motion(config::motion, lateral_regulator(), angula
 // priorisierten Task mit save_tuning() beantworten und take_event() ins Log schreiben (braucht Logger F-05); Fahrer-Aktionen sperren.
 frostbyte::hal::ProsStorage g_tuning_store("/usd/tuning.txt");
 
+// RuleGuard (M-07, ADR-027): letzter Filter vor den Motoren. Noch nicht verdrahtet (Lift, Antrieb und Greifer haben noch keine
+// Ports, TODO(HW)); der Steuer-Task ruft g_rule_guard.filter() auf, sobald Motoren geschrieben werden, und gibt
+// Restzeit/Besitz/Lift-Zustand hinein. Disabled -> Halt bleibt Sache dieses Aufrufs (siehe TODO im Steuer-Task).
+frostbyte::RuleGuard g_rule_guard(config::rule_guard);
+
 std::uint32_t micros_u32() { return static_cast<std::uint32_t>(pros::micros()); }
 
 // Ein Steuer-Task fuer alle Phasen. Die Callbacks setzen nur g_phase, damit beim Uebergang
@@ -59,7 +65,7 @@ void control_task(void*) {
             last_phase = phase;
         }
         // TODO: Sensoren lesen, Odometrie, Logik, Regler, Motoren schreiben (je nach phase).
-        // TODO(RuleGuard): in Phase Disabled alle Motoren auf Halt (Ticket mit Regelwaechter).
+        // TODO(RuleGuard): alle Motorausgaben durch g_rule_guard.filter() (M-07), mit GuardInput.disabled = (Phase == Disabled).
         loop.end(pros::millis(), micros_u32());
         g_cycle_stats.publish(loop.stats());
         std::uint32_t base_ms = frostbyte::delay_until_base_ms(loop.wake_ms(), control_period_ms);
