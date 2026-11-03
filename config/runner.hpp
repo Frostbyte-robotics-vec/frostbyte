@@ -2,6 +2,7 @@
 
 #include "control/motion_controller.hpp"
 #include "match/driver_map.hpp"
+#include "util/rule_guard.hpp"
 
 namespace config::runner {
 inline constexpr const char* robot_name = "runner";
@@ -61,5 +62,10 @@ inline constexpr bool motion_uses_lemlib_pid = false;
 // einschalten (Tasten A/B/X und das Steuerkreuz gehoeren dann dem Tuning, nicht dem Fahrer); im Match immer false.
 // Gilt nur mit dem eigenen Pid (motion_uses_lemlib_pid = false). Uebernahme ins Repo: Werte hier eintragen (D-07).
 inline constexpr bool tuning_enabled = false;
+
+// RuleGuard (M-07, ADR-027). TODO(HW): lift_top_offset_in = Hoehe der hoechsten Roboterstelle ueber dem Boden minus gemessene
+// Lifthoehe (bei jeder Lifthoehe konstant, sonst Kurve noetig); Messanleitung in tasks/M-07.md. NaN (Standard) sperrt den Lift
+// nach oben immer. Geraten wird nichts.
+inline constexpr frostbyte::RuleGuardConfig rule_guard{};
 
 }  // namespace config::runner
