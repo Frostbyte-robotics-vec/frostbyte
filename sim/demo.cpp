@@ -25,7 +25,7 @@ std::function<std::pair<double, double>(int)> play(std::vector<Segment> segments
 
 }  // namespace
 
-void apply_demo(SimConfig& cfg) {
+void apply_demo(SimConfig& cfg, const std::string& params_path) {
     cfg.build = "demo";
     // Platzhalter-Posen (nicht aus field.json): Stacker fährt nach rechts, biegt nach oben ab und trifft den Runner,
     // der von oben kommt.
@@ -50,6 +50,18 @@ void apply_demo(SimConfig& cfg) {
     }
     cfg.stacker.open_loop = play(stacker);
     cfg.runner.open_loop = play(runner);
+
+    if (params_path.empty())
+        return;
+    // Platzhalter-Spielzustand: Stacker baut im roten, Runner im blauen Quadranten, alle 10 s ein Zyklus (die Dauer eines
+    // Zyklus liegt weit darunter). Wo die Roboter dabei stehen, spielt keine Rolle: das Szenario gibt Zeit und Goal vor.
+    load_game_params(load_json_file(params_path), cfg.game);
+    cfg.game.goals.push_back(GoalState{Zone::red_quadrant, ToggleColor::red, {}});
+    cfg.game.goals.push_back(GoalState{Zone::blue_quadrant, ToggleColor::blue, {}});
+    for (int t = 5000; t + 10000 <= 55000; t += 10000) {
+        cfg.game.cycles.push_back({t, 0, 0, 0, Source::loader});
+        cfg.game.cycles.push_back({t + 2000, 1, 1, 0, Source::loader});
+    }
 }
 
 }  // namespace frostbyte::sim

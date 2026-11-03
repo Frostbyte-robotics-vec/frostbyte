@@ -20,14 +20,15 @@ SIM-10 hat nur die Funktion `score_skills()` (sim/scorer.*) mit Tests geliefert.
 - Gleicher Seed = byte-gleiches Ergebnis; Laptop-Tests grün, beide Roboter bauen, `python tools/board.py validate` grün
 
 ## Kontext
-Hängt praktisch an einer Quelle für Spielzustandsänderungen: Das Demo bewegt nur Roboter. Echte Punkte entstehen erst, wenn der Routenspieler (A-03) Aktionen auslöst; falls dafür A-03 nötig ist, in der Übergabe begründen oder einen Zwischenschritt (Demo setzt Pins direkt) wählen. Regeln: CLAUDE.md, docs/rules_scoring.md, ADR-024.
+Korrektur nach Advisor-Rat: Der Pages-Bericht kommt aus `frostbyte_sim --demo --runs 100`, nicht aus Routen; echte Routen laufen in der Simulation ohnehin erst mit vermessenem Feld (A-09, C-06 blockiert) und dem Routenspieler (A-03). Darum erzeugt hier das Demo den Spielzustand, A-03 hängt später an dieselbe Schnittstelle (ADR-026). Regeln: CLAUDE.md, docs/rules_scoring.md, ADR-024.
 
 ## Hardware-Prüfung
 —
 
 ## Übergabe
-—
+Fertig: sim/game.* (Spielzustand, Zyklen über ObjectModel, Scorer bei Änderung), score-Spalte in beiden Logs im Demo, Bericht angepasst, ADR-026, sim_params.json `spiel`. Tests: test_sim_game.cpp, test_sim_game_log.cpp, HtmlHintTest. Am Roboter nichts zu prüfen. Folgearbeit: A-03 (Routenspieler) füllt GameSetup::cycles aus Routen.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-03 · arjanssen (KI) · Ticket angelegt: SIM-10 lieferte nur die Funktion, kein Einhängen (Hinweis von arjanssen zu report.html) · –
+2026-11-03 · arjanssen (KI) · Game + score im Log + Bericht + ADR-026 · –

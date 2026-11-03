@@ -142,6 +142,15 @@ class AcceptanceTest(unittest.TestCase):
             self.assertTrue(any("nicht geprüft" in m for m in msgs))  # ... aber ausdrücklich nicht geprüft
 
 
+class HtmlHintTest(unittest.TestCase):
+    def test_hint_matches_current_state(self):
+        with tempfile.TemporaryDirectory() as d:
+            SummaryTest().make_dir(d, 3)
+            html = sim_report.html_report(sim_report.summarize(d), [])
+            self.assertNotIn("sobald der Scorer", html)  # der Scorer steht im Log (SIM-20), der alte Hinweis wäre falsch
+            self.assertIn("Platzhalter-Zyklen", html)
+
+
 class RouteTargetTest(unittest.TestCase):
     def test_reads_target_p10(self):
         with tempfile.TemporaryDirectory() as d:

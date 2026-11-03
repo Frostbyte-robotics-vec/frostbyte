@@ -42,6 +42,11 @@
       }
     }
   },
+  "spiel": {
+    "cup_undurchsichtig_unten": false,
+    "roboter_im_midfield": 0,
+    "quelle": "annahme (Cup-Lage ungeklärt, ADR-024; Midfield-Bereich noch nicht definiert)"
+  },
   "ereignisse": {
     "loader_einheit":   { "dauer_s": 1.2, "sigma_s": 0.3, "fehlschlag": 0.05, "quelle": "schaetzung" },
     "boden_einheit":    { "dauer_s": 1.8, "sigma_s": 0.5, "fehlschlag": 0.10, "quelle": "schaetzung" },

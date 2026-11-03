@@ -5,7 +5,7 @@
 
 #include "sim/json.hpp"
 #include "sim/mechanism.hpp"
-#include "sim/world.hpp"
+#include "sim/rng.hpp"
 
 // Objektmodell der Simulation als Ereignisse (SIM-04): Teile werden nicht physikalisch simuliert, sondern als
 // Zufallsereignisse mit Dauer und Erfolgswahrscheinlichkeit (Loader, Boden, Ausrichtung, Greifen, Setzen).
