@@ -27,6 +27,7 @@ GoalBook make_book() {
 RuleGuardConfig guard_config() {
     RuleGuardConfig c;
     c.lift_top_offset_in = 10.0;
+    c.lift_footprint_ceiling_in = std::numeric_limits<double>::infinity();  // Testwert: Lift verlässt den Footprint nie
     c.soft_margin_in = 1.0;
     return c;
 }

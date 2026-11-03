@@ -7,10 +7,16 @@ using namespace frostbyte;
 
 namespace {
 
+constexpr double kInf = std::numeric_limits<double>::infinity();
+constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+
 // Testwerte, nicht aus config/: höchste Stelle = Lifthöhe + 20 Zoll.
 RuleGuardConfig cfg() {
     RuleGuardConfig c;
     c.lift_top_offset_in = 20.0;
+    c.lift_footprint_ceiling_in = kInf;  // gemessen: der Lift verlässt den Footprint nie
+    c.arm_min_deg = -10.0;
+    c.arm_max_deg = 90.0;
     c.soft_margin_in = 1.0;
     return c;
 }
@@ -20,6 +26,8 @@ GuardInput ok_input() {
     in.remaining_s = 30.0;
     in.lift_ok = true;
     in.lift_height_in = 10.0;
+    in.arm_ok = true;
+    in.arm_deg = 45.0;
     in.pins = 0;
     in.cups = 0;
     return in;
@@ -181,4 +189,128 @@ TEST_CASE("Disabled: alles 0 V mit Bremse, ohne Latch; nach Enable läuft es wie
     CHECK(r.cmd.left_v == 6.0);
     CHECK(r.intervened == 0);
     CHECK_FALSE(g.match_ended());
+}
+
+// ---- M-09: SG2/SG3 aus der Geometrie (ADR-027, Nachtrag). Alle Zahlen sind Testwerte, nichts aus config/. ----
+
+namespace {
+
+GuardCommand lift_up() { return GuardCommand{.lift_v = 4.0}; }
+GuardCommand arm_cmd(double v) { return GuardCommand{.arm_v = v}; }
+
+}  // namespace
+
+TEST_CASE("SG2 Lift: Footprint-Decke unter der SG3-Decke bindet, knapp darunter erlaubt, nach unten immer frei") {
+    RuleGuardConfig c = cfg();
+    c.lift_top_offset_in = 10.0;       // SG3-Decke 40
+    c.lift_footprint_ceiling_in = 30;  // SG2-Decke 30 bindet
+    RuleGuard g(c);
+    CHECK(g.hard_lift_ceiling_in() == 30.0);
+    GuardInput in = ok_input();
+    in.lift_height_in = 29.99;
+    CHECK(g.filter(lift_up(), in).cmd.lift_v == 4.0);
+    in.lift_height_in = 30.0;
+    GuardResult r = g.filter(lift_up(), in);
+    CHECK(r.cmd.lift_v == 0.0);
+    CHECK((r.intervened & kRuleSg2) != 0);
+    CHECK((r.intervened & kRuleSg3) == 0);
+    in.lift_height_in = 35.0;  // über der Decke: nach unten bleibt erlaubt
+    CHECK(g.filter(GuardCommand{.lift_v = -4.0}, in).cmd.lift_v == -4.0);
+}
+
+TEST_CASE("SG3 Lift: bindet die SG3-Decke (unter der Footprint-Decke), wird SG3 gemeldet, nicht SG2") {
+    RuleGuardConfig c = cfg();
+    c.lift_top_offset_in = 10.0;       // SG3-Decke 40
+    c.lift_footprint_ceiling_in = 45;  // darüber
+    RuleGuard g(c);
+    CHECK(g.hard_lift_ceiling_in() == 40.0);
+    GuardInput in = ok_input();
+    in.lift_height_in = 39.99;
+    CHECK(g.filter(lift_up(), in).cmd.lift_v == 4.0);
+    in.lift_height_in = 40.0;
+    const GuardResult r = g.filter(lift_up(), in);
+    CHECK(r.cmd.lift_v == 0.0);
+    CHECK((r.intervened & kRuleSg3) != 0);
+    CHECK((r.intervened & kRuleSg2) == 0);
+}
+
+TEST_CASE("SG2 Lift: nicht gemessen (NaN) sperrt nach oben, gemessen ohne Grenze (+inf) nicht; weiche Decke folgt") {
+    RuleGuardConfig c = cfg();
+    c.lift_footprint_ceiling_in = kNan;
+    CHECK(RuleGuard(c).filter(lift_up(), ok_input()).cmd.lift_v == 0.0);
+    c.lift_footprint_ceiling_in = kInf;
+    CHECK(RuleGuard(c).filter(lift_up(), ok_input()).cmd.lift_v == 4.0);
+    c.lift_top_offset_in = 10.0;
+    c.lift_footprint_ceiling_in = 30.0;
+    c.soft_margin_in = 1.0;
+    CHECK(RuleGuard(c).soft_lift_ceiling_in() == 29.0);  // min(40, 30) - 1
+}
+
+TEST_CASE("SG2/SG3 Arm: Grenzen einschließlich, nur die Richtung nach außen wird gesperrt") {
+    RuleGuard g(cfg());  // Bereich -10 .. 90
+    GuardInput in = ok_input();
+    in.arm_deg = 89.99;
+    CHECK(g.filter(arm_cmd(3.0), in).cmd.arm_v == 3.0);
+    in.arm_deg = 90.0;
+    GuardResult r = g.filter(arm_cmd(3.0), in);
+    CHECK(r.cmd.arm_v == 0.0);
+    CHECK((r.intervened & kRuleSg2) != 0);
+    CHECK((r.intervened & kRuleSg3) != 0);
+    CHECK(g.filter(arm_cmd(-3.0), in).cmd.arm_v == -3.0);  // nach innen frei
+    in.arm_deg = -9.99;
+    CHECK(g.filter(arm_cmd(-3.0), in).cmd.arm_v == -3.0);
+    in.arm_deg = -10.0;
+    CHECK(g.filter(arm_cmd(-3.0), in).cmd.arm_v == 0.0);
+    CHECK(g.filter(arm_cmd(3.0), in).cmd.arm_v == 3.0);
+    in.arm_deg = 95.0;  // über die Grenze hinaus (Überschwinger): zurück ist erlaubt, weiter nicht
+    CHECK(g.filter(arm_cmd(3.0), in).cmd.arm_v == 0.0);
+    CHECK(g.filter(arm_cmd(-3.0), in).cmd.arm_v == -3.0);
+}
+
+TEST_CASE(
+    "Arm: unbekannter Zustand oder nicht gemessene Grenzen sperren beide Richtungen; Stillstand ist kein Eingriff") {
+    RuleGuard g(cfg());
+    GuardInput in = ok_input();
+    in.arm_ok = false;
+    CHECK(g.filter(arm_cmd(3.0), in).cmd.arm_v == 0.0);
+    CHECK(g.filter(arm_cmd(-3.0), in).cmd.arm_v == 0.0);
+    CHECK(g.filter(arm_cmd(0.0), in).intervened == 0);
+    in.arm_ok = true;
+    in.arm_deg = kNan;
+    CHECK(g.filter(arm_cmd(3.0), in).cmd.arm_v == 0.0);
+    CHECK(g.filter(arm_cmd(-3.0), in).cmd.arm_v == 0.0);
+
+    RuleGuardConfig c = cfg();
+    c.arm_min_deg = kNan;
+    c.arm_max_deg = kNan;
+    RuleGuard unmeasured(c);
+    in.arm_deg = 45.0;
+    CHECK(unmeasured.filter(arm_cmd(3.0), in).cmd.arm_v == 0.0);
+    CHECK(unmeasured.filter(arm_cmd(-3.0), in).cmd.arm_v == 0.0);
+    CHECK(RuleGuard(RuleGuardConfig{}).filter(arm_cmd(3.0), in).cmd.arm_v == 0.0);  // Standardkonfiguration
+}
+
+TEST_CASE(
+    "Arm: Disabled und Matchende (mit Latch) stellen auch den Arm still, eine Haltbefehl-Hülle bleibt kein Eingriff") {
+    RuleGuard g(cfg());
+    GuardInput in = ok_input();
+    in.disabled = true;
+    GuardResult r = g.filter(arm_cmd(3.0), in);
+    CHECK(r.cmd.arm_v == 0.0);
+    CHECK(r.cmd.brake);
+    CHECK((r.intervened & kRuleDisabled) != 0);
+    in.disabled = false;
+    CHECK(g.filter(arm_cmd(3.0), in).cmd.arm_v == 3.0);
+    in.remaining_s = 0.0;
+    r = g.filter(arm_cmd(3.0), in);
+    CHECK(r.cmd.arm_v == 0.0);
+    CHECK((r.intervened & kRuleMatchEnd) != 0);
+    in.remaining_s = 5.0;  // Latch
+    CHECK(g.filter(arm_cmd(3.0), in).cmd.arm_v == 0.0);
+    // Nur ein Arm-Befehl ohne Bremse ist bei Matchende ein Eingriff
+    RuleGuard h(cfg());
+    in = ok_input();
+    in.remaining_s = 0.0;
+    CHECK(h.filter(GuardCommand{.brake = true}, in).intervened == 0);
+    CHECK(h.filter(GuardCommand{.brake = true, .arm_v = 1.0}, in).intervened != 0);  // nur der Arm bewegt sich
 }
