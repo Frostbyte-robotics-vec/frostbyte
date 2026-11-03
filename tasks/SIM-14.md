@@ -30,8 +30,10 @@ Vom Menschen gewünscht (3.11.): manuelle Grundsimulation bis 4.11. Modellwerte 
 —
 
 ## Übergabe
-—
+Stand: livesim.js + livesim_test.js + test_livesim.py (Node) grün, sim_params.json hat neuen Block `live`. Offen: Einbau in index.html (Modus Live, Tasten, Tab/R, Pause bei Hintergrund), ADR-025, CI/dashboard.yml kopieren livesim.js + sim_params.json, Selbsttest-Einbindung (?selftest), Format/Tests/Roboter-Build.
+Test: `cd tools/viewer && py -m unittest test_livesim`.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-03 · DAVIDCOPCOP (KI) · Ticket angelegt · –
+2026-11-03 · DAVIDCOPCOP (KI) · livesim.js, Tests (Node), live-Block in sim_params.json · –
