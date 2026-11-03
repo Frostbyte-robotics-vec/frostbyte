@@ -17,15 +17,15 @@ Scorer, der aus dem Spielzustand die Punkte nach den Wertungsregeln (RSC3) berec
 - Laptop-Tests grün, beide Roboter bauen, `python tools/board.py validate` grün
 
 ## Kontext
-blocked: Die Wertungsregeln (Punkte je Pin/Cup/Goal usw.) stehen nirgends im Repo und werden nicht geraten. Der Mensch
-liefert den Regeltext bzw. die Wertungstabelle (z. B. docs/rules_scoring.md) und die 5 Handrechnungen.
+Wertungsregeln: Game Manual v2.1 (liegt mit C-07, PR #39, in docs/ref/), RSC3 PDF-Seite 32. Auszug und Handrechnungen: docs/rules_scoring.md. ADR-024.
 
 ## Hardware-Prüfung
 —
 
 ## Übergabe
-blocked: wartet auf Wertungsregeln und Handrechnungen vom Menschen.
+Scorer sim/scorer.* mit Tests fertig, Laptop-Tests grün. Offen: Mensch bestätigt gegen die Webversion https://manuals.vex.com/v5/override/v2.1/ (von der KI schon geprüft, keine Abweichung) die Handrechnungen (docs/rules_scoring.md) und die Cup-Ausrichtung (opaque_lower).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-01 · matelechner01 (KI) · aus SIM-05 ausgelagert (Review PR #15) · –
+2026-11-03 · arjanssen (KI) · Wertungsregeln aus Manual v2.1, Scorer + 14 Testfälle + ADR-024; Handrechnungen von KI, Bestätigung offen · –
