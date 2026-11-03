@@ -7,7 +7,9 @@
 #include <vector>
 
 #include "doctest/doctest.h"
+#include "gen/test_square_route.hpp"
 #include "match/route_player.hpp"
+#include "sim/route_parser.hpp"
 
 using namespace frostbyte;
 
@@ -592,4 +594,52 @@ TEST_CASE("Gültige Grenzfälle: 6 Lanes, 4 verschachtelte repeat") {
         CHECK(h.ex.starts_of(5) == 16);
         CHECK(h.p->status() == RouteStatus::done);
     }
+}
+
+// ---- Vertrag Parser -> Player: vom Parser gebaute Routen müssen der Prüfung des Players genügen ----
+TEST_CASE("Vom Parser gebaute Route läuft im Player: gültig, richtige Reihenfolge, Ende done") {
+    sim::RouteNames names;
+    names.goals = {"G_A", "G_B", "MIDFIELD"};
+    names.loaders = {"L_A"};
+    names.toggles = {"T_A"};
+    names.poses = {"P_START", "P_MID"};
+    const auto r = sim::parse_route(
+        "start P_START\n"
+        "repeat 2 {\n"
+        "  goto L_A timeout=3.0 on_timeout=retry\n"
+        "}\n"
+        "parallel {\n"
+        "  goto L_A\n"
+        "  turn 90\n"
+        "}\n"
+        "at 5s goto P_MID timeout=6\n"
+        "end hold\n",
+        names);
+    REQUIRE_MESSAGE(r.ok(), r.error);
+    H h(r.cmds);
+    h.begin();
+    REQUIRE(h.p->status() == RouteStatus::running);
+    h.run(8.0);
+    CHECK(h.p->status() == RouteStatus::done);
+    // start, goto, goto, goto (parallel), turn (parallel), goto P_MID (erst ab 5 s)
+    REQUIRE(h.ex.log.size() == 6);
+    CHECK(h.ex.log[0] == "start:1:P_START");
+    CHECK(h.ex.log[1] == "start:3:L_A");
+    CHECK(h.ex.log[2] == "start:3:L_A");
+    CHECK(h.ex.starts_of(5) == 1);
+    CHECK(h.ex.starts_of(6) == 1);
+    CHECK(h.ex.log[5] == "start:8:P_MID");
+    CHECK(h.p->failed_steps() == 0);
+}
+
+TEST_CASE("Die erzeugte Testroute (kRouteTestSquare) ist für den Player gültig und läuft durch") {
+    std::vector<RouteCmd> v(routes::kRouteTestSquare, routes::kRouteTestSquare + routes::kRouteTestSquareLen);
+    Fake ex;
+    RoutePlayer p(v.data(), static_cast<int>(v.size()), ex, RoutePlayerConfig{});
+    REQUIRE(p.status() == RouteStatus::idle);
+    p.begin(0.0);
+    for (int i = 1; i <= 6000 && p.status() == RouteStatus::running; ++i)
+        p.update(i * 0.01, i * 0.01);
+    CHECK(p.status() == RouteStatus::done);
+    CHECK(ex.active_count() == 0);
 }

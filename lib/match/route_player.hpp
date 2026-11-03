@@ -293,7 +293,8 @@ private:
         } else {
             s = exec_.poll(i, now_s);
             if (s == StepStatus::running && now_s - l.leaf_start_s >= timeout_for(c)) {
-                s = exec_.cancel(i, now_s);  // Ablauf: der Endstatus entscheidet, ob es ein Fehlschlag war
+                // Ablauf: der Endstatus entscheidet, ob es ein Fehlschlag war; ein 'running' vom Executor gilt als failed.
+                s = exec_.cancel(i, now_s) == StepStatus::done ? StepStatus::done : StepStatus::failed;
                 l.exec_active = false;
             }
         }

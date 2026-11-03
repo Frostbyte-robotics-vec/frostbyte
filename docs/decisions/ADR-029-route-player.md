@@ -31,5 +31,6 @@ Status: angenommen (3. Nov 2026), Ticket A-03. Der Advisor (Opus) hat vorgegeben
 
 ## Folgen
 - ADR-028 "Folgen" gilt angepasst: `auto` auflösen und `RouteSource` abbilden macht der Executor-Adapter (A-10), nicht der Player. Der Adapter ruft `CycleController::cancel` in `cancel(lane)` und meldet `done`, wenn `result().placed`.
+- Die Prüfung "`toggle` nur Runner" (ADR-023 gab sie an A-03/A-04) liegt beim Executor-Adapter: der Player kennt den Roboter nicht.
 - Mirror Rot/Blau, Funk zwischen den Robotern (`signal`/`wait_for`) liegen im Executor.
 - Neue Tickets: A-10 (echter Executor-Adapter für den Roboter).
