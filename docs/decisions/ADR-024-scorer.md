@@ -13,5 +13,5 @@ Status: angenommen (3. Nov 2026), Ticket SIM-10. Der Advisor (Opus) hat vorgegeb
 - Welche Cup-Hälfte undurchsichtig ist, steht in unserer Kopie des Manuals nicht lesbar (Cup-Definition S. 74; die Safari-Kopie ist am rechten Rand abgeschnitten, vielleicht steht es im vollständigen Manual). Deshalb Eingabe `opaque_lower`; wer den Scorer füttert (Objektmodell, SIM-04), muss das festlegen, bis es am echten Cup geprüft ist.
 - Modell kennt nur Stapel aus Pins und Cups im Goal; keine Höhenprüfung (zu hohe Stapel, Toggle-Berührung durch Roboter SC4b) und keine Verletzungen.
 - Der Scorer ist noch nicht in `run_match` eingehängt (eigenes Ticket, wie bei Kollisionen/Regelprüfer).
-- Auch RSC3a, RSC3a.iii.1, SC2 (nested) und SC5b sind in unserer Kopie am Rand abgeschnitten; der Scorer stützt sich auf den lesbaren Teil. Gegen das vollständige Manual prüfen.
+- RSC3, SC2, SC3, SC5 und die Cup-Definition wurden gegen die Webversion v2.1 geprüft (manuals.vex.com); keine Abweichung zum Scorer. Offen bleibt nur die Lage des Cups im Stapel (`opaque_lower`).
 - Die Handrechnungen (docs/rules_scoring.md) sind von der KI aus dem Regeltext gerechnet; Bestätigung durch einen Menschen steht aus.

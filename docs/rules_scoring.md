@@ -3,7 +3,7 @@
 Quelle: Game Manual 2026–2027 v2.1, Regeln RSC3 (PDF-Seite 32), SC2–SC5 (S. 17–19), SC6 (S. 19), VURS1–VURS3 (VEX U). Eigene Worte, Regelnummern in Klammern.
 Der Scorer `sim/scorer.*` (SIM-10, ADR-024) setzt genau das um.
 
-**Achtung:** Die Safari-Kopie des Manuals (C-07) ist am rechten Seitenrand abgeschnitten. Betroffen sind u. a. RSC3a (Satzende), RSC3a.iii.1, der Hinweis zu SC2 (nested), SC5b und die Cup-Definition. Dieser Auszug stützt sich auf den lesbaren Teil; er muss gegen das vollständige Manual geprüft werden.
+**Prüfung gegen die Webversion (3. Nov 2026, https://manuals.vex.com/v5/override/v2.1/):** RSC3 (5/10/8 Punkte, Quadrant-Toggle, Midfield-Roboter), SC2 (Placed, max. 1 Pin-Hälfte je Goal bzw. Cup-Hälfte), SC3 (nur die undurchsichtige Cup-Hälfte und das Goal verdecken) und SC5/SC6 stimmen mit diesem Auszug überein. Die lokale PDF-Kopie (C-07) ist am Rand abgeschnitten, die Webseite ist die Quelle.
 
 ## Regeln
 - **Placed (SC2):** Der unterste Gegenstand eines Stapels muss ein Pin sein (in das Goal eingetaucht). Darüber muss sich Cup und Pin
@@ -12,7 +12,7 @@ Der Scorer `sim/scorer.*` (SIM-10, ADR-024) setzt genau das um.
 - **Sichtbar (SC3):** Eine Pin-Hälfte ist sichtbar, außer sie steckt im Goal oder in der undurchsichtigen Cup-Hälfte.
   Untere Hälfte des untersten Pins: im Goal, unsichtbar. Obere Hälfte eines Pins unter einem Cup: steckt in der unteren Cup-Hälfte.
   Untere Hälfte eines Pins über einem Cup: steckt in der oberen Cup-Hälfte. Obere Hälfte des obersten Pins: sichtbar.
-- **Welche Cup-Hälfte undurchsichtig ist,** steht in unserer (abgeschnittenen) Kopie nicht lesbar (Cup-Definition S. 74); im vollständigen Manual prüfen.
+- **Welche Cup-Hälfte undurchsichtig ist:** Laut Glossar (Cup) ist eine Hälfte durchsichtig, eine undurchsichtig; die Abbildung zeigt den stehenden Cup mit durchsichtiger Hälfte oben. Wie der Cup im Stapel liegt, ist offen; der Scorer nimmt es als Eingabe `opaque_lower`.
   Der Scorer nimmt es deshalb als Eingabe `opaque_lower` (true = untere Hälfte undurchsichtig).
 - **Punkte je sichtbarer Hälfte (RSC3a):**
   - rot: 5 Punkte, nur in einem roten Quadranten oder im Midfield-Goal
