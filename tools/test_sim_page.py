@@ -106,5 +106,56 @@ class SimPageTest(unittest.TestCase):
         self.assertIn("Simulation (intern)", tpl)
 
 
+    # ---- SIM-21: Kamera verschieben (Mausrad-Taste) und mit R zurücksetzen. Statische Prüfung: im Repo gibt es keinen
+    # Browser-Test (kein Playwright), das Verhalten im Browser steht in der Übergabe von tasks/SIM-21.md. ----
+
+    def viewer(self):
+        return VIEWER.read_text(encoding="utf-8")
+
+    def handler(self, src, start):
+        """Rumpf des keydown-Handlers, der mit `start` beginnt, bis zur nächsten Zeile `});` am Zeilenanfang."""
+        i = src.index(start)
+        return src[i:src.index("\n});", i)] + "\n"
+
+    def test_mittlere_maustaste_verschiebt_die_kamera(self):
+        src = self.viewer()
+        self.assertIn("controls.mouseButtons", src)
+        self.assertRegex(src, r"MIDDLE:\s*THREE\.MOUSE\.PAN")
+        self.assertRegex(src, r"LEFT:\s*THREE\.MOUSE\.ROTATE")
+        self.assertRegex(src, r"RIGHT:\s*THREE\.MOUSE\.PAN")
+
+    def test_mittlere_maustaste_loest_kein_autoscroll_aus(self):
+        src = self.viewer()
+        self.assertRegex(src, r"addEventListener\('mousedown',[^\n]*button\s*===\s*1[^\n]*preventDefault")
+
+    def test_r_setzt_die_kamera_zurueck_in_live_und_wiedergabe(self):
+        src = self.viewer()
+        play = self.handler(src, "window.addEventListener('keydown', e => {\n  if (e.target.tagName === 'INPUT' && e.target.type")
+        i = play.index("KeyR")
+        r = play[i:play.index("\n", i)]
+        self.assertIn("!e.repeat", r)
+        self.assertIn("setView(", r)
+        self.assertIn("aria-pressed') === 'true'", r)  # aktuelle Ansicht (oben/schräg) behalten
+        self.assertIn("S.follow = false", r)
+        self.assertIn("bFollow", r)
+
+    def test_roboter_zuruecksetzen_liegt_auf_backspace_nicht_mehr_auf_r(self):
+        src = self.viewer()
+        live = self.handler(src, "window.addEventListener('keydown', e => {\n  if (!S.live ||")
+        self.assertNotIn("KeyR", live)
+        i = live.index("Backspace")
+        line = live[i:live.index("\n", i)]
+        self.assertIn("!e.repeat", line)
+        self.assertIn("S.live.sim.reset()", line)
+        self.assertIn("preventDefault", line)
+
+    def test_tastenhilfe_nennt_neue_belegung(self):
+        src = self.viewer()
+        self.assertIn("Mittlere Taste ziehen: schieben", src)
+        self.assertEqual(src.count("Rücktaste zurücksetzen"), 2)  # #liveinfo und title von #bLive
+        self.assertNotIn("R zurücksetzen", src)
+        self.assertIn("R Kamera zurück", src)
+
+
 if __name__ == "__main__":
     unittest.main()
