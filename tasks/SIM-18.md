@@ -2,7 +2,7 @@
 id: SIM-18
 phase: "1b"
 titel: Simulationsseite /sim/ maximal schlicht: nur 3D-Feld, Live-Statuszeile und Live-Knopf, weißer Hintergrund
-status: review
+status: done
 owner: arjanssen
 branch: ticket/sim-18
 depends: [SIM-16]
