@@ -32,8 +32,9 @@ Vom Menschen gewünscht (3.11.): „alles rot Durchgestrichene weg, Hintergrund 
 —
 
 ## Übergabe
-—
+Advisor: JS-Syntax per JavaScriptCore geprüft (ok), Boden-Textur ist JS-fest, Autostart-Fehler nur console.warn. Stand: umgesetzt (nur CSS-Ausblenden in tools/viewer/index.html unter body[data-ansicht="sim"]; const SIM; autoLive startet Live nach dem Feld; Demo-Logs entfallen auf /sim/; liveinfo = eine Zeile). Tests: tools/test_sim_page.py (statische Prüfung, kein Playwright im Repo). Am echten Browser prüfen: weißer Hintergrund auch im Dark Mode, Feldlinien gut sichtbar, /viewer/ unverändert.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-03 · DAVIDCOPCOP (KI) · Ticket angelegt (nach Screenshot mit Markierungen) · –
+2026-11-03 · arjanssen (KI) · /sim/ schlicht: Zeitleiste, Log, Feldinfo ausgeblendet, weiß, Autostart Live · –
