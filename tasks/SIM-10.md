@@ -23,7 +23,7 @@ Wertungsregeln: Game Manual v2.1 (liegt mit C-07, PR #39, in docs/ref/), RSC3 PD
 —
 
 ## Übergabe
-Scorer sim/scorer.* mit Tests fertig, Laptop-Tests grün. Offen: Mensch bestätigt die Handrechnungen (docs/rules_scoring.md) und die Cup-Ausrichtung (opaque_lower).
+Scorer sim/scorer.* mit Tests fertig, Laptop-Tests grün. Offen: Mensch bestätigt gegen das VOLLSTÄNDIGE Manual (unsere Safari-Kopie ist am rechten Rand abgeschnitten, siehe C-07) die Handrechnungen (docs/rules_scoring.md) und die Cup-Ausrichtung (opaque_lower).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->

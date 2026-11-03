@@ -3,6 +3,8 @@
 Quelle: Game Manual 2026–2027 v2.1, Regeln RSC3 (PDF-Seite 32), SC2–SC5 (S. 17–19), SC6 (S. 19), VURS1–VURS3 (VEX U). Eigene Worte, Regelnummern in Klammern.
 Der Scorer `sim/scorer.*` (SIM-10, ADR-024) setzt genau das um.
 
+**Achtung:** Die Safari-Kopie des Manuals (C-07) ist am rechten Seitenrand abgeschnitten. Betroffen sind u. a. RSC3a (Satzende), RSC3a.iii.1, der Hinweis zu SC2 (nested), SC5b und die Cup-Definition. Dieser Auszug stützt sich auf den lesbaren Teil; er muss gegen das vollständige Manual geprüft werden.
+
 ## Regeln
 - **Placed (SC2):** Der unterste Gegenstand eines Stapels muss ein Pin sein (in das Goal eingetaucht). Darüber muss sich Cup und Pin
   abwechseln (Pin, Cup, Pin, Cup …). Ein Cup gilt nur auf einem Placed Pin als Placed, ein Pin nur im Goal oder in einem Placed Cup.
@@ -10,7 +12,7 @@ Der Scorer `sim/scorer.*` (SIM-10, ADR-024) setzt genau das um.
 - **Sichtbar (SC3):** Eine Pin-Hälfte ist sichtbar, außer sie steckt im Goal oder in der undurchsichtigen Cup-Hälfte.
   Untere Hälfte des untersten Pins: im Goal, unsichtbar. Obere Hälfte eines Pins unter einem Cup: steckt in der unteren Cup-Hälfte.
   Untere Hälfte eines Pins über einem Cup: steckt in der oberen Cup-Hälfte. Obere Hälfte des obersten Pins: sichtbar.
-- **Welche Cup-Hälfte undurchsichtig ist,** steht im Manual nicht lesbar (Cup-Definition S. 74 ist im PDF abgeschnitten).
+- **Welche Cup-Hälfte undurchsichtig ist,** steht in unserer (abgeschnittenen) Kopie nicht lesbar (Cup-Definition S. 74); im vollständigen Manual prüfen.
   Der Scorer nimmt es deshalb als Eingabe `opaque_lower` (true = untere Hälfte undurchsichtig).
 - **Punkte je sichtbarer Hälfte (RSC3a):**
   - rot: 5 Punkte, nur in einem roten Quadranten oder im Midfield-Goal
