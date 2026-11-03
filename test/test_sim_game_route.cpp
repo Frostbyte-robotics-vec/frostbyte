@@ -346,7 +346,7 @@ TEST_CASE("Routenlauf: Timeout kürzer als der Zyklus: nichts landet im Stapel")
 TEST_CASE("Routenlauf: fehlgeschlagene Aufnahme meldet failed, on_timeout=abort beendet die Route") {
     const Run r = run(load("game_intake_abort.route", "empty.route", "sim_params_game_pickfail.json"));
     CHECK(has(r.stacker, "2:intake"));
-    CHECK_FALSE(has(r.stacker, "3:cycle"));
+    // route_step zeigt bei skip und abort dasselbe; der Unterschied ist, dass der Preload-cycle danach nicht mehr läuft.
     CHECK(max_score(r.stacker) == 0);
 }
 
@@ -360,12 +360,33 @@ TEST_CASE("Routenlauf: ein level, das nicht zur Stapelhöhe passt, scheitert, es
     CHECK(max_score(r.stacker) == 0);
 }
 
-TEST_CASE("Routenlauf: gleicher Seed = byte-gleiche Logs mit Spielzustand, anderer Seed nicht") {
-    SimConfig cfg = load("game_three_cycles.route", "game_runner.route");
-    cfg.stacker.sensors = load("empty.route", "empty.route").stacker.sensors;
-    const Run a = run(cfg, 3), b = run(cfg, 3);
+TEST_CASE("Routenlauf: gleicher Seed = byte-gleiche Logs mit Spielzustand und Zufall, anderer Seed nicht") {
+    SimConfig cfg = load_config(fixtures + "/sim_params_game_random.json", fixtures + "/field_game.json",
+                                fixtures + "/game_three_cycles.route", fixtures + "/game_runner.route", "realistic");
+    cfg.stacker.control = test_control();
+    cfg.runner.control = test_control();
+    const Run a = run(cfg, 3), b = run(cfg, 3), c = run(cfg, 4);
     CHECK(a.stacker == b.stacker);
     CHECK(a.runner == b.runner);
+    CHECK(a.stacker != c.stacker);
+}
+
+// Wahre Endpose (tx, ty) der letzten Zeile.
+static std::pair<double, double> final_truth(const std::string& csv) {
+    const Rows t = parse(csv);
+    const auto& row = t.r.back();
+    return {std::stod(row[t.col("tx_in")]), std::stod(row[t.col("ty_in")])};
+}
+
+TEST_CASE("Routenlauf: fehlgeschlagener cycle meldet failed: abort hält die Route an, skip fährt zum nächsten Ziel") {
+    const Run abort = run(load("game_place_abort.route", "empty.route", "sim_params_game_placefail.json"));
+    const Run skip = run(load("game_place_skip.route", "empty.route", "sim_params_game_placefail.json"));
+    CHECK(max_score(abort.stacker) == 0);
+    CHECK(max_score(skip.stacker) == 0);
+    const auto start = final_truth(abort.stacker);
+    CHECK(std::hypot(start.first + 20.0, start.second) <= 1.5);  // START_STACKER (-20, 0): nicht gefahren
+    const auto goal = final_truth(skip.stacker);
+    CHECK(std::hypot(goal.first + 20.0, goal.second - 20.0) <= 1.5);  // Ziel (-20, 20) erreicht
 }
 
 TEST_CASE("Routenlauf: ohne cycle/intake in den Routen gibt es keinen Spielzustand, Spalte score bleibt leer") {

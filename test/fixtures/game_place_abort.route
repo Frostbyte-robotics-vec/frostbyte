@@ -1,0 +1,4 @@
+start START_STACKER
+cycle goal=GOAL_RED level=auto source=preload timeout=6.0 on_timeout=abort
+goto pose x=-20 y=20 h=0 timeout=10.0
+end hold
