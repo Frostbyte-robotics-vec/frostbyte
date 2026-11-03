@@ -12,10 +12,27 @@ void load_game_params(const Json& params, GameSetup& g) {
     g.mech[1] = load_mechanism_params(params, "runner");
     const Json& spiel = params.at("spiel");
     g.cup_opaque_lower = spiel.at("cup_undurchsichtig_unten").as_bool();
-    const double mid = spiel.at("roboter_im_midfield").as_number();
-    if (mid < 0.0 || mid > max_scored_robots || mid != std::floor(mid))
-        throw std::runtime_error("sim_params spiel.roboter_im_midfield muss 0, 1 oder 2 sein");
-    g.robots_in_midfield = static_cast<int>(mid);
+}
+
+MidfieldSpec load_midfield(const Json& field) {
+    MidfieldSpec m;
+    if (const Json* j = field.find("midfield")) {
+        m.present = true;
+        m.side_in = j->at("seite_in").as_number();
+        m.x_in = j->at("mitte_x_in").as_number();
+        m.y_in = j->at("mitte_y_in").as_number();
+    }
+    return m;
+}
+
+int robots_in_midfield(const MidfieldSpec& m, const std::vector<Box>& robots) {
+    if (!m.present)
+        return 0;
+    const Box field{m.x_in, m.y_in, m.side_in, m.side_in, 45.0};
+    int n = 0;
+    for (const Box& r : robots)
+        n += penetration(r, field).has_value();
+    return std::min(n, max_scored_robots);
 }
 
 Game::Game(const GameSetup& setup, std::uint64_t seed_stacker, std::uint64_t seed_runner, int end_ms)
@@ -34,9 +51,14 @@ Game::Game(const GameSetup& setup, std::uint64_t seed_stacker, std::uint64_t see
 void Game::rescore() {
     ScoreInput in;
     in.goals = goals_;
-    in.robots_in_midfield = setup_.robots_in_midfield;
-    score_ = score_skills(in).total;
+    for (int n = 0; n <= max_scored_robots;
+         ++n) {  // gelb im Midfield-Goal hängt davon ab, ob überhaupt ein Roboter dort steht
+        in.robots_in_midfield = n;
+        score_[n] = score_skills(in).total;
+    }
 }
+
+int Game::score(int robots_in_midfield) const { return score_[std::clamp(robots_in_midfield, 0, max_scored_robots)]; }
 
 void Game::step(int t_ms) {
     bool changed = false;
@@ -47,6 +69,7 @@ void Game::step(int t_ms) {
             continue;
         }
         pending_.erase(pending_.begin() + static_cast<std::ptrdiff_t>(i));
+        held_[p.robot] = Held{};
         if (p.done_ms >= end_ms_)
             continue;  // nach 0:00 setzt niemand mehr etwas ab
         GoalState& g = goals_[static_cast<std::size_t>(p.goal)];
@@ -76,9 +99,14 @@ void Game::step(int t_ms) {
         const CycleResult r = models_[c.robot].run_cycle(c.source, c.level, lift, target, claw);
         const int done_ms = c.t_ms + static_cast<int>(std::ceil(r.time_s * 1000.0));
         busy_until_[c.robot] = done_ms;
-        if (r.outcome == CycleOutcome::ok)
-            pending_.push_back({done_ms, c.goal, r.yellow_up});
-        else
+        if (r.outcome == CycleOutcome::ok) {
+            // Pin oder Cup wie beim Ablegen: nach der Stapelfolge, die Teile auf dem Weg zum Goal mitgezählt.
+            std::size_t on_goal = goals_[static_cast<std::size_t>(c.goal)].stack.size();
+            for (const Pending& p : pending_)
+                on_goal += p.goal == c.goal;
+            (on_goal % 2 == 0 ? held_[c.robot].pins : held_[c.robot].cups) = 1;
+            pending_.push_back({done_ms, c.goal, r.yellow_up, c.robot});
+        } else
             ++failed_;
     }
     if (changed)

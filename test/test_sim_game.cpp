@@ -2,6 +2,7 @@
 
 #include "doctest/doctest.h"
 #include "sim/game.hpp"
+#include "sim/json.hpp"
 #include "sim/scorer.hpp"
 
 using namespace frostbyte::sim;
@@ -127,4 +128,63 @@ TEST_CASE("Game: gleiche Seeds = gleicher Verlauf, mit zufälligen Fehlschlägen
         return std::to_string(game.score()) + "/" + std::to_string(game.failed_cycles());
     };
     CHECK(run(5) == run(5));
+}
+
+TEST_CASE("Midfield: Quadrat ist um 45 Grad gedreht, Berühren eines Teils genügt, höchstens zwei zählen") {
+    MidfieldSpec m;
+    m.present = true;
+    m.side_in = 48.0;  // Halbdiagonale 33,94
+    const auto box = [](double x, double y) { return Box{x, y, 24.0, 24.0, 0.0}; };
+    CHECK(robots_in_midfield(m, {box(0, 0)}) == 1);
+    CHECK(robots_in_midfield(m, {box(40, 0)}) == 1);  // die Spitze des Rhombus ragt unter die Kante
+    CHECK(robots_in_midfield(m, {box(50, 0)}) == 0);
+    CHECK(robots_in_midfield(m, {box(30, 30)}) == 0);  // läge im ungedrehten Quadrat (Ecke 18/18), nicht im gedrehten
+    CHECK(robots_in_midfield(m, {box(0, 0), box(0, 10), box(5, 5)}) == 2);
+    m.present = false;
+    CHECK(robots_in_midfield(m, {box(0, 0)}) == 0);
+}
+
+TEST_CASE("Midfield: field.json-Block wird gelesen, ohne Block ist es nicht vorhanden") {
+    const MidfieldSpec m =
+        load_midfield(parse_json(R"({"midfield": {"seite_in": 48, "mitte_x_in": 1, "mitte_y_in": -2}})"));
+    CHECK(m.present);
+    CHECK(m.side_in == 48.0);
+    CHECK(m.x_in == 1.0);
+    CHECK(m.y_in == -2.0);
+    CHECK_FALSE(load_midfield(parse_json(R"({"feld_in": 144})")).present);
+}
+
+TEST_CASE("Game: Punktestand mit Robotern im Midfield, gelb im Midfield-Goal braucht einen Roboter dort") {
+    GameSetup g = one_goal(Zone::midfield, ToggleColor::neutral);
+    g.cycles = {{1000, 0, 0, 0, Source::loader}};
+    Game game(g, 1, 2, end_ms);
+    run_to_end(game);
+    CHECK(game.score(0) == 0);   // Pin(rot, gelb): unten im Goal, oben gelb, aber nicht Owned
+    CHECK(game.score(1) == 18);  // gelb 10 + 8 für den Roboter
+    CHECK(game.score(2) == 26);
+    CHECK(game.score(7) == 26);  // begrenzt auf zwei Roboter
+}
+
+TEST_CASE("Game: Besitz von Zyklusstart bis Zyklusende, erst Pin, dann Cup, der andere Roboter bleibt leer") {
+    GameSetup g = one_goal(Zone::red_quadrant, ToggleColor::red);
+    g.cycles = {{1000, 0, 0, 0, Source::loader}, {11000, 0, 0, 0, Source::loader}};
+    Game game(g, 1, 2, end_ms);
+    for (int t = 0; t <= 500; ++t)
+        game.step(t);
+    CHECK(game.pins(0) == 0);
+    for (int t = 501; t <= 1000; ++t)
+        game.step(t);
+    CHECK(game.pins(0) == 1);  // erster Zyklus: Pin
+    CHECK(game.cups(0) == 0);
+    CHECK(game.pins(1) == 0);
+    for (int t = 1001; t <= 10000; ++t)
+        game.step(t);
+    CHECK(game.pins(0) == 0);  // abgelegt
+    for (int t = 10001; t <= 11000; ++t)
+        game.step(t);
+    CHECK(game.cups(0) == 1);  // zweiter Zyklus: Cup auf den Pin
+    CHECK(game.pins(0) == 0);
+    for (int t = 11001; t <= 20000; ++t)
+        game.step(t);
+    CHECK(game.cups(0) == 0);
 }

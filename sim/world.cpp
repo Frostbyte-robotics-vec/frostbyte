@@ -46,6 +46,12 @@ std::optional<Pose> start_pose(const Json& field, const std::string& id) {
     throw std::runtime_error("field.json: Pose " + id + " fehlt");
 }
 
+struct GameCols {
+    int score;
+    int has_cup;
+    int has_pin;
+};
+
 class RobotLog {
 public:
     RobotLog(const RobotSetup& robot, std::uint64_t seed, const std::string& build, std::ostream& out)
@@ -60,9 +66,10 @@ public:
 
     // truth: wahre Pose aus dem Fahrmodell; leer, solange die Startpose null ist (keine Pose erfinden).
     // est: Pose aus Odometrie und IMU; gps: letzte GPS-Messung (nur wenn gültig); event: Ereignisse seit der letzten Zeile.
-    // score: Punktestand des Teams aus dem Scorer; leer, solange die Simulation keinen Spielzustand führt.
+    // game: Punktestand des Teams aus dem Scorer und Besitz dieses Roboters; leer, solange die Simulation keinen
+    // Spielzustand führt.
     void row(int t_ms, const std::optional<Pose>& truth, const std::optional<Pose>& est, const GpsSample* gps,
-             const std::string& event, const std::optional<int>& score) {
+             const std::string& event, const std::optional<GameCols>& game) {
         logfmt::Row r;
         r.t_s = t_ms / 1000.0;
         r.robot = robot_.name.c_str();
@@ -82,8 +89,11 @@ public:
             r.gh_deg = gps->heading_deg;
             r.g_err_in = gps->error_in;
         }
-        if (score)
-            r.score = *score;
+        if (game) {
+            r.score = game->score;
+            r.has_cup = game->has_cup;
+            r.has_pin = game->has_pin;
+        }
         if (!event.empty())
             r.event = event.c_str();
         char buf[512];
@@ -170,6 +180,7 @@ SimConfig load_config(const std::string& params_path, const std::string& field_p
         throw std::runtime_error("sim_params welt: log_ms muss die Matchdauer (" + std::to_string(match_ms) +
                                  " ms) ohne Rest teilen");
     cfg.field_in = field.at("feld_in").as_number();
+    cfg.game.midfield = load_midfield(field);
 
     const auto robot = [&](const char* name, const char* start_id, const std::string& route) {
         RobotSetup r;
@@ -287,14 +298,23 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
         if (game)
             game->step(t_ms);
         if (t_ms % cfg.log_ms == 0) {
-            const std::optional<int> score = game ? std::optional<int>(game->score()) : std::nullopt;
+            int mid = 0;
+            if (game) {
+                std::vector<Box> boxes;
+                for (const RobotRun& r : runs)
+                    if (r.drive)
+                        boxes.push_back(r.box());
+                mid = robots_in_midfield(cfg.game.midfield, boxes);
+            }
             for (int i = 0; i < 2; ++i) {
                 RobotRun& r = runs[i];
                 if (r.drive) {
                     const Pose p = r.drive->pose();
                     r.gps_sample = r.gps->measure(p.x_in, p.y_in, p.h_deg, r.speed_in_s());
                 }
-                logs[i]->row(t_ms, truth_of(r), r.est, r.drive ? &r.gps_sample : nullptr, r.events, score);
+                logs[i]->row(t_ms, truth_of(r), r.est, r.drive ? &r.gps_sample : nullptr, r.events,
+                             game ? std::optional<GameCols>(GameCols{game->score(mid), game->cups(i), game->pins(i)})
+                                  : std::nullopt);
                 r.events.clear();
             }
             ++result.log_rows;
