@@ -7,6 +7,11 @@ var FBLive = (function () {
   var START_ID = { stacker: 'START_STACKER', runner: 'START_RUNNER' };
   var MAX_FRAME_MS = 100;   // längere Bildpausen (Tab war im Hintergrund) werden nicht nachgeholt
   var EPS = 1e-9;
+  // Spaltenreihenfolge nach docs/log_format.md v1 (test_livesim.py vergleicht mit make_test_logs.COLUMNS)
+  var LOG_COLUMNS = ['t_s', 'robot', 'x_in', 'y_in', 'h_deg', 'gx_in', 'gy_in', 'gh_deg', 'g_err_in', 'tx_in', 'ty_in', 'th_deg',
+    'lift_deg', 'arm_deg', 'claw_in', 'lift_set_deg', 'arm_set_deg', 'cycle', 'route_step', 'has_cup', 'has_pin', 'pin_yellow_up',
+    'score', 'cpu_ms', 'batt_v', 'temp_max_c', 'event'];
+  var LOG_BUILD = 'live';
 
   function wrap(deg) {
     var w = deg - 360 * Math.round(deg / 360);
@@ -199,6 +204,7 @@ var FBLive = (function () {
     var ctlMs = need(params.welt, 'steuer_ms', 'welt', true);
     var slow = need(params.live, 'langsam_faktor', 'live', true);
     var ctlEvery = Math.max(1, Math.round(ctlMs / stepMs));
+    var logEvery = Math.max(1, Math.round(need(params.welt, 'log_ms', 'welt', true) / stepMs));
     var notes = [];
     var robots = {};
     ROBOTS.forEach(function (n) {
@@ -217,7 +223,36 @@ var FBLive = (function () {
 
     function boxOf(r) { return { x_in: r.x_in, y_in: r.y_in, length_in: r.outline.length_in, width_in: r.outline.width_in, h_deg: r.h_deg }; }
     function contactOf(r, key) { return r.contact[key] || (r.contact[key] = { on: false, free: 0 }); }
-    function emit(name, text) { events.push({ t_s: stepNo * stepMs / 1000, robot: name, text: text }); }
+    function emit(name, text) { events.push({ t_s: stepNo * stepMs / 1000, robot: name, text: text }); logEvent(name, text); }
+
+    // Aufnahme im Log-Format v1: eine Zeile je Roboter alle welt.log_ms; Ereignisse zwischen zwei Zeilen hängen an der nächsten.
+    var rows = { stacker: [], runner: [] }, pending = { stacker: [], runner: [] };
+    function logEvent(name, text) { pending[name].push(String(text).replace(/[,;\r\n]/g, ' ')); }
+    function seedNotes() {
+      notes.forEach(function (t) { logEvent(/START_RUNNER/.test(t) ? 'runner' : 'stacker', 'NOTE:' + t); });
+    }
+    function record() {
+      ROBOTS.forEach(function (n) {
+        var r = robots[n];
+        rows[n].push({ t_s: stepNo * stepMs / 1000, x_in: r.x_in, y_in: r.y_in, h_deg: r.h_deg, event: pending[n].splice(0).join(';') });
+      });
+    }
+    function csvOf(n) {
+      var out = ['# frostbyte-log v1 robot=' + n + ' source=sim seed=- build=' + LOG_BUILD, LOG_COLUMNS.join(',')];
+      var list = rows[n].slice();
+      if (pending[n].length) {   // noch nicht abgeholte Ereignisse nie verwerfen: letzte Zeile mit aktuellem Stand
+        var r = robots[n], now = stepNo * stepMs / 1000, last = list[list.length - 1];
+        if (last && last.t_s === now) list[list.length - 1] = Object.assign({}, last, { event: [last.event].concat(pending[n]).filter(Boolean).join(';') });
+        else list.push({ t_s: now, x_in: r.x_in, y_in: r.y_in, h_deg: r.h_deg, event: pending[n].join(';') });
+      }
+      list.forEach(function (w) {
+        var c = { t_s: w.t_s.toFixed(3), robot: n, x_in: w.x_in.toFixed(3), y_in: w.y_in.toFixed(3), h_deg: w.h_deg.toFixed(3),
+          tx_in: w.x_in.toFixed(3), ty_in: w.y_in.toFixed(3), th_deg: w.h_deg.toFixed(3), event: w.event };
+        out.push(LOG_COLUMNS.map(function (k) { return c[k] === undefined ? '' : c[k]; }).join(','));
+      });
+      return out.join('\n') + '\n';
+    }
+    function restartLog() { rows.stacker.length = 0; rows.runner.length = 0; pending.stacker.length = 0; pending.runner.length = 0; record(); }
 
     // Reihenfolge wie sim/world.cpp: Roboter untereinander (je zur Hälfte), dann Feldrand; Feldelemente zuletzt.
     function collide() {
@@ -261,6 +296,8 @@ var FBLive = (function () {
       });
     }
 
+    restartLog(); seedNotes();
+
     return {
       notes: notes,
       setKeys: function (k) { keys = { w: !!k.w, a: !!k.a, s: !!k.s, d: !!k.d, shift: !!k.shift }; },
@@ -276,6 +313,7 @@ var FBLive = (function () {
           r.contact = {}; r.blockedS = 0; r.blockedSent = false;
         });
         acc_ms = 0; stepNo = 0; events.length = 0;
+        restartLog(); seedNotes(); // R beginnt eine neue Aufnahme
       },
       // dt_s = vergangene Bildzeit; rechnet in festen Schritten (welt.schritt_ms), Steuerung alle welt.steuer_ms. Liefert die Schrittzahl.
       advance: function (dt_s) {
@@ -287,12 +325,18 @@ var FBLive = (function () {
           ROBOTS.forEach(function (name) { stepRobot(robots[name], stepMs / 1000); });
           collide();
           acc_ms -= stepMs; stepNo++; n++;
+          if (stepNo % logEvery === 0) record();
         }
         if (acc_ms < 0) acc_ms = 0;
         return n;
       },
       pose: function (n) { var r = robots[n]; return { x_in: r.x_in, y_in: r.y_in, h_deg: r.h_deg }; },
       // Ereignisse seit dem letzten Aufruf: [{t_s, robot, text}] (COLLISION:<mit>, BLOCKED).
+      // Eigene Ereignisse ins Log (z. B. später Ausgaben); Komma und Semikolon werden zu Leerzeichen.
+      logEvent: function (name, text) { if (rows[name]) emit(name, text); },
+      clearLog: function () { restartLog(); },
+      // Aufnahme als CSV je Roboter (Log-Format v1): {stacker: text, runner: text}
+      exportCsv: function () { return { stacker: csvOf('stacker'), runner: csvOf('runner') }; },
       takeEvents: function () { return events.splice(0, events.length); },
       // Umriss als geschlossenes Vieleck (4 Ecken, Zoll) für die Anzeige.
       outline: function (n) { var c = cornersOf(boxOf(robots[n])); return [c[0], c[1], c[3], c[2]]; },
@@ -301,7 +345,7 @@ var FBLive = (function () {
     };
   }
 
-  return { create: create, keysToVolts: keysToVolts, wrap: wrap, penetrationBoxBox: penetrationBoxBox,
+  return { create: create, keysToVolts: keysToVolts, wrap: wrap, LOG_COLUMNS: LOG_COLUMNS, penetrationBoxBox: penetrationBoxBox,
     penetrationBoxCircle: penetrationBoxCircle, pushInsideField: pushInsideField };
 })();
 if (typeof module !== 'undefined') module.exports = FBLive;

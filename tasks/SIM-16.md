@@ -26,7 +26,7 @@ Vom Menschen gewünscht (3.11.): „Log für Kollision erkannt, Ausgabe erkannt 
 —
 
 ## Übergabe
-—
+Stand: fertig, PR folgt. Aufnahme + CSV-Export in livesim.js, Log-Tab (Chips mit Zählern, Mitscrollen, Log leeren, CSV speichern, Log laden) in index.html, ADR-025 Nachtrag. Node-Tests (Export → logparse.js) grün. Nicht im echten Browser gesehen (Syntax per node --check). Offen an den Menschen: was „Ausgabe erkannt“ heißen soll; bis dahin COLLISION, BLOCKED, NOTE.
 
 **KI-Review PR #45 (arjanssen/Sonnet, 2026-11-03): Empfehlung ändern.**
 - `restartLog()` (livesim.js:252) ruft `record()` zum aktuellen Schritt auf. „Log leeren“ mitten im Raster (z. B. nach 105 Schritten) erzeugt als erste Zeile t_s = 0.105 statt auf dem log_ms-Raster; Fertig-Kriterium „log_ms-Raster“ und die ADR-Aussage „einzige Zeile abseits des Rasters ist die Schlusszeile“ stimmen dann nicht. Vorschlag: in restartLog nur bei `stepNo % logEvery === 0` aufzeichnen (R/Start sind bei 0 immer drauf) plus Test, der bei einem Nicht-Vielfachen leert.
@@ -36,3 +36,4 @@ Vom Menschen gewünscht (3.11.): „Log für Kollision erkannt, Ausgabe erkannt 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-03 · DAVIDCOPCOP (KI) · Ticket angelegt · –
+2026-11-03 · DAVIDCOPCOP (KI) · Aufnahme/Export, Log-Tab, ADR-Nachtrag · –

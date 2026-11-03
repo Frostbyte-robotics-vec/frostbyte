@@ -91,6 +91,9 @@ body[data-ansicht="sim"] header, body[data-ansicht="sim"] #selftest, body[data-a
 body[data-ansicht="sim"] #stateCard, body[data-ansicht="sim"] #logsCard, body[data-ansicht="sim"] .hint{display:none}
 body[data-ansicht="sim"] .time{grid-template-columns:auto auto minmax(0,1fr) auto}
 /* Live-Handsteuerung (SIM-14) */
+#livectl{display:none;align-items:center}
+body[data-ansicht="sim"] #livectl{display:flex}
+.btn:disabled{opacity:.5;cursor:default}
 .livebar{position:absolute;right:12px;bottom:10px;display:flex;gap:8px;align-items:center}
 .liveinfo{position:absolute;left:12px;bottom:10px;font:12px var(--f-mono);color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 8px;max-width:calc(100% - 140px);white-space:pre-line}
 </style>
@@ -157,6 +160,13 @@ body[data-ansicht="sim"] .time{grid-template-columns:auto auto minmax(0,1fr) aut
       </section>
       <section class="card">
         <h2><span id="evtitle">Ereignisse</span> <small id="evcount"></small></h2>
+        <div class="chips" id="livectl">
+          <button class="btn" id="bLogClear" disabled>Log leeren</button>
+          <button class="btn" id="bLogCsv" disabled title="Je Roboter eine CSV im Log-Format v1; lässt sich im Viewer und hier wieder laden">CSV speichern</button>
+          <label class="btn" for="fileLogsLive">Log laden</label>
+          <input class="sr" type="file" id="fileLogsLive" accept=".csv,.txt,text/csv" multiple>
+          <label class="chip"><input type="checkbox" id="cScroll" checked>Mitscrollen</label>
+        </div>
         <div class="chips" id="evfilter"></div>
         <ul class="events" id="events"></ul>
       </section>
@@ -517,14 +527,40 @@ function renderStateRows(){
 function renderFilter(){
   const box = $('evfilter'); box.innerHTML = '';
   EV_KINDS.forEach(kd => {
-    const n = S.events.filter(e => kindOf(e) === kd).length;
+    const n = (S.live ? S.live.entries : S.events).filter(e => kindOf(e) === kd).length;
     const l = document.createElement('label'); l.className = 'chip';
     l.innerHTML = `<input type="checkbox" ${S.kinds.has(kd) ? 'checked' : ''}><span class="k-${kd}">${kd}</span> ${n}`;
     l.querySelector('input').onchange = e => { e.target.checked ? S.kinds.add(kd) : S.kinds.delete(kd); renderEvents(); drawStrip(); };
     box.appendChild(l);
   });
 }
+function liveItem(e){
+  const li = document.createElement('li');
+  li.innerHTML = `<span>${fmt(e.t_s, 2)}</span><span class="sw" style="background:${e.robot === 'runner' ? '#4e9bff' : '#ff5a4e'}"></span><span class="evtext"><span class="k-${kindOf(e)}">${esc(e.text)}</span> · ${esc(e.robot)}</span>`;
+  li.title = `${e.robot} · t = ${fmt(e.t_s, 2)} s`;
+  return li;
+}
+function renderLiveEvents(){
+  renderFilter();
+  const ul = $('events'); ul.innerHTML = '';
+  const shown = S.live.entries.filter(e => S.kinds.has(kindOf(e)));
+  $('evcount').textContent = `${shown.length} von ${S.live.entries.length}`;
+  shown.forEach(e => ul.appendChild(liveItem(e)));
+  if ($('cScroll').checked) ul.scrollTop = ul.scrollHeight;
+}
+function liveAdd(t_s, robot, text){
+  const e = { t_s, robot, text, kind: String(text).split(':')[0] };
+  S.live.entries.push(e);
+  if (S.kinds.has(kindOf(e))) {
+    const ul = $('events'); ul.appendChild(liveItem(e));
+    if ($('cScroll').checked) ul.scrollTop = ul.scrollHeight;
+  }
+}
+function liveSeed(){
+  S.live.sim.notes.forEach(t => liveAdd(0, /START_RUNNER/.test(t) ? 'runner' : 'stacker', 'NOTE:' + t));
+}
 function renderEvents(){
+  if (S.live) return renderLiveEvents();
   renderFilter();
   const ul = $('events'); ul.innerHTML = '';
   const shown = S.events.filter(e => S.kinds.has(kindOf(e)));
@@ -591,6 +627,7 @@ function readFiles(files){
     .catch(name => alert(name + ': konnte nicht gelesen werden'));
 }
 $('fileLogs').onchange = e => { readFiles(e.target.files); e.target.value = ''; };
+$('fileLogsLive').onchange = e => { readFiles(e.target.files); e.target.value = ''; };
 $('fileField').onchange = e => { readFiles(e.target.files); e.target.value = ''; };
 let dragDepth = 0;
 window.addEventListener('dragenter', e => { e.preventDefault(); dragDepth++; document.body.classList.add('dragging'); });
@@ -610,7 +647,9 @@ function updateLive(){
     const pts = L.sim.outline(n).map(c => new THREE.Vector3(c.x_in, 0.3, -c.y_in));
     L.outlines[n].geometry.setFromPoints(pts); L.outlines[n].visible = L.showOutline;
   });
-  L.sim.takeEvents().forEach(e => { L.log.push(`${e.t_s.toFixed(2)} s ${e.robot}: ${e.text}`); });
+  const fresh = L.sim.takeEvents();
+  fresh.forEach(e => { L.log.push(`${e.t_s.toFixed(2)} s ${e.robot}: ${e.text}`); liveAdd(e.t_s, e.robot, e.text); });
+  if (fresh.length) { renderFilter(); $('evcount').textContent = `${L.entries.filter(x => S.kinds.has(kindOf(x))).length} von ${L.entries.length}`; }
   if (L.log.length > 4) L.log.splice(0, L.log.length - 4);
   const p = L.sim.pose(a);
   $('liveinfo').textContent = `Live · ${a === 'stacker' ? 'Stacker' : 'Runner'} aktiv · ${fmt(L.sim.speed(a))} in/s · x ${fmt(p.x_in)} y ${fmt(p.y_in)} h ${fmt(p.h_deg, 0)}°`
@@ -631,7 +670,9 @@ async function startLive(){
     const l = new THREE.LineLoop(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: n === 'stacker' ? 0xff5a4e : 0x4e9bff }));
     l.frustumCulled = false; l.visible = false; scene.add(l); outlines[n] = l;
   });
-  S.live = { sim, models, outlines, showOutline: false, log: [] };
+  S.live = { sim, models, outlines, showOutline: false, log: [], entries: [] };
+  $('bLogClear').disabled = false; $('bLogCsv').disabled = false;
+  liveSeed(); renderLiveEvents();
   $('bLive').setAttribute('aria-pressed', true); $('liveinfo').hidden = false;
   document.body.dataset.live = '1';
   liveSend(); S.dirty = true;
@@ -641,14 +682,27 @@ function stopLive(){
   Object.values(S.live.models).forEach(m => scene.remove(m));
   Object.values(S.live.outlines).forEach(l => scene.remove(l));
   S.live = null; document.body.dataset.live = '';
+  $('bLogClear').disabled = true; $('bLogCsv').disabled = true; renderEvents();
   $('bLive').setAttribute('aria-pressed', false); $('liveinfo').hidden = true; S.dirty = true;
 }
 $('bLive').onclick = () => { if (S.live) stopLive(); else startLive().catch(e => alert('Live: ' + e.message)); $('bLive').blur(); };
+$('cScroll').onchange = e => e.target.blur();
+$('bLogClear').onclick = () => { $('bLogClear').blur(); if (!S.live) return; S.live.sim.clearLog(); S.live.log.length = 0; S.live.entries.length = 0; renderLiveEvents(); };
+$('bLogCsv').onclick = () => {
+  $('bLogCsv').blur();
+  if (!S.live) return;
+  const csv = S.live.sim.exportCsv();
+  Object.keys(csv).forEach((rn, i) => setTimeout(() => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv[rn]], { type: 'text/csv' })); a.download = `live_${rn}.csv`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }, i * 300));
+};
 window.addEventListener('keydown', e => {
-  if (!S.live || e.target.tagName === 'INPUT' && e.target.type !== 'range' || e.target.tagName === 'SELECT') return;
+  if (!S.live || e.target.tagName === 'INPUT' && !['range', 'checkbox'].includes(e.target.type) || e.target.tagName === 'SELECT') return;
   if (e.code in LIVE_KEYS) { liveHeld[LIVE_KEYS[e.code]] = true; e.preventDefault(); }
   else if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) S.live.sim.toggle(); }
-  else if (e.code === 'KeyR') { if (!e.repeat) { S.live.sim.reset(); S.live.log.length = 0; } }
+  else if (e.code === 'KeyR') { if (!e.repeat) { S.live.sim.reset(); S.live.log.length = 0; S.live.entries.length = 0; liveSeed(); renderLiveEvents(); } }
   else if (e.code === 'KeyC') { if (!e.repeat) S.live.showOutline = !S.live.showOutline; }
   liveHeld.shift = e.shiftKey; liveSend();
 });
@@ -682,7 +736,7 @@ if (q.has('selftest')) {
     el.textContent = (el.hidden ? '' : el.textContent + '\n') + `Selbsttest ${name}: ${r.ok} ok, ${r.fail} Fehler` + (r.msgs.length ? '\n' + r.msgs.join('\n') : '');
     el.className = bad ? 'bad' : 'ok'; el.hidden = false;
   };
-  [['logparse_test.js', () => runLogparseTests(FBLog), 'logparse'], ['livesim_test.js', () => runLivesimTests(FBLive), 'livesim']].forEach(([src, run, name]) => {
+  [['logparse_test.js', () => runLogparseTests(FBLog), 'logparse'], ['livesim_test.js', () => runLivesimTests(FBLive, FBLog), 'livesim']].forEach(([src, run, name]) => {
     const s = document.createElement('script'); s.src = src;
     s.onload = () => showTest(name, run());
     document.head.appendChild(s);

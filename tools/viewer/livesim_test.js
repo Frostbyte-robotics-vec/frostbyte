@@ -1,6 +1,6 @@
 /* Tests für livesim.js. Läuft im Browser (index.html?selftest) und unter Node (test_livesim.py). Kein DOM, keine Ausgabe:
    liefert ein Ergebnisobjekt. Eigene Fixture-Parameter: die Tests hängen nicht an den Schätzwerten aus sim_params.json. */
-function runLivesimTests(FBLive) {
+function runLivesimTests(FBLive, FBLog) {
   const msgs = [];
   let ok = 0, fail = 0;
   function check(name, cond, info) {
@@ -12,7 +12,7 @@ function runLivesimTests(FBLive) {
     motor_max_V: 10.0 });
   const outline = { laenge: 10, breite: 10 };
   const params = {
-    welt: { schritt_ms: 1, steuer_ms: 10, g_in_s2: 386.1 },
+    welt: { schritt_ms: 1, steuer_ms: 10, log_ms: 20, g_in_s2: 386.1 },
     live: { langsam_faktor: 0.4, ersatzpose_in: { stacker: { x_in: -30, y_in: 10, h_deg: 90 }, runner: { x_in: 30, y_in: -10, h_deg: 0 } } },
     roboter: { stacker: { antrieb: drive(14), akku: { spannung_V: 12.8 }, umriss_in: outline }, runner: { antrieb: drive(11), akku: { spannung_V: 8.0 }, umriss_in: outline } }
   };
@@ -219,6 +219,69 @@ function runLivesimTests(FBLive) {
   live.setKeys(press({ w: true }));
   run(live, 3, 10);
   check('nach R kann dieselbe Wand wieder ein Ereignis erzeugen', live.takeEvents().filter(e => e.text === 'COLLISION:wall').length === 1);
+
+  // 10 CSV-Export im Log-Format v1 (SIM-16): Export → logparse.js → gleiche Posen und Ereignisse
+  if (FBLog) {
+    live = FBLive.create(params);   // ohne field.json: zwei START_-Hinweise + kein Feldrand → nur NOTE-Token
+    const poses = [live.pose('stacker')];
+    live.setKeys(press({ w: true }));
+    for (let k = 0; k < 20; k++) { live.advance(0.02); poses.push(live.pose('stacker')); }
+    live.setKeys(press({ w: true, d: true }));   // Kurve: Heading ändert sich
+    for (let k = 0; k < 20; k++) { live.advance(0.02); poses.push(live.pose('stacker')); }
+    check('Kurve ändert das Heading', Math.abs(FBLive.wrap(poses[40].h_deg - poses[0].h_deg)) > 1);
+    let csv = live.exportCsv();
+    const head = csv.stacker.split('\n')[0];
+    check('Kopfzeile v1', /^# frostbyte-log v1 robot=stacker source=sim seed=- build=\S+$/.test(head), head);
+    check('zweite Zeile: Spaltennamen', csv.stacker.split('\n')[1].split(',').join() === FBLive.LOG_COLUMNS.join(), csv.stacker.split('\n')[1]);
+    let L = FBLog.parseLog(csv.stacker);
+    check('Parser: keine Warnungen', L.warnings.length === 0, L.warnings.join('|'));
+    const tr = L.robots.stacker;
+    check('Raster 20 ms, eine Zeile mehr als Bilder', tr.n === 41 && Math.abs(tr.num.t_s[1] - 0.02) < 1e-9 && Math.abs(tr.num.t_s[40] - 0.8) < 1e-9, tr.n);
+    let maxErr = 0;
+    for (let k = 0; k < 41; k++) maxErr = Math.max(maxErr, Math.abs(tr.num.x_in[k] - poses[k].x_in), Math.abs(tr.num.y_in[k] - poses[k].y_in), Math.abs(FBLive.wrap(tr.num.th_deg[k] - poses[k].h_deg)), Math.abs(FBLive.wrap(tr.num.h_deg[k] - poses[k].h_deg)));
+    check('Posen des Exports = Posen der Live-Fahrt', maxErr < 1e-3, maxErr);
+    check('wahre Pose und Odometrie-Spalte gleich', Math.abs(tr.num.tx_in[40] - tr.num.x_in[40]) < 1e-9);
+    const ev0 = FBLog.events(L).filter(e => e.robot === 'stacker');
+    check('Hinweise stehen als NOTE-Token im Log', ev0.some(e => e.kind === 'NOTE' && /START_STACKER/.test(e.text)), JSON.stringify(ev0));
+    check('Runner-Datei hat nur Runner-Zeilen', FBLog.parseLog(csv.runner).robots.runner.n === 41 && Object.keys(FBLog.parseLog(csv.runner).robots).join() === 'runner');
+
+    // Fahrt gegen die Wand: Ereignisse im Export = takeEvents
+    const fld = { feld_in: 144, posen: [] };
+    live = FBLive.create(params, fld);
+    live.setKeys(press({ w: true }));
+    const seen = [];
+    for (let k = 0; k < 400; k++) { live.advance(0.02); live.takeEvents().forEach(e => seen.push(e.text)); }
+    csv = live.exportCsv();
+    L = FBLog.parseLog(csv.stacker);
+    const evs = FBLog.events(L).filter(e => e.robot === 'stacker' && e.kind !== 'NOTE').map(e => e.text);
+    check('Ereignisse im Export = Ereignisse der Fahrt (COLLISION:wall, BLOCKED)',
+      evs.join() === seen.join() && evs.indexOf('COLLISION:wall') >= 0 && evs.indexOf('BLOCKED') >= 0, evs.join() + ' | ' + seen.join());
+    check('Pose im Export bleibt im Feld', Array.from(L.robots.stacker.num.y_in).every(y => y <= 72 + 1e-6));
+
+    // Unbekannte Token und Sonderzeichen werden nicht verworfen und zerstören das CSV nicht
+    live = FBLive.create(params, fld);
+    live.logEvent('stacker', 'OUTPUT:motor,links;rechts');
+    live.advance(0.04);
+    check('logEvent erscheint auch in takeEvents (Anzeige)', live.takeEvents().some(e => /^OUTPUT:motor/.test(e.text)));
+    L = FBLog.parseLog(live.exportCsv().stacker);
+    const un = FBLog.events(L).filter(e => e.kind === 'OUTPUT');
+    check('unbekannter Token bleibt erhalten, Komma/Semikolon entschärft', un.length === 1 && L.warnings.length === 0 && /^OUTPUT:motor/.test(un[0].text), JSON.stringify(un));
+
+    // Log leeren, R beginnt neue Aufnahme, Ereignis ganz am Ende geht beim Export nicht verloren
+    live = FBLive.create(params, fld);
+    live.setKeys(press({ w: true }));
+    for (let k = 0; k < 10; k++) live.advance(0.02);
+    live.clearLog();
+    L = FBLog.parseLog(live.exportCsv().stacker);
+    check('Log leeren: nur noch eine Zeile (aktuelle Zeit)', L.robots.stacker.n === 1 && Math.abs(L.robots.stacker.num.t_s[0] - 0.2) < 1e-9, L.robots.stacker.n);
+    live.reset();
+    L = FBLog.parseLog(live.exportCsv().stacker);
+    check('R: neue Aufnahme ab t = 0', L.robots.stacker.n === 1 && L.robots.stacker.num.t_s[0] === 0);
+    live.logEvent('runner', 'BLOCKED');
+    live.advance(0.005);
+    const evEnd = FBLog.events(FBLog.parseLog(live.exportCsv().runner)).filter(e => e.kind === 'BLOCKED');
+    check('Ereignis vor dem nächsten Rasterpunkt geht beim Export nicht verloren', evEnd.length === 1, evEnd.length);
+  }
 
   // 9 Fehlende Parameter melden sich laut
   let threw = false;
