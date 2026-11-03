@@ -55,5 +55,5 @@ Lift-Zielhöhe = `GoalBook::place_height_in(goal, level)` + `CycleConfig::grip_o
 ## Folgen
 - `CycleConfig` (Zustands-Timeouts, `retreat_lift_in`, `grip_offset_in`) steht in `config/stacker.hpp`. Die Zeiten sind Startwerte (Software-Entscheidung, am Roboter zu prüfen); `grip_offset_in` ist offen. Der Runner bekommt nichts, bis geklärt ist, ob er überhaupt Zyklen fährt (siehe config/runner.hpp, Lift-TODO).
 - Der Controller ist noch nicht in `src/main.cpp` verdrahtet (Intake, Claw, Port-Zuordnung fehlen: M-03, M-04, F-07).
-- A-03 muss `auto` auflösen, `RouteSource` auf `CycleSource` abbilden, `cancel` bei `at <t>` und `on_timeout=abort` aufrufen und `result()` auswerten.
+- Der Executor-Adapter (A-10, ADR-029) löst `auto` auf, bildet `RouteSource` auf `CycleSource` ab, ruft `CycleController::cancel` aus `RouteExecutor::cancel` und meldet `done`, wenn `result().placed`; er gibt `timeout_s` nicht weiter (der RoutePlayer besitzt das Timeout der Route).
 - Die Eingänge sind Pegel und gelten ab dem ersten Takt nach dem Zustandswechsel. Ein veraltetes Flag (z. B. `at_goal` vom letzten `goto`, `lift_at_target` von der alten Höhe) würde den Zustand nach 10 ms überspringen. Beim Verdrahten muss jede Meldung an den aktuellen Befehl gebunden sein (erst melden, wenn der Befehl dieses Zustands angenommen wurde).

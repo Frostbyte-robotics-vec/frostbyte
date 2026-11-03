@@ -2,6 +2,7 @@
 
 #include "control/motion_controller.hpp"
 #include "match/driver_map.hpp"
+#include "match/route_player.hpp"
 #include "tasks/cycle_controller.hpp"
 #include "util/rule_guard.hpp"
 
@@ -74,5 +75,15 @@ inline constexpr frostbyte::RuleGuardConfig rule_guard{};
 // TODO(HW): grip_offset_in = Hoehe des Greifers ueber der gemessenen Lifthoehe (und retreat_lift_in = Lifthoehe beim Rueckzug).
 // NaN (Standard) lehnt jeden Zyklus ab bzw. haelt beim Rueckzug die Hoehe. Geraten wird nichts.
 inline constexpr frostbyte::CycleConfig cycle{};
+
+// Routen (A-03, ADR-029): Standard-Timeout je Befehlsart, wenn die Route keins nennt. Startwerte (Software-Entscheidung), am
+// Roboter und in der Simulation (A-05) pruefen.
+inline constexpr frostbyte::RoutePlayerConfig route_player{.goto_s = 8.0,
+                                                           .turn_s = 4.0,
+                                                           .intake_s = 4.0,
+                                                           .cycle_s = 12.0,
+                                                           .toggle_s = 4.0,
+                                                           .wait_for_s = 10.0,
+                                                           .other_s = 1.0};
 
 }  // namespace config::stacker

@@ -2,6 +2,7 @@
 
 #include "control/motion_controller.hpp"
 #include "match/driver_map.hpp"
+#include "match/route_player.hpp"
 #include "util/rule_guard.hpp"
 
 namespace config::runner {
@@ -67,5 +68,15 @@ inline constexpr bool tuning_enabled = false;
 // Lifthoehe (bei jeder Lifthoehe konstant, sonst Kurve noetig); Messung in M-09. NaN (Standard) sperrt den Lift
 // nach oben immer. Geraten wird nichts.
 inline constexpr frostbyte::RuleGuardConfig rule_guard{};
+
+// Routen (A-03, ADR-029): Standard-Timeout je Befehlsart, wenn die Route keins nennt. Startwerte (Software-Entscheidung), am
+// Roboter und in der Simulation (A-05) pruefen.
+inline constexpr frostbyte::RoutePlayerConfig route_player{.goto_s = 8.0,
+                                                           .turn_s = 4.0,
+                                                           .intake_s = 4.0,
+                                                           .cycle_s = 12.0,
+                                                           .toggle_s = 4.0,
+                                                           .wait_for_s = 10.0,
+                                                           .other_s = 1.0};
 
 }  // namespace config::runner
