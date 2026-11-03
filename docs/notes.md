@@ -26,3 +26,5 @@ Kurze Einträge, neueste oben: Datum · Ticket · Erkenntnis. Jede KI-Sitzung li
 2026-11-01 · S-01 · Brain-Build prüfen: Binärdateien enthalten nur den eigenen Robotername (`grep -a -c -w runner bin/stacker/hot.package.elf` muss 0 ergeben).
 2026-11-01 · D-02 · macOS: Mutationstests mit `sed -i` und sofortigem `cmake --build` können einen veralteten Build testen (make vergleicht Zeitstempel). Vor jedem Build `sleep 1; touch <Datei>`, sonst „überlebt“ eine Mutation scheinbar.
 2026-11-01 · F-04 · `lib/core/control_loop.hpp` rechnet ausnahmsweise in ganzzahligen Uhr-Ticks (`_ms` für das Raster aus `millis()`, `_us` für die Messung aus `micros()`), nicht in Sekunden: vorzeichenlose Differenzen sind überlauffest und frei von Rundung. Angezeigter Jitter = Abstand zweier Takte gegen den geplanten Rasterabstand (kann bis ~2× die Weckverspätung sein).
+
+2026-11-03 · A-04 · Windows: clang-format.exe liegt im Python-Scripts-Ordner (py -c "import sysconfig;print(sysconfig.get_path(\"scripts\"))"), der nicht im PATH ist; tools/format.py findet es erst, wenn der Ordner im PATH steht. Make aus Git-Bash: `cmd //c "set TMP=<Ordner>&& set TEMP=<Ordner>&& make ROBOT=stacker"`.
