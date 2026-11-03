@@ -49,7 +49,11 @@ add_executable(frostbyte_controls_export "${FB_ROOT}/tools/controls_export.cpp")
 target_link_libraries(frostbyte_controls_export PRIVATE frostbyte_lib)
 target_include_directories(frostbyte_controls_export PRIVATE "${FB_ROOT}/tools")
 
-foreach(t frostbyte_controls_export frostbyte_tests frostbyte_simlib frostbyte_sim)
+# Route -> C++ für den Roboter: tools/route2cpp.py ruft frostbyte_route_export (ADR-023)
+add_executable(frostbyte_route_export "${FB_ROOT}/tools/route_export.cpp")
+target_link_libraries(frostbyte_route_export PRIVATE frostbyte_simlib)
+
+foreach(t frostbyte_route_export frostbyte_controls_export frostbyte_tests frostbyte_simlib frostbyte_sim)
     if(MSVC)
         target_compile_options(${t} PRIVATE /W4)
     else()
