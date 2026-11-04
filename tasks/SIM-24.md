@@ -2,7 +2,7 @@
 id: SIM-24
 phase: "5"
 titel: target_p10 einmal je Allianz prüfen (sim_report, route_format, Routen)
-status: review
+status: done
 owner: arjanssen
 branch: ticket/sim-24
 depends: [SIM-22]
