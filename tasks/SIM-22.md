@@ -2,7 +2,7 @@
 id: SIM-22
 phase: "5"
 titel: Routen-Zyklen im Spielzustand der Simulation (Dauer, Besitz, Punkte aus cycle/intake)
-status: review
+status: done
 owner: arjanssen
 branch: ticket/sim-22
 depends: [A-04, SIM-20]
