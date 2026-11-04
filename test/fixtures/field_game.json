@@ -34,8 +34,10 @@
   "toggles": [
     {
       "id": "TOGGLE_T",
+      "quadrant": "BLUE_1",
       "x_in": 30.0,
-      "y_in": 30.0
+      "y_in": 30.0,
+      "zielfarbe": "blue"
     }
   ],
   "posen": [

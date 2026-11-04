@@ -24,3 +24,5 @@ Status: angenommen (3. Nov 2026), Ticket SIM-22. Der Advisor (Opus) hat vorgegeb
 
 ## Am Roboter zu prüfen
 - Nichts; erst echte Zykluszeiten (SIM-08) ersetzen die Schätzwerte.
+
+Hinweis (SIM-23, ADR-033): `toggle` ist inzwischen modelliert, `spiel.toggle_anfang` ist `neutral`.

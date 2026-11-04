@@ -137,7 +137,15 @@ void SimRouteExecutor::start(int lane, const RouteCmd& cmd, double now_s) {
                                                        cmd.source == RouteSource::preload));
             }
             break;
-        default:  // start, toggle: Platzhalter ohne Modell (ADR-031)
+        case RouteOp::toggle:
+            if (game_ == nullptr) {
+                l.status = StepStatus::done;
+                break;
+            }
+            begin_game_op(lane, game_->start_toggle(now_ms(now_s), robot_index(), game_->toggle_index(cmd.name),
+                                                    pose_.x_in, pose_.y_in));
+            break;
+        default:  // start: Platzhalter ohne Modell (ADR-031)
             l.status = StepStatus::done;
             break;
     }
@@ -190,8 +198,9 @@ RouteRunner::RouteRunner(std::vector<RouteCmd> cmds, const std::vector<FieldPoin
         throw std::runtime_error("Route für den RoutePlayer ungültig (Struktur, Lanes oder Tiefe)");
 }
 
-std::pair<double, double> RouteRunner::step(int t_ms, const Pose& est) {
+std::pair<double, double> RouteRunner::step(int t_ms, const Pose& est, const Pose& truth) {
     const double t_s = t_ms / 1000.0;
+    exec_.set_pose(truth);  // vor begin(): auch ein erster Schritt toggle sieht die Pose
     if (!begun_) {
         player_.begin(t_s);
         begun_ = true;

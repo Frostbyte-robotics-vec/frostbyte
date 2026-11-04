@@ -125,7 +125,9 @@
   },
   "spiel": {
     "cup_undurchsichtig_unten": false,
-    "toggle_anfang": "zielfarbe"
+    "toggle_anfang": "zielfarbe",
+    "toggle_dauer_s": 2.0,
+    "toggle_reichweite_in": 40.0
   },
   "ereignisse": {
     "loader_einheit": {

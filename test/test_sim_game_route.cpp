@@ -402,3 +402,41 @@ TEST_CASE("Routenlauf: level=auto + Goal aus field.json: Zone folgt dem Quadrant
     CHECK(cfg.game.goals[1].zone == Zone::blue_quadrant);
     CHECK(cfg.game.goal_names[0] == "GOAL_RED");
 }
+
+// --- toggle (SIM-23) --------------------------------------------------------------------------------------------
+
+TEST_CASE("Routenlauf: toggle setzt den Toggle des Quadranten, danach zählt das gelbe Pin-Hälfte (Start neutral)") {
+    const Run without = run(load("empty.route", "game_runner.route", "sim_params_game_toggle.json"));
+    const Run with = run(load("empty.route", "game_toggle.route", "sim_params_game_toggle.json"));
+    CHECK(max_score(without.runner) == 0);  // gelb bei neutralem Toggle: nicht Owned (SC4, RSC3a.iii.1)
+    CHECK(max_score(with.runner) == 10);
+    CHECK(max_score(with.stacker) == 10);  // der Teamstand steht in beiden Logs
+}
+
+TEST_CASE("Routenlauf: ein toggle mit Timeout kürzer als die Dauer setzt nichts") {
+    const Run r = run(load("empty.route", "game_toggle_short.route", "sim_params_game_toggle.json"));  // 1 s < 2 s
+    CHECK(max_score(r.runner) == 0);
+}
+
+TEST_CASE("Routenlauf: der Spielzustand liest toggles aus field.json (Name, Zielfarbe, Goals des Quadranten)") {
+    const SimConfig cfg = load("empty.route", "game_toggle.route", "sim_params_game_toggle.json");
+    REQUIRE(cfg.game.toggles.size() == 1);
+    CHECK(cfg.game.toggles[0].name == "TOGGLE_T");
+    CHECK(cfg.game.toggles[0].color == ToggleColor::blue);
+    CHECK(cfg.game.toggles[0].goals == std::vector<int>{1});  // GOAL_BLUE im Quadranten BLUE_1
+    CHECK(cfg.game.toggle_ms == 2000);
+}
+
+TEST_CASE("Routenlauf: toggle weiter vom Toggle als die Reichweite setzt nichts (Fixture mit kleiner Reichweite)") {
+    // Toggle bei (30, 30), Runner startet bei (20, 0): Abstand 31,6 in; Reichweite in der Fixture 10 in.
+    const Run r = run(load("empty.route", "game_toggle.route", "sim_params_game_toggle_far.json"));
+    CHECK(max_score(r.runner) == 0);
+}
+
+TEST_CASE("Routenlauf: der Spielzustand liest Toggle-Position und Reichweite") {
+    const SimConfig cfg = load("empty.route", "game_toggle.route", "sim_params_game_toggle.json");
+    REQUIRE(cfg.game.toggles.size() == 1);
+    CHECK(cfg.game.toggles[0].x_in == doctest::Approx(30.0));
+    CHECK(cfg.game.toggles[0].y_in == doctest::Approx(30.0));
+    CHECK(cfg.game.toggle_reach_in == doctest::Approx(40.0));
+}

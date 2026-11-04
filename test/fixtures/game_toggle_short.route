@@ -1,0 +1,4 @@
+start START_RUNNER
+cycle goal=GOAL_BLUE level=auto source=preload
+toggle TOGGLE_T timeout=1.0
+end hold

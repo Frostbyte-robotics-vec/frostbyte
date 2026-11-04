@@ -175,6 +175,7 @@ void add_route_goals(const Json& params, const Json& field, GameSetup& g) {
     if (toggle_start != "zielfarbe" && toggle_start != "neutral")
         throw std::runtime_error("sim_params spiel.toggle_anfang: 'zielfarbe' oder 'neutral' erwartet");
     const Json& goals = field.at("goals");
+    std::vector<std::string> goal_quadrants;
     for (std::size_t i = 0; i < goals.size(); ++i) {
         const Json& j = goals[i];
         const std::string q = j.at("quadrant").as_string();
@@ -191,6 +192,27 @@ void add_route_goals(const Json& params, const Json& field, GameSetup& g) {
             s.toggle = s.zone == Zone::red_quadrant ? ToggleColor::red : ToggleColor::blue;
         g.goals.push_back(std::move(s));
         g.goal_names.push_back(j.at("id").as_string());
+        goal_quadrants.push_back(q);
+    }
+    // Toggles (SIM-23): ein Toggle setzt die Goals seines Quadranten auf seine Zielfarbe.
+    if (const Json* toggles = field.find("toggles")) {
+        for (std::size_t i = 0; i < toggles->size(); ++i) {
+            const Json& j = (*toggles)[i];
+            const std::string color = j.at("zielfarbe").as_string();
+            if (color != "red" && color != "blue")
+                throw std::runtime_error("field.json toggles: zielfarbe '" + color + "' unbekannt (red oder blue)");
+            ToggleSpec t;
+            t.name = j.at("id").as_string();
+            t.x_in = j.at("x_in").as_number();
+            t.y_in = j.at("y_in").as_number();
+            t.color = color == "red" ? ToggleColor::red : ToggleColor::blue;
+            for (std::size_t k = 0; k < goal_quadrants.size(); ++k)
+                if (goal_quadrants[k] == j.at("quadrant").as_string())
+                    t.goals.push_back(static_cast<int>(k));
+            if (t.goals.empty())
+                throw std::runtime_error("field.json toggles: " + t.name + ": kein Goal im Quadranten");
+            g.toggles.push_back(std::move(t));
+        }
     }
     if (g.goals.empty())
         throw std::runtime_error("field.json: Routen mit cycle/intake brauchen Goals");
@@ -347,7 +369,7 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
                 if (r.setup.closed_loop) {
                     r.held_cmd = r.setup.closed_loop(t_ms, *r.est);
                 } else if (r.route) {
-                    r.held_cmd = r.route->step(t_ms, *r.est);
+                    r.held_cmd = r.route->step(t_ms, *r.est, r.drive->pose());
                     r.route_step = r.route->step_text();
                 }
             }
