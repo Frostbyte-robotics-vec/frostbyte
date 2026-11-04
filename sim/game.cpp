@@ -12,6 +12,10 @@ void load_game_params(const Json& params, GameSetup& g) {
     g.mech[1] = load_mechanism_params(params, "runner");
     const Json& spiel = params.at("spiel");
     g.cup_opaque_lower = spiel.at("cup_undurchsichtig_unten").as_bool();
+    const double toggle_s = spiel.at("toggle_dauer_s").as_number();
+    if (!(toggle_s > 0.0))
+        throw std::runtime_error("sim_params spiel.toggle_dauer_s: Zahl größer 0 erwartet");
+    g.toggle_ms = static_cast<int>(std::lround(toggle_s * 1000.0));
 }
 
 MidfieldSpec load_midfield(const Json& field) {
@@ -83,6 +87,20 @@ void Game::step(int t_ms) {
         ++completed_;
         changed = true;
     }
+    for (std::size_t i = 0; i < pending_toggles_.size();) {
+        const PendingToggle p = pending_toggles_[i];
+        if (p.done_ms > t_ms) {
+            ++i;
+            continue;
+        }
+        pending_toggles_.erase(pending_toggles_.begin() + static_cast<std::ptrdiff_t>(i));
+        if (p.done_ms >= end_ms_)
+            continue;  // nach 0:00 zählt nichts mehr
+        const ToggleSpec& spec = setup_.toggles[static_cast<std::size_t>(p.toggle)];
+        for (int goal : spec.goals)
+            goals_[static_cast<std::size_t>(goal)].toggle = spec.color;
+        changed = true;
+    }
     for (std::size_t i = 0; i < setup_.cycles.size(); ++i) {
         const GameCycle& c = setup_.cycles[i];
         if (started_[i] || c.t_ms > t_ms)
@@ -129,6 +147,24 @@ int Game::goal_index(const std::string& name) const {
         if (setup_.goal_names[i] == name)
             return static_cast<int>(i);
     return -1;
+}
+
+int Game::toggle_index(const std::string& name) const {
+    for (std::size_t i = 0; i < setup_.toggles.size(); ++i)
+        if (setup_.toggles[i].name == name)
+            return static_cast<int>(i);
+    return -1;
+}
+
+CycleTicket Game::start_toggle(int t_ms, int robot, int toggle) {
+    if (toggle < 0 || toggle >= static_cast<int>(setup_.toggles.size()) || busy_until_[robot] > t_ms) {
+        ++rejected_;
+        return {};
+    }
+    const int done_ms = t_ms + setup_.toggle_ms;
+    busy_until_[robot] = done_ms;
+    pending_toggles_.push_back({done_ms, toggle, robot});
+    return {true, true, done_ms};
 }
 
 CycleTicket Game::start_intake(int t_ms, int robot, Source src) {
@@ -178,6 +214,12 @@ void Game::cancel(int t_ms, int robot) {
             pending_.erase(pending_.begin() + static_cast<std::ptrdiff_t>(i));
             dropped = true;
         } else
+            ++i;
+    }
+    for (std::size_t i = 0; i < pending_toggles_.size();) {
+        if (pending_toggles_[i].robot == robot && pending_toggles_[i].done_ms > t_ms)
+            pending_toggles_.erase(pending_toggles_.begin() + static_cast<std::ptrdiff_t>(i));
+        else
             ++i;
     }
     Hand& h = hand_[robot];
