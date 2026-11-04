@@ -5,8 +5,8 @@
                               [--stacker-route routes/skills_stacker.route] [--runner-route routes/skills_runner.route]
 
 Liest DIR/run<NNN>_<roboter>.csv (Log-Format v1, docs/log_format.md), schreibt summary.json und einen HTML-Bericht
-(P10/Median/P90 je Kennzahl und Roboter). Exit-Code 1 bei Regelverstoß (RULE:… im Log) oder wenn der P10 der Punkte unter
-target_p10 der Route liegt. Fehlt der Punktestand im Log (nur Demo-Läufe führen einen Spielzustand, ADR-026; Routen erst mit dem Routenspieler A-03), wird target_p10 ausdrücklich als „nicht geprüft“
+(P10/Median/P90 je Kennzahl und Roboter). Exit-Code 1 bei Regelverstoß (RULE:… im Log) oder wenn der P10 des Allianz-Punktestands unter
+dem höchsten target_p10 der Routen liegt (ein Ziel je Allianz, ADR-034). Fehlt der Punktestand im Log (nur Demo-Läufe führen einen Spielzustand, ADR-026; Routen erst mit dem Routenspieler A-03), wird target_p10 ausdrücklich als „nicht geprüft“
 gemeldet, nicht als bestanden gezählt.
 """
 import argparse
@@ -130,17 +130,30 @@ def route_target(path):
 
 
 def acceptance(summary, targets):
+    """Regelverstöße und das Allianz-Ziel. Der Spielstand ist die Teamsumme (ADR-026, SIM-24): target_p10 der Routen gilt
+    einmal, der höchste Wert; er wird nie gesenkt, damit etwas grün wird."""
     ok, msgs = True, []
     if summary["rule_violations"]:
         ok = False
         msgs.append(f"Regelverstoß (RULE:…) in {summary['rule_violations']} Fällen")
-    for robot, target in targets.items():
-        score = summary["robots"].get(robot, {}).get("score")
-        if score is None:
-            msgs.append(f"target_p10 {target:g} für {robot} nicht geprüft (kein Punktestand im Log: Routenläufe führen noch keinen Spielzustand, ADR-026)")
-        elif score["p10"] < target:
-            ok = False
-            msgs.append(f"{robot}: P10 der Punkte {score['p10']:g} liegt unter target_p10 {target:g}")
+    if not targets:
+        return ok, msgs
+    target = max(targets.values())
+    scores = {r: summary["robots"].get(r, {}).get("score") for r in targets}
+    scores.update({r: v.get("score") for r, v in summary["robots"].items()})
+    scores = {r: v for r, v in scores.items() if v is not None}
+    if not scores:
+        msgs.append(f"target_p10 {target:g} (Allianz) nicht geprüft (kein Punktestand im Log: Routenläufe führen noch keinen Spielzustand, ADR-026)")
+        return ok, msgs
+    if len({v["p10"] for v in scores.values()}) > 1:
+        ok = False
+        msgs.append("Punktestand in den beiden Logs verschieden (er sollte die Teamsumme sein, ADR-026): " +
+                    ", ".join(f"{r} {v['p10']:g}" for r, v in sorted(scores.items())))
+        return ok, msgs
+    p10 = next(iter(scores.values()))["p10"]
+    if p10 < target:
+        ok = False
+        msgs.append(f"Allianz: P10 der Punkte {p10:g} liegt unter target_p10 {target:g}")
     return ok, msgs
 
 

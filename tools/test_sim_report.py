@@ -91,7 +91,7 @@ class SummaryTest(unittest.TestCase):
         for i in range(runs):
             ev = "RULE:SG6" if i == violations_in_run else ""
             write_run(d, i, "stacker", [row(0.0, "stacker", est=(0, 0, 0), truth=(0, 0, 0), score=i * 10, event=ev)])
-            write_run(d, i, "runner", [row(0.0, "runner", est=(0, 0, 0), truth=(0, 0, 0), score=i * 5)])
+            write_run(d, i, "runner", [row(0.0, "runner", est=(0, 0, 0), truth=(0, 0, 0), score=i * 10)])  # Teamsumme: in beiden Logs gleich (ADR-026)
 
     def test_summary_percentiles_over_runs(self):
         with tempfile.TemporaryDirectory() as d:
@@ -140,6 +140,43 @@ class AcceptanceTest(unittest.TestCase):
             ok, msgs = sim_report.acceptance(sim_report.summarize(d), {"stacker": 120})
             self.assertTrue(ok)  # kein Verstoß ...
             self.assertTrue(any("nicht geprüft" in m for m in msgs))  # ... aber ausdrücklich nicht geprüft
+
+
+class AllianceTargetTest(unittest.TestCase):
+    """Der Spielstand ist die Allianz-Summe (ADR-026): target_p10 gilt einmal, der höhere Wert der Routen (SIM-24)."""
+
+    def test_highest_route_target_applies_once(self):
+        with tempfile.TemporaryDirectory() as d:
+            SummaryTest().make_dir(d, 11)  # Team-P10 = 10
+            s = sim_report.summarize(d)
+            ok, msgs = sim_report.acceptance(s, {"stacker": 120, "runner": 80})
+            self.assertFalse(ok)
+            self.assertEqual(len([m for m in msgs if "target_p10" in m]), 1)  # eine Meldung, nicht je Roboter
+            self.assertTrue(any("120" in m and "Allianz" in m for m in msgs))
+
+    def test_lower_route_target_alone_is_not_enough_to_pass_the_higher_one(self):
+        with tempfile.TemporaryDirectory() as d:
+            SummaryTest().make_dir(d, 11)
+            s = sim_report.summarize(d)
+            self.assertTrue(sim_report.acceptance(s, {"stacker": 10, "runner": 5})[0])
+            self.assertFalse(sim_report.acceptance(s, {"stacker": 10, "runner": 50})[0])  # 50 > 10 gilt
+
+    def test_not_checkable_without_score_is_reported_once(self):
+        with tempfile.TemporaryDirectory() as d:
+            write_run(d, 0, "stacker", [row(0.0, "stacker")])
+            write_run(d, 0, "runner", [row(0.0, "runner")])
+            ok, msgs = sim_report.acceptance(sim_report.summarize(d), {"stacker": 120, "runner": 80})
+            self.assertTrue(ok)
+            self.assertEqual(len([m for m in msgs if "nicht geprüft" in m]), 1)
+
+    def test_differing_scores_in_the_two_logs_fail(self):
+        with tempfile.TemporaryDirectory() as d:
+            for i in range(3):
+                write_run(d, i, "stacker", [row(0.0, "stacker", score=50)])
+                write_run(d, i, "runner", [row(0.0, "runner", score=20)])
+            ok, msgs = sim_report.acceptance(sim_report.summarize(d), {"stacker": 10})
+            self.assertFalse(ok)
+            self.assertTrue(any("verschieden" in m for m in msgs))
 
 
 class HtmlHintTest(unittest.TestCase):

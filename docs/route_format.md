@@ -5,7 +5,7 @@ Namen (Goals, Loader, Toggles, Posen) müssen in field/field.json existieren, so
 
 | Anweisung | Bedeutung |
 | --- | --- |
-| `target_p10 <punkte>` | Abnahmegrenze für die Simulation (P10 der Punkte) |
+| `target_p10 <punkte>` | Abnahmegrenze für die Simulation: P10 des Allianz-Punktestands (Teamsumme, nicht je Roboter). Steht es in beiden Routen, gilt der höhere Wert einmal |
 | `start <POSE>` oder `start pose x= y= h=` | Startpose setzen |
 | `goto <NAME> [tol=<in>] [timeout=<s>]` | zu einem Feldpunkt fahren (Anfahrrichtung aus field.json) |
 | `goto pose x= y= h= [timeout=]` | zu einer Pose fahren |
