@@ -42,10 +42,10 @@ gh api -X PUT "repos/$OWNER/$REPO/actions/permissions/workflow" -f default_workf
 say "Fortschrittsseite (GitHub Pages) einschalten"
 if gh api -X POST "repos/$OWNER/$REPO/pages" -f build_type=workflow >/dev/null 2>&1 \
    || gh api -X PUT "repos/$OWNER/$REPO/pages" -f build_type=workflow >/dev/null 2>&1; then
-  echo "ok – Seite: https://$OWNER.github.io/$REPO/ (erscheint nach dem ersten Workflow-Lauf)"
+  echo "ok – Seite: https://$OWNER.github.io/$REPO/board/ (Fortschritt; die Wurzel ist die Teamseite; erscheint nach dem ersten Workflow-Lauf)"
 else
   echo "Pages nicht verfügbar. Für private Repos braucht es GitHub Pro (gratis im GitHub Student Developer Pack)."
-  echo "Ohne Pages: python3 tools/board.py export site  und  site/index.html lokal öffnen."
+  echo "Ohne Pages: python3 tools/board.py export site/board  und  site/board/index.html lokal öffnen."
 fi
 
 say "Teammitglieder einladen"

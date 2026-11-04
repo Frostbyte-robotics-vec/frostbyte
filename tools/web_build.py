@@ -56,7 +56,7 @@ def e(text):
     return html.escape(str(text), quote=True)
 
 
-def logo_link(s, gross=False):
+def logo_link(s):
     img = f'<img src="img/sponsoren/{e(s["logo"])}" alt="Logo {e(s["name"])}">'
     return f'<a href="{e(s["url"])}">{img}</a>'
 
