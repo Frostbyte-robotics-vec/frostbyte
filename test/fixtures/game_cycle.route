@@ -1,0 +1,3 @@
+start START_STACKER
+cycle goal=GOAL_RED level=auto source=preload
+end hold

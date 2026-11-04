@@ -1,0 +1,3 @@
+start START_RUNNER
+cycle goal=GOAL_BLUE level=auto source=preload
+end hold

@@ -25,8 +25,9 @@ ADR-026 (Spielzustand), ADR-031 (Routen in der Simulation), `sim/route_runner.cp
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Fertig, im Review. Game::start_intake/start_cycle/cancel + Executor-Anschluss, ADR-032. Toggle-Anfangszustand ist Annahme `spiel.toggle_anfang` (schaetzung). Demo byte-gleich zu vorher geprüft. Echte Skills-Routen laufen erst mit gesetzten Posen (A-01/A-09). Am Roboter nichts zu prüfen.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-03 · DAVIDCOPCOP (KI) · Ticket angelegt, aus A-04 ausgelagert · –
+2026-11-03 · arjanssen (KI) · Game-Routenaufrufe, Executor, ADR-032, Tests · (Branch ticket/sim-22)

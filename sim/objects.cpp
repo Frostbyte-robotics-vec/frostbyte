@@ -71,14 +71,21 @@ double ObjectModel::place_success_probability(int level) const {
 bool ObjectModel::place(int level) { return rng_.uniform() < place_success_probability(level); }
 
 CycleResult ObjectModel::run_cycle(Source src, int level, const Joint& lift, double lift_target_deg, const Claw& claw) {
-    CycleResult r;
     const PickResult pick_r = pick(src);
-    r.time_s += pick_r.time_s;
     if (!pick_r.success) {
+        CycleResult r;
+        r.time_s = pick_r.time_s;
         r.outcome = CycleOutcome::pick_failed;
         return r;
     }
-    r.yellow_up = pick_r.yellow_up;
+    return place_unit(pick_r.yellow_up, pick_r.time_s, level, lift, lift_target_deg, claw);
+}
+
+CycleResult ObjectModel::place_unit(bool yellow_up, double time_before_s, int level, const Joint& lift,
+                                    double lift_target_deg, const Claw& claw) {
+    CycleResult r;
+    r.time_s = time_before_s;
+    r.yellow_up = yellow_up;
 
     r.time_s += claw.time_to_settle_after_close(true);
     if (!grasp()) {
@@ -91,5 +98,7 @@ CycleResult ObjectModel::run_cycle(Source src, int level, const Joint& lift, dou
         r.outcome = CycleOutcome::place_failed;
     return r;
 }
+
+bool ObjectModel::preload_yellow_up() { return rng_.uniform() < p_.yellow_up_loader; }
 
 }  // namespace frostbyte::sim
