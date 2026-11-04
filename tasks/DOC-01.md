@@ -2,7 +2,7 @@
 id: DOC-01
 phase: "0"
 titel: Sponsoring-Unterlage 2026/27 als Referenz im Repo ablegen
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/doc-01
 depends: []
