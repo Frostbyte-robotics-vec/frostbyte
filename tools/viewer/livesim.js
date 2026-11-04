@@ -144,6 +144,15 @@ var FBLive = (function () {
     r.h_deg = wrap(r.h_deg + dh);
   }
 
+  // Wie DriveModel::set_position (SIM-26): Kollision verschiebt die Pose; Tempo gegen die Verschiebung wird null.
+  // Den Radweg führt der Livesim nicht.
+  function nudge(r, dx, dy) {
+    var h = r.h_deg * Math.PI / 180;
+    var along = dx * Math.cos(h) + dy * Math.sin(h);
+    [r.left, r.right].forEach(function (s) { if (s.v * along < 0) s.v = 0; });
+    r.x_in += dx; r.y_in += dy;
+  }
+
   function loadDrive(params, name) {
     var r = params.roboter && params.roboter[name];
     var where = 'roboter.' + name;
@@ -259,8 +268,8 @@ var FBLive = (function () {
       var a = robots.stacker, b = robots.runner;
       var mtv = penetrationBoxBox(boxOf(a), boxOf(b));
       if (mtv) {
-        a.x_in += mtv.x / 2; a.y_in += mtv.y / 2;
-        b.x_in -= mtv.x / 2; b.y_in -= mtv.y / 2;
+        nudge(a, mtv.x / 2, mtv.y / 2);
+        nudge(b, -mtv.x / 2, -mtv.y / 2);
       }
       var began0 = trackContact(!!mtv, contactOf(a, 'robot')), began1 = trackContact(!!mtv, contactOf(b, 'robot'));
       if (began0) emit('stacker', 'COLLISION:runner');
@@ -270,7 +279,7 @@ var FBLive = (function () {
         if (fieldIn !== null) {
           var push = pushInsideField(boxOf(r), fieldIn);
           var wall = push.x !== 0 || push.y !== 0;
-          if (wall) { r.x_in += push.x; r.y_in += push.y; }
+          if (wall) nudge(r, push.x, push.y);
           if (trackContact(wall, contactOf(r, 'wall'))) emit(n, 'COLLISION:wall');
         }
         elements.forEach(function (e) {
