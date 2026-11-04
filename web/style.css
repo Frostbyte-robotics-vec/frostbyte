@@ -1,0 +1,27 @@
+body {
+  font-family: system-ui, Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #222;
+  background: #fff;
+  margin: 0;
+}
+main, header, footer, nav {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+}
+h1 { font-size: 1.75rem; margin: 1rem 0 0.25rem; }
+h2 { font-size: 1.25rem; margin: 1.5rem 0 0.5rem; }
+h3 { font-size: 1.05rem; margin: 1rem 0 0.25rem; }
+a { color: #0000ee; }
+a:visited { color: #551a8b; }
+nav a { margin-right: 1rem; }
+img { max-width: 100%; height: auto; }
+.haupt img { max-height: 8rem; }
+.sponsoren img { max-height: 4rem; margin-right: 1rem; }
+ul { padding-left: 1.25rem; }
+@media print {
+  nav { display: none; }
+  a { color: #000; }
+}

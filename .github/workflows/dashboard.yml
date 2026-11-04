@@ -16,8 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Seite erzeugen
-        run: python3 tools/board.py export site
+      - name: Öffentliche Teamseite erzeugen (Wurzel)
+        run: python3 tools/web_build.py web site
+      - name: Fortschrittsseite erzeugen (/board/)
+        run: python3 tools/board.py export site/board
       - name: Simulation bauen und Demo-Logs erzeugen
         run: |
           cmake -S test -B build-test -DCMAKE_BUILD_TYPE=Release
