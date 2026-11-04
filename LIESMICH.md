@@ -33,7 +33,7 @@ Dieses Paket ist der Anfang des Repos `frostbyte`. Claude Code baut den Rest Tic
 | field/field.json | alle Feldpunkte mit festen Namen, Koordinaten noch leer (A-01) |
 | routes/*.route | Entwürfe der Skills-Routen und eine Kalibrierroute |
 | setup/ | SETUP_FUER_ADMIN.md, setup_repo.sh, ONBOARDING_TEMPLATE.md (Vorlage für die Einrichtungsdatei) |
-| web/, tools/web_build.py | Öffentliche Teamseite (inhalt.json: Sponsoren, Team, Kontakt; Logos nach web/img/sponsoren/) |
+| web/ | Öffentliche Team- und Sponsoringseite (statisch, index.html + assets/; Sponsor eintragen: siehe Kommentar im Abschnitt #partner) |
 | tools/dashboard/, .github/workflows/dashboard.yml | Fortschrittsseite (board.py export) |
 | tasks/*.md, tools/board.py | Ticket-Board mit allen 47 Tickets und Abhängigkeiten |
 | .claude/commands/, .claude/settings.json | /start, /handoff, /finish; Board-Überblick beim Start |
