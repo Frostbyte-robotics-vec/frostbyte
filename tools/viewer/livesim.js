@@ -284,7 +284,7 @@ var FBLive = (function () {
         }
         elements.forEach(function (e) {
           var m = penetrationBoxCircle(boxOf(r), e);
-          if (m) { r.x_in += m.x; r.y_in += m.y; }
+          if (m) nudge(r, m.x, m.y);
           if (trackContact(!!m, contactOf(r, e.id))) emit(n, 'COLLISION:' + e.id);
         });
         // BLOCKED: Kontakt hält > 0,5 s bei Fahreingabe (einmal je Kontaktfolge).

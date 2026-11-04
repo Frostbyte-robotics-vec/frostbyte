@@ -24,7 +24,7 @@ ADR-033 (Ergänzung SIM-25, „Nebenbefund“), tasks/SIM-25.md, sim/world.cpp (
 —
 
 ## Übergabe
-Stand: Ursache gefunden und behoben (siehe docs/notes.md 2026-11-04 SIM-26). Tests in test/test_sim_drive.cpp, Livesim-Referenz neu, livesim.js gespiegelt. Node fehlt lokal: tools/viewer/test_livesim.py lief nur in der CI. Nächster Schritt: PR.
+Stand: Ursache gefunden und behoben (siehe docs/notes.md 2026-11-04 SIM-26). Tests in test/test_sim_drive.cpp, Livesim-Referenz neu, livesim.js gespiegelt. Node fehlt lokal: tools/viewer/test_livesim.py lief nur in der CI. Gleicher Seed zweimal = diff -r leer (Logs und Bericht). CI-Schritte lokal: unittest tools 52 ok, Demo 100 Läufe ok. Seit SIM-25 werden die Toggles am Anfang ohne Zeitverbrauch abgelehnt, deshalb ergibt die Route mit und ohne Toggle-Zeilen fast dieselben Zahlen. Kreuzende Routen: SIM-27. Nächster Schritt: PR.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
