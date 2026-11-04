@@ -25,8 +25,9 @@ tasks/A-05.md (Übergabe), ADR-026, ADR-032, docs/route_format.md.
 —
 
 ## Übergabe
-—
+Implementiert auf ticket/sim-24 (ADR-034): sim_report prüft ein Allianz-Ziel (höchster target_p10), eine Meldung, Schutz gegen verschiedene Punktstände. Routen unverändert; den endgültigen Wert legt ein Mensch fest (A-05). Am Roboter zu prüfen: nichts (Auswertung am Laptop).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-04 · arjanssen (KI) · Ticket angelegt (aus A-05) · –
+2026-11-04 · arjanssen (KI) · Allianz-Ziel in sim_report, Tests, route_format, ADR-034 · ticket/sim-24
