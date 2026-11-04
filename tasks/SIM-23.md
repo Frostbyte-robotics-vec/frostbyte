@@ -2,7 +2,7 @@
 id: SIM-23
 phase: "5"
 titel: Toggles in der Simulation modellieren (Zustand, Punkte, Fahrt zum Toggle)
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-23
 depends: [SIM-22]

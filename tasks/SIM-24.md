@@ -13,7 +13,10 @@ hw: nein
 Der Spielstand ist die Allianz-Summe, `target_p10` steht aber in beiden Routen. Bericht und Format so ändern, dass das Ziel einmal je Allianz gilt. Den Zielwert legt ein Mensch fest (Frage in A-05); Ziele nie senken, damit etwas grün wird. Entstanden aus A-05.
 
 ## Fertig, wenn …
-- `docs/route_format.md` und `tools/sim_report.py` beschreiben und prüfen ein Allianz-Ziel; ADR hält die Änderung festn- Der höhere der bisherigen Werte (120) gilt, bis ein Mensch etwas anderes festlegtn- Tests für den Bericht (Ziel erreicht / verfehlt / Punktestand fehlt)n- Laptop-Tests grün, beide Roboter bauen, `python tools/board.py validate` grün
+- `docs/route_format.md` und `tools/sim_report.py` beschreiben und prüfen ein Allianz-Ziel; ein ADR hält die Änderung fest
+- Der höhere der bisherigen Werte (120) gilt, bis ein Mensch etwas anderes festlegt
+- Tests für den Bericht (Ziel erreicht / verfehlt / Punktestand fehlt)
+- Laptop-Tests grün, beide Roboter bauen, `python tools/board.py validate` grün
 
 ## Kontext
 tasks/A-05.md (Übergabe), ADR-026, ADR-032, docs/route_format.md.
