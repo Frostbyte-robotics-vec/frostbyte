@@ -33,6 +33,7 @@ Dieses Paket ist der Anfang des Repos `frostbyte`. Claude Code baut den Rest Tic
 | field/field.json | alle Feldpunkte mit festen Namen, Koordinaten noch leer (A-01) |
 | routes/*.route | Entwürfe der Skills-Routen und eine Kalibrierroute |
 | setup/ | SETUP_FUER_ADMIN.md, setup_repo.sh, ONBOARDING_TEMPLATE.md (Vorlage für die Einrichtungsdatei) |
+| web/ | Öffentliche Team- und Sponsoringseite (statisch, index.html + assets/; Sponsor eintragen: siehe Kommentar im Abschnitt #partner) |
 | tools/dashboard/, .github/workflows/dashboard.yml | Fortschrittsseite (board.py export) |
 | tasks/*.md, tools/board.py | Ticket-Board mit allen 47 Tickets und Abhängigkeiten |
 | .claude/commands/, .claude/settings.json | /start, /handoff, /finish; Board-Überblick beim Start |
@@ -74,7 +75,7 @@ Nach jedem Ticket: Pull Request von jemand anderem lesen lassen und mergen.
 ## Fortschrittsseite
 Eine Webseite zeigt jederzeit den Stand: erledigte Tickets, Fortschritt pro Phase, wer woran arbeitet (mit Übergabe),
 welcher Merge was freischaltet, die letzten Einträge und alle Tickets zum Filtern.
-- Online: GitHub Pages unter https://<besitzer>.github.io/frostbyte/ – wird bei jedem Push auf main neu gebaut (.github/workflows/dashboard.yml).
+- Online: GitHub Pages unter https://<besitzer>.github.io/frostbyte/board/ (die Wurzel ist die öffentliche Teamseite, ADR-035) – wird bei jedem Push auf main neu gebaut (.github/workflows/dashboard.yml).
   Achtung: Eine Pages-Seite ist öffentlich erreichbar, auch wenn das Repo privat ist (nur mit GitHub Enterprise nicht).
   Sie zeigt Ticket-Titel und eure Board-Namen, keinen Code. Wollt ihr das nicht: Workflow löschen und lokal arbeiten.
-- Lokal: python3 tools/board.py export site, dann site/index.html im Browser öffnen.
+- Lokal: python3 tools/board.py export site/board, dann site/board/index.html im Browser öffnen.

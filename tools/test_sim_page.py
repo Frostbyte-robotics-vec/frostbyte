@@ -102,7 +102,7 @@ class SimPageTest(unittest.TestCase):
         self.assertIn("tools/sim_page.py", wf)
         self.assertIn("site/sim/index.html", wf)
         tpl = (ROOT / "tools" / "dashboard" / "template.html").read_text(encoding="utf-8")
-        self.assertIn('href="sim/"', tpl)
+        self.assertIn('href="../sim/"', tpl)  # Board liegt unter /board/ (ADR-035)
         self.assertIn("Simulation (intern)", tpl)
 
 
