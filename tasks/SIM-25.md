@@ -25,9 +25,9 @@ ADR-033, tasks/SIM-23.md, field/field.json (`toggles`), routes/skills_runner.rou
 —
 
 ## Übergabe
-Stand: fertig, Tests grün. Folge: Route v1 skills_runner fällt in der Simulation von 56 auf 0 Punkte (kein goto vor den Toggles); in tasks/A-05.md vermerkt. ADR-033 ergänzt.
+Stand: fertig, Tests grün, Advisor-Review eingearbeitet (wahre Pose statt Schätzung, Determinismus geprüft). Folge: Route v1 skills_runner fällt in der Simulation von 56 auf 0 Punkte (kein goto vor den Toggles); in tasks/A-05.md vermerkt. ADR-033 ergänzt.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-04 · arjanssen (KI) · Ticket angelegt (aus SIM-23, Advisor-Hinweis) · –
-2026-11-04 · arjanssen (KI) · Reichweite in Game, world, route_runner, sim_params, Tests, ADR-033 · –
+2026-11-04 · arjanssen (KI) · Reichweite in Game, world, route_runner, sim_params, Tests, ADR-033 · 6d23208

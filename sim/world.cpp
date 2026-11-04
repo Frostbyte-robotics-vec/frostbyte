@@ -369,7 +369,7 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
                 if (r.setup.closed_loop) {
                     r.held_cmd = r.setup.closed_loop(t_ms, *r.est);
                 } else if (r.route) {
-                    r.held_cmd = r.route->step(t_ms, *r.est);
+                    r.held_cmd = r.route->step(t_ms, *r.est, r.drive->pose());
                     r.route_step = r.route->step_text();
                 }
             }

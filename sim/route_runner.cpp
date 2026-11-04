@@ -198,13 +198,13 @@ RouteRunner::RouteRunner(std::vector<RouteCmd> cmds, const std::vector<FieldPoin
         throw std::runtime_error("Route für den RoutePlayer ungültig (Struktur, Lanes oder Tiefe)");
 }
 
-std::pair<double, double> RouteRunner::step(int t_ms, const Pose& est) {
+std::pair<double, double> RouteRunner::step(int t_ms, const Pose& est, const Pose& truth) {
     const double t_s = t_ms / 1000.0;
+    exec_.set_pose(truth);  // vor begin(): auch ein erster Schritt toggle sieht die Pose
     if (!begun_) {
         player_.begin(t_s);
         begun_ = true;
     }
-    exec_.set_pose(est);
     player_.update(t_s, t_s);  // Matchzeit = Simulationszeit
     if (!exec_.motion_active())
         return {0.0, 0.0};
