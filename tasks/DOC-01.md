@@ -24,8 +24,9 @@ docs/ref/README.md. Kein Code geändert.
 —
 
 ## Übergabe
-—
+Fertig auf ticket/doc-01. Am Roboter zu prüfen: nichts.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-04 · arjanssen (KI) · Ticket angelegt und übernommen · –
+2026-11-04 · arjanssen (KI) · PDF unverändert abgelegt (SHA-256 gleich Original), README ergänzt · ticket/doc-01
