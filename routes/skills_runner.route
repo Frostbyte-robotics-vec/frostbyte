@@ -1,14 +1,15 @@
-# Runner, Autonomous Skills – Entwurf v0
+# Runner, Autonomous Skills – v1 (A-05): erst von der Wand wegfahren, Loader RED_1 (Süd) liegt nahe am Start.
 target_p10 80
 start    START_RUNNER
+goto     pose x=-40 y=-52 h=90 timeout=2.0
 toggle   TOGGLE_RED_1   timeout=2.0
 toggle   TOGGLE_RED_2   timeout=3.0
 toggle   TOGGLE_BLUE_1  timeout=3.5
 toggle   TOGGLE_BLUE_2  timeout=3.5
 signal   toggles_done
 cycle    source=preload  goal=RED_ALLIANCE_2  level=auto
-repeat 5 {
-  goto   LOADER_RED_2     tol=1.5  timeout=3.0
+repeat 9 {
+  goto   LOADER_RED_1     tol=1.5  timeout=3.0
   intake until=unit       timeout=2.5
   cycle  goal=NEUTRAL_R2  level=auto  timeout=6.0
 }
