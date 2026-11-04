@@ -28,7 +28,7 @@ double wrap_deg(double d) {
 
 }  // namespace
 
-// Echte Messwerte (CAD 276-9250-000); Winkel der Goals und Startposen sind Strategie und dürfen null bleiben.
+// Echte Messwerte (CAD 276-9250-000); Winkel der Goals sind Strategie und dürfen null bleiben; die Posen stehen in eigenen Tests (A-13).
 TEST_CASE("field.json: Goals, Toggles und Loader haben x/y und liegen im Feld") {
     const Json f = field();
     const double half = f.at("feld_in").as_number() / 2.0;
