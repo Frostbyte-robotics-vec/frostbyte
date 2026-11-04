@@ -18,11 +18,19 @@ jobs:
         with: { ref: main, token: "${{ secrets.BOARD_TOKEN }}" }
       - name: Ticket-Status nach dem Merge setzen
         run: |
-          ID=$(echo "${{ github.event.pull_request.head.ref }}" | sed 's#ticket/##' | tr '[:lower:]' '[:upper:]')
+          # Branch ticket/a-04-v2 -> A-04 (Suffix wie -v2 wird ignoriert)
+          ID=$(echo "${{ github.event.pull_request.head.ref }}" | sed -E 's#ticket/([a-z]+-[0-9]+).*#\1#' | tr '[:lower:]' '[:upper:]')
           python3 tools/board.py merged "$ID"
-          python3 tools/board.py validate
           git config user.name "frostbyte-board"
           git config user.email "board@users.noreply.github.com"
           STATUS=$(sed -n 's/^status: *//p' "tasks/$ID.md" | head -1)
           git commit -am "board: $ID $STATUS (PR #${{ github.event.pull_request.number }})" || exit 0
-          git push
+          # Mehrere Merges kurz hintereinander: main hat sich inzwischen bewegt -> rebase und erneut pushen.
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && break
+            [ "$i" = 5 ] && exit 1
+            sleep $((i * 3))
+          done
+          # Erst nach dem Push prüfen: war eine Abhängigkeit noch nicht fertig (paralleler Lauf), ist das nur eine Warnung;
+          # die endgültige Prüfung macht die CI auf main.
+          python3 tools/board.py validate || echo "::warning::board.py validate meldet Fehler (evtl. paralleler Merge) - CI auf main prüfen"
