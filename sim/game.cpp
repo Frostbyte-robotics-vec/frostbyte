@@ -16,6 +16,9 @@ void load_game_params(const Json& params, GameSetup& g) {
     if (!(toggle_s > 0.0))
         throw std::runtime_error("sim_params spiel.toggle_dauer_s: Zahl größer 0 erwartet");
     g.toggle_ms = static_cast<int>(std::lround(toggle_s * 1000.0));
+    g.toggle_reach_in = spiel.at("toggle_reichweite_in").as_number();
+    if (!(g.toggle_reach_in > 0.0))
+        throw std::runtime_error("sim_params spiel.toggle_reichweite_in: Zahl größer 0 erwartet");
 }
 
 MidfieldSpec load_midfield(const Json& field) {
@@ -156,8 +159,13 @@ int Game::toggle_index(const std::string& name) const {
     return -1;
 }
 
-CycleTicket Game::start_toggle(int t_ms, int robot, int toggle) {
+CycleTicket Game::start_toggle(int t_ms, int robot, int toggle, double robot_x_in, double robot_y_in) {
     if (toggle < 0 || toggle >= static_cast<int>(setup_.toggles.size()) || busy_until_[robot] > t_ms) {
+        ++rejected_;
+        return {};
+    }
+    const ToggleSpec& spec = setup_.toggles[static_cast<std::size_t>(toggle)];
+    if (std::hypot(robot_x_in - spec.x_in, robot_y_in - spec.y_in) > setup_.toggle_reach_in) {  // zu weit weg (SIM-25)
         ++rejected_;
         return {};
     }

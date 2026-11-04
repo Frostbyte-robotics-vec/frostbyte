@@ -55,6 +55,9 @@ public:
     StepStatus poll(int lane, double now_s) override;
     StepStatus cancel(int lane, double now_s) override;
 
+    // Pose des Roboters (Schätzung), vor jedem Routenschritt gesetzt; toggle prüft damit die Reichweite (SIM-25).
+    void set_pose(const Pose& p) { pose_ = p; }
+
     // true, solange eine Lane auf den Befehl des MotionController wartet.
     bool motion_active() const { return motion_lane_ >= 0; }
 
@@ -79,6 +82,7 @@ private:
     RouteRobot self_;
     RoutePlayerConfig cfg_;
     Game* game_;
+    Pose pose_;
     bool last_goto_loader_ =
         false;  // letztes goto-Ziel war ein Ladepunkt: intake nimmt dann vom Loader, sonst vom Boden
     LaneRec lanes_[RoutePlayer::kMaxLanes];

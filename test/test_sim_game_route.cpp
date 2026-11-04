@@ -426,3 +426,17 @@ TEST_CASE("Routenlauf: der Spielzustand liest toggles aus field.json (Name, Ziel
     CHECK(cfg.game.toggles[0].goals == std::vector<int>{1});  // GOAL_BLUE im Quadranten BLUE_1
     CHECK(cfg.game.toggle_ms == 2000);
 }
+
+TEST_CASE("Routenlauf: toggle weiter vom Toggle als die Reichweite setzt nichts (Fixture mit kleiner Reichweite)") {
+    // Toggle bei (30, 30), Runner startet bei (20, 0): Abstand 31,6 in; Reichweite in der Fixture 10 in.
+    const Run r = run(load("empty.route", "game_toggle.route", "sim_params_game_toggle_far.json"));
+    CHECK(max_score(r.runner) == 0);
+}
+
+TEST_CASE("Routenlauf: der Spielzustand liest Toggle-Position und Reichweite") {
+    const SimConfig cfg = load("empty.route", "game_toggle.route", "sim_params_game_toggle.json");
+    REQUIRE(cfg.game.toggles.size() == 1);
+    CHECK(cfg.game.toggles[0].x_in == doctest::Approx(30.0));
+    CHECK(cfg.game.toggles[0].y_in == doctest::Approx(30.0));
+    CHECK(cfg.game.toggle_reach_in == doctest::Approx(40.0));
+}

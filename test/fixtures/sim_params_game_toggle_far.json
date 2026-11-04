@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "welt": {
+    "schritt_ms": 1,
+    "steuer_ms": 10,
+    "log_ms": 20,
+    "g_in_s2": 386.1
+  },
+  "rauschen_profile": {
+    "none": {
+      "skala": 0.0
+    },
+    "realistic": {
+      "skala": 1.0
+    },
+    "harsh": {
+      "skala": 2.0
+    }
+  },
+  "roboter": {
+    "stacker": {
+      "antrieb": {
+        "kS_V": 1.0,
+        "kV_V_per_in_s": 0.2,
+        "kA_V_per_in_s2": 0.04,
+        "spurbreite_in": 12.0,
+        "mu": 1.0,
+        "motor_max_V": 11.5
+      },
+      "umriss_in": {
+        "laenge": 12.0,
+        "breite": 12.0
+      },
+      "sensoren": {
+        "tracking": {
+          "skalierung_fehler": 0.01,
+          "sigma_in_pro_takt": 0.05
+        },
+        "imu": {
+          "drift_deg_pro_min": 1.0,
+          "sigma_deg": 0.1
+        },
+        "gps": {
+          "sigma_in": 0.5,
+          "sigma_deg": 1.0,
+          "aussetzer_anteil": 0.1,
+          "guete_verlust_pro_in_s": 0.02
+        }
+      },
+      "akku": {
+        "spannung_V": 12.6
+      },
+      "mechanismen": {
+        "lift": {
+          "min_deg": 0,
+          "max_deg": 90,
+          "max_deg_s": 90,
+          "max_deg_s2": 1000
+        },
+        "arm": {
+          "min_deg": 0,
+          "max_deg": 90,
+          "max_deg_s": 90,
+          "max_deg_s2": 1000
+        },
+        "claw": {
+          "offen_in": 1.0,
+          "pin_in": 0.2,
+          "max_in_s": 4.0
+        }
+      }
+    },
+    "runner": {
+      "antrieb": {
+        "kS_V": 1.0,
+        "kV_V_per_in_s": 0.2,
+        "kA_V_per_in_s2": 0.03,
+        "spurbreite_in": 10.0,
+        "mu": 1.0,
+        "motor_max_V": 11.5
+      },
+      "umriss_in": {
+        "laenge": 10.0,
+        "breite": 10.0
+      },
+      "sensoren": {
+        "encoder": {
+          "skalierung_fehler": 0.01,
+          "sigma_in_pro_takt": 0.05
+        },
+        "imu": {
+          "drift_deg_pro_min": 1.0,
+          "sigma_deg": 0.1
+        },
+        "gps": {
+          "sigma_in": 0.5,
+          "sigma_deg": 1.0,
+          "aussetzer_anteil": 0.1,
+          "guete_verlust_pro_in_s": 0.02
+        }
+      },
+      "akku": {
+        "spannung_V": 12.6
+      },
+      "mechanismen": {
+        "lift": {
+          "min_deg": 0,
+          "max_deg": 90,
+          "max_deg_s": 90,
+          "max_deg_s2": 1000
+        },
+        "arm": {
+          "min_deg": 0,
+          "max_deg": 90,
+          "max_deg_s": 90,
+          "max_deg_s2": 1000
+        },
+        "claw": {
+          "offen_in": 1.0,
+          "pin_in": 0.2,
+          "max_in_s": 4.0
+        }
+      }
+    }
+  },
+  "spiel": {
+    "cup_undurchsichtig_unten": false,
+    "toggle_anfang": "neutral",
+    "toggle_dauer_s": 2.0,
+    "toggle_reichweite_in": 10.0
+  },
+  "ereignisse": {
+    "loader_einheit": {
+      "dauer_s": 1.0,
+      "sigma_s": 0.0,
+      "fehlschlag": 0.0
+    },
+    "boden_einheit": {
+      "dauer_s": 2.0,
+      "sigma_s": 0.0,
+      "fehlschlag": 0.0
+    },
+    "pin_gelb_oben": {
+      "loader": 1.0,
+      "boden": 1.0
+    },
+    "greifer_fasst": {
+      "erfolg": 1.0
+    },
+    "setzen": {
+      "erfolg_ebene0": 1.0,
+      "abzug_pro_ebene": 0.0
+    }
+  }
+}

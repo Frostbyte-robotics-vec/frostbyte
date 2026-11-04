@@ -203,6 +203,8 @@ void add_route_goals(const Json& params, const Json& field, GameSetup& g) {
                 throw std::runtime_error("field.json toggles: zielfarbe '" + color + "' unbekannt (red oder blue)");
             ToggleSpec t;
             t.name = j.at("id").as_string();
+            t.x_in = j.at("x_in").as_number();
+            t.y_in = j.at("y_in").as_number();
             t.color = color == "red" ? ToggleColor::red : ToggleColor::blue;
             for (std::size_t k = 0; k < goal_quadrants.size(); ++k)
                 if (goal_quadrants[k] == j.at("quadrant").as_string())

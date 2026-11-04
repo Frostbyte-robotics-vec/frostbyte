@@ -142,7 +142,8 @@ void SimRouteExecutor::start(int lane, const RouteCmd& cmd, double now_s) {
                 l.status = StepStatus::done;
                 break;
             }
-            begin_game_op(lane, game_->start_toggle(now_ms(now_s), robot_index(), game_->toggle_index(cmd.name)));
+            begin_game_op(lane, game_->start_toggle(now_ms(now_s), robot_index(), game_->toggle_index(cmd.name),
+                                                    pose_.x_in, pose_.y_in));
             break;
         default:  // start: Platzhalter ohne Modell (ADR-031)
             l.status = StepStatus::done;
@@ -203,6 +204,7 @@ std::pair<double, double> RouteRunner::step(int t_ms, const Pose& est) {
         player_.begin(t_s);
         begun_ = true;
     }
+    exec_.set_pose(est);
     player_.update(t_s, t_s);  // Matchzeit = Simulationszeit
     if (!exec_.motion_active())
         return {0.0, 0.0};

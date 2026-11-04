@@ -12,13 +12,15 @@ using namespace frostbyte::sim;
 
 constexpr int end_ms = 60000;
 constexpr int toggle_ms = 2500;
+constexpr double reach_in = 10.0;
 
 GameSetup one_goal_neutral_toggle() {
     GameSetup g;
     g.goals.push_back(GoalState{Zone::red_quadrant, ToggleColor::neutral, {}});
     g.goal_names = {"GOAL_RED"};
-    g.toggles.push_back(ToggleSpec{"TOGGLE_RED", ToggleColor::red, {0}});
+    g.toggles.push_back(ToggleSpec{"TOGGLE_RED", ToggleColor::red, {0}, 0.0, 0.0});
     g.toggle_ms = toggle_ms;
+    g.toggle_reach_in = reach_in;
     g.events.loader = {1.0, 0.0, 0.0};
     g.events.floor = {2.0, 0.0, 0.0};
     g.events.yellow_up_loader = 1.0;  // der Pin liegt mit gelber Hälfte oben im Goal
@@ -55,7 +57,7 @@ TEST_CASE("Game: ohne gesetzten Toggle zählt das gelbe Pin-Hälfte nicht, nach 
     Game game(one_goal_neutral_toggle(), 1, 2, end_ms);
     const int free_ms = place_yellow_pin(game, 1);
     CHECK(game.score() == 0);  // gelb, Toggle neutral (SC4): nicht Owned
-    const CycleTicket t = game.start_toggle(free_ms, 1, game.toggle_index("TOGGLE_RED"));
+    const CycleTicket t = game.start_toggle(free_ms, 1, game.toggle_index("TOGGLE_RED"), 0.0, 0.0);
     REQUIRE(t.accepted);
     CHECK(t.ok);
     CHECK(t.done_ms == free_ms + toggle_ms);
@@ -68,19 +70,19 @@ TEST_CASE("Game: ohne gesetzten Toggle zählt das gelbe Pin-Hälfte nicht, nach 
 TEST_CASE("Game: start_toggle lehnt unbekannten Toggle und beschäftigten Roboter ab, ohne etwas zu ändern") {
     Game game(one_goal_neutral_toggle(), 1, 2, end_ms);
     CHECK(game.toggle_index("TOGGLE_X") == -1);
-    CHECK_FALSE(game.start_toggle(0, 1, -1).accepted);
-    const CycleTicket first = game.start_toggle(0, 1, 0);
+    CHECK_FALSE(game.start_toggle(0, 1, -1, 0.0, 0.0).accepted);
+    const CycleTicket first = game.start_toggle(0, 1, 0, 0.0, 0.0);
     REQUIRE(first.accepted);
-    CHECK_FALSE(game.start_toggle(100, 1, 0).accepted);  // derselbe Roboter ist noch beim Drehen
+    CHECK_FALSE(game.start_toggle(100, 1, 0, 0.0, 0.0).accepted);  // derselbe Roboter ist noch beim Drehen
     CHECK(game.rejected_cycles() == 2);
-    CHECK(game.start_toggle(100, 0, 0).accepted);  // ein anderer Roboter ist frei
+    CHECK(game.start_toggle(100, 0, 0, 0.0, 0.0).accepted);  // ein anderer Roboter ist frei
 }
 
 TEST_CASE("Game: cancel bricht einen laufenden Toggle ab, nach 0:00 zählt keiner mehr") {
     {
         Game game(one_goal_neutral_toggle(), 1, 2, end_ms);
         const int free_ms = place_yellow_pin(game, 1);
-        const CycleTicket t = game.start_toggle(free_ms, 1, 0);
+        const CycleTicket t = game.start_toggle(free_ms, 1, 0, 0.0, 0.0);
         game.cancel(free_ms + 1000, 1);
         advance(game, free_ms, t.done_ms + 10);
         CHECK(game.score() == 0);
@@ -88,9 +90,32 @@ TEST_CASE("Game: cancel bricht einen laufenden Toggle ab, nach 0:00 zählt keine
     {
         Game game(one_goal_neutral_toggle(), 1, 2, end_ms);
         const int free_ms = place_yellow_pin(game, 1);
-        const CycleTicket t = game.start_toggle(end_ms - 1000, 1, 0);  // fertig erst nach 0:00
+        const CycleTicket t = game.start_toggle(end_ms - 1000, 1, 0, 0.0, 0.0);  // fertig erst nach 0:00
         REQUIRE(t.accepted);
         advance(game, free_ms, end_ms);
         CHECK(game.score() == 0);
     }
+}
+
+// Reichweite (SIM-25): der Toggle steht bei (0, 0), die Reichweite gehört dem Test.
+TEST_CASE("Game: start_toggle lehnt ab, wenn der Roboter weiter als die Reichweite vom Toggle steht") {
+    Game game(one_goal_neutral_toggle(), 1, 2, end_ms);
+    CHECK_FALSE(game.start_toggle(0, 1, 0, reach_in + 0.5, 0.0).accepted);
+    CHECK_FALSE(game.start_toggle(0, 1, 0, 8.0, 8.0).accepted);  // Abstand 11,3 in
+    CHECK(game.rejected_cycles() == 2);
+    const CycleTicket far_rejected = game.start_toggle(0, 1, 0, 0.0, -reach_in - 1.0);
+    CHECK_FALSE(far_rejected.accepted);
+    const CycleTicket near = game.start_toggle(0, 1, 0, 6.0, -8.0);  // Abstand genau reach_in: erlaubt
+    CHECK(near.accepted);
+    CHECK(near.ok);
+}
+
+TEST_CASE("Game: ein abgelehnter Toggle macht den Roboter nicht beschäftigt und setzt nichts") {
+    Game game(one_goal_neutral_toggle(), 1, 2, end_ms);
+    const int free_ms = place_yellow_pin(game, 1);
+    CHECK_FALSE(game.start_toggle(free_ms, 1, 0, 50.0, 0.0).accepted);
+    const CycleTicket ok = game.start_toggle(free_ms, 1, 0, 0.0, 0.0);  // sofort wieder möglich
+    REQUIRE(ok.accepted);
+    advance(game, free_ms, ok.done_ms);
+    CHECK(game.score() == 10);
 }

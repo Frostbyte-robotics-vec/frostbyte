@@ -42,6 +42,8 @@ struct ToggleSpec {
     std::string name;
     ToggleColor color = ToggleColor::neutral;
     std::vector<int> goals;
+    double x_in = 0.0;  // Lage aus field.json (SIM-25): Reichweitenprüfung von start_toggle
+    double y_in = 0.0;
 };
 
 struct GameSetup {
@@ -49,6 +51,7 @@ struct GameSetup {
     std::vector<std::string> goal_names;  // je Goal der Name aus field.json (für Routen, SIM-22); sonst leer
     std::vector<ToggleSpec> toggles;      // je Toggle aus field.json (für Routen, SIM-23); sonst leer
     int toggle_ms = 0;                    // Dauer des Befehls toggle (sim_params spiel.toggle_dauer_s)
+    double toggle_reach_in = 0.0;  // größter Abstand Roboter-Toggle für toggle (spiel.toggle_reichweite_in, SIM-25)
     std::vector<GameCycle> cycles;
     EventParams events;
     MechanismParams mech[2];
@@ -98,7 +101,7 @@ public:
     int goal_index(const std::string& name) const;
     // Toggle setzen (SIM-23): der Roboter ist toggle_ms beschäftigt, danach steht der Toggle auf seiner Farbe. Gleiche
     // Antwort wie bei Zyklen; ein unbekannter Toggle oder ein beschäftigter Roboter wird abgelehnt.
-    CycleTicket start_toggle(int t_ms, int robot, int toggle);
+    CycleTicket start_toggle(int t_ms, int robot, int toggle, double robot_x_in, double robot_y_in);
     // Index des Toggles mit diesem Namen (GameSetup::toggles), -1 wenn unbekannt.
     int toggle_index(const std::string& name) const;
     int rejected_cycles() const { return rejected_; }  // von Routen abgelehnte Befehle
