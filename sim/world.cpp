@@ -203,6 +203,8 @@ void add_route_goals(const Json& params, const Json& field, GameSetup& g) {
                 throw std::runtime_error("field.json toggles: zielfarbe '" + color + "' unbekannt (red oder blue)");
             ToggleSpec t;
             t.name = j.at("id").as_string();
+            t.x_in = j.at("x_in").as_number();
+            t.y_in = j.at("y_in").as_number();
             t.color = color == "red" ? ToggleColor::red : ToggleColor::blue;
             for (std::size_t k = 0; k < goal_quadrants.size(); ++k)
                 if (goal_quadrants[k] == j.at("quadrant").as_string())
@@ -367,7 +369,7 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
                 if (r.setup.closed_loop) {
                     r.held_cmd = r.setup.closed_loop(t_ms, *r.est);
                 } else if (r.route) {
-                    r.held_cmd = r.route->step(t_ms, *r.est);
+                    r.held_cmd = r.route->step(t_ms, *r.est, r.drive->pose());
                     r.route_step = r.route->step_text();
                 }
             }

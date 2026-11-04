@@ -55,6 +55,10 @@ public:
     StepStatus poll(int lane, double now_s) override;
     StepStatus cancel(int lane, double now_s) override;
 
+    // Wahre Pose des Roboters, vor jedem Routenschritt gesetzt: ob der Arm den Toggle erreicht, hängt von der wahren Lage ab,
+    // nicht von der Schätzung (SIM-25).
+    void set_pose(const Pose& p) { pose_ = p; }
+
     // true, solange eine Lane auf den Befehl des MotionController wartet.
     bool motion_active() const { return motion_lane_ >= 0; }
 
@@ -79,6 +83,7 @@ private:
     RouteRobot self_;
     RoutePlayerConfig cfg_;
     Game* game_;
+    Pose pose_;
     bool last_goto_loader_ =
         false;  // letztes goto-Ziel war ein Ladepunkt: intake nimmt dann vom Loader, sonst vom Boden
     LaneRec lanes_[RoutePlayer::kMaxLanes];
@@ -93,8 +98,9 @@ public:
     RouteRunner(const RouteRunner&) = delete;
     RouteRunner& operator=(const RouteRunner&) = delete;
 
-    // Einmal je Steuertakt: Player, dann Bewegung mit der geschätzten Pose. Rückgabe: Spannung links/rechts.
-    std::pair<double, double> step(int t_ms, const Pose& est);
+    // Einmal je Steuertakt: Player, dann Bewegung mit der geschätzten Pose (est); truth ist die wahre Pose (nur für die
+    // Reichweite von toggle). Rückgabe: Spannung links/rechts.
+    std::pair<double, double> step(int t_ms, const Pose& est, const Pose& truth);
 
     RouteStatus status() const { return player_.status(); }
     int failed_steps() const { return player_.failed_steps(); }
