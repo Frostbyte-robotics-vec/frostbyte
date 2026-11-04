@@ -2,7 +2,7 @@
 id: SIM-26
 phase: "5"
 titel: Odometriefehler beim frühen ersten goto (Runner: 72 statt 12 in) untersuchen
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-26
 depends: [SIM-25]
