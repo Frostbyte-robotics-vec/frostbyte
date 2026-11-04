@@ -233,3 +233,107 @@ TEST_CASE("field.json: Pins drehen sich mit der Feldmitte um 180 Grad (Farbe ver
         CHECK(gefunden);
     }
 }
+
+namespace {
+
+struct Start {
+    double x, y, h;
+};
+
+Start start_of(const Json& f, const std::string& id) {
+    const Json& p = find_id(f.at("posen"), id);
+    REQUIRE_FALSE(p.at("x_in").is_null());
+    REQUIRE_FALSE(p.at("y_in").is_null());
+    REQUIRE_FALSE(p.at("h_deg").is_null());
+    return {p.at("x_in").as_number(), p.at("y_in").as_number(), p.at("h_deg").as_number()};
+}
+
+// Dreieckiges Quadrant = Wand, zu der der Mittelpunkt gehört (Diagonalen trennen): 0 = +x, 1 = +y, 2 = -x, 3 = -y.
+int wand_of(const Start& s) {
+    if (std::fabs(s.x) >= std::fabs(s.y))
+        return s.x > 0 ? 0 : 2;
+    return s.y > 0 ? 1 : 3;
+}
+
+// Fest eingebaute Footprints (CLAUDE.md): Stacker 24 in (SG2), Runner 15 in. Pose steht mit dem Rücken an der Wand.
+void check_start(const Json& f, const std::string& id, double seite_in) {
+    INFO(id);
+    const Start s = start_of(f, id);
+    const double half = f.at("feld_in").as_number() / 2.0;
+    const int wand = wand_of(s);
+    const double abstand = wand % 2 == 0 ? half - std::fabs(s.x) : half - std::fabs(s.y);
+    // Rückseite an der Wand: höchstens 1 in Luft (Stacker steht 13 in Mitte-Wand, Entscheidung des Menschen).
+    CHECK(abstand >= seite_in / 2.0 - 1e-9);
+    CHECK(abstand <= seite_in / 2.0 + 1.0 + 1e-9);
+    CHECK(std::fabs(s.x) + seite_in / 2.0 <= half + 1e-9);
+    CHECK(std::fabs(s.y) + seite_in / 2.0 <= half + 1e-9);
+    // Blick senkrecht von der Wand weg, ins Feld.
+    const double ins_feld = wrap_deg(wand * 90.0 + 180.0);
+    CHECK(wrap_deg(s.h) == doctest::Approx(ins_feld));
+}
+
+}  // namespace
+
+TEST_CASE("field.json: Startposen an der Wand, ins Feld gerichtet, verschiedene Dreiecke (Quadrant Placement)") {
+    const Json f = field();
+    check_start(f, "START_STACKER", 24.0);
+    check_start(f, "START_RUNNER", 15.0);
+    CHECK(wand_of(start_of(f, "START_STACKER")) != wand_of(start_of(f, "START_RUNNER")));
+}
+
+TEST_CASE("field.json: keine Elementmitte liegt im Footprint der Startposen, die Roboter überlappen sich nicht") {
+    const Json f = field();
+    const double seite[2] = {24.0, 15.0};
+    const char* ids[2] = {"START_STACKER", "START_RUNNER"};
+    Start s[2] = {start_of(f, ids[0]), start_of(f, ids[1])};
+    auto innen = [&](int r, double x, double y) {
+        return std::fabs(x - s[r].x) < seite[r] / 2.0 && std::fabs(y - s[r].y) < seite[r] / 2.0;
+    };
+    for (int r = 0; r < 2; ++r) {
+        for (const char* key : {"goals", "toggles", "loader"}) {
+            const Json& list = f.at(key);
+            for (std::size_t i = 0; i < list.size(); ++i) {
+                INFO(std::string(ids[r]) << " / " << list[i].at("id").as_string());
+                CHECK_FALSE(innen(r, list[i].at("x_in").as_number(), list[i].at("y_in").as_number()));
+            }
+        }
+        for (const char* key : {"cups", "pins"}) {
+            const Json& list = f.at("objekte_start").at(key);
+            for (std::size_t i = 0; i < list.size(); ++i) {
+                INFO(std::string(ids[r]) << " / " << list[i].at("id").as_string());
+                CHECK_FALSE(innen(r, list[i].at("x_in").as_number(), list[i].at("y_in").as_number()));
+            }
+        }
+    }
+    const double dx = std::fabs(s[0].x - s[1].x) - (seite[0] + seite[1]) / 2.0;
+    const double dy = std::fabs(s[0].y - s[1].y) - (seite[0] + seite[1]) / 2.0;
+    CHECK((dx >= 0.0 || dy >= 0.0));
+}
+
+// MIDFIELD_S/MIDFIELD_R sind Parkposen für Matchende (SC6: zumindest teilweise im Midfield), Vorschlag der KI (A-13), vom Menschen
+// nicht bestätigt. Midfield: Quadrat 48 in, um 45 Grad gedreht, also |x| + |y| <= seite / sqrt(2).
+TEST_CASE(
+    "field.json: Midfield-Parkposen - im Feld, teilweise im Midfield, Goal-Mitte frei, Roboter überlappen sich nicht") {
+    const Json f = field();
+    const double half = f.at("feld_in").as_number() / 2.0;
+    const double raute = f.at("midfield").at("seite_in").as_number() / std::sqrt(2.0);
+    const double seite[2] = {24.0, 15.0};
+    const char* ids[2] = {"MIDFIELD_S", "MIDFIELD_R"};
+    Start s[2] = {start_of(f, ids[0]), start_of(f, ids[1])};
+    for (int r = 0; r < 2; ++r) {
+        INFO(ids[r]);
+        const double h = seite[r] / 2.0;
+        CHECK(std::fabs(s[r].x) + h <= half + 1e-9);
+        CHECK(std::fabs(s[r].y) + h <= half + 1e-9);
+        // Die dem Mittelpunkt nächste Ecke liegt im Midfield.
+        const double cx = std::fabs(s[r].x) - h > 0 ? std::fabs(s[r].x) - h : 0.0;
+        const double cy = std::fabs(s[r].y) - h > 0 ? std::fabs(s[r].y) - h : 0.0;
+        CHECK(cx + cy < raute);
+        // Die Goal-Mitte (0/0) liegt nicht im Footprint.
+        const bool mitte_im_footprint = std::fabs(s[r].x) < h && std::fabs(s[r].y) < h;
+        CHECK_FALSE(mitte_im_footprint);
+    }
+    const double dx = std::fabs(s[0].x - s[1].x) - (seite[0] + seite[1]) / 2.0;
+    const double dy = std::fabs(s[0].y - s[1].y) - (seite[0] + seite[1]) / 2.0;
+    CHECK((dx >= 0.0 || dy >= 0.0));
+}
