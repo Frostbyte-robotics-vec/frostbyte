@@ -44,8 +44,9 @@
   },
   "spiel": {
     "cup_undurchsichtig_unten": false,
-    "toggle_anfang": "zielfarbe",
-    "quelle": "schaetzung (Annahme: Cup-Lage ungeklärt, ADR-024; Toggles stehen für Routen in Zielfarbe, bis der Befehl toggle modelliert ist, ADR-032)"
+    "toggle_anfang": "neutral",
+    "toggle_dauer_s": 2.5,
+    "quelle": "toggle_anfang: Game Manual v2.1, Appendix A (Field Element Locations): alle vier Toggles stehen gelb; SC4: nicht gesetzt = neutral. cup_undurchsichtig_unten und toggle_dauer_s: schaetzung (Cup-Lage ungeklärt, ADR-024; Dauer ungemessen, SIM-23)"
   },
   "ereignisse": {
     "loader_einheit":   { "dauer_s": 1.2, "sigma_s": 0.3, "fehlschlag": 0.05, "quelle": "schaetzung" },

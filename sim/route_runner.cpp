@@ -137,7 +137,14 @@ void SimRouteExecutor::start(int lane, const RouteCmd& cmd, double now_s) {
                                                        cmd.source == RouteSource::preload));
             }
             break;
-        default:  // start, toggle: Platzhalter ohne Modell (ADR-031)
+        case RouteOp::toggle:
+            if (game_ == nullptr) {
+                l.status = StepStatus::done;
+                break;
+            }
+            begin_game_op(lane, game_->start_toggle(now_ms(now_s), robot_index(), game_->toggle_index(cmd.name)));
+            break;
+        default:  // start: Platzhalter ohne Modell (ADR-031)
             l.status = StepStatus::done;
             break;
     }

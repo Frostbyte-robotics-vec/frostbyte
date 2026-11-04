@@ -10,10 +10,13 @@ hw: nein
 ---
 
 ## Ziel
-Die Simulation kennt `toggle` aus der Route noch nicht (ADR-032). Ohne Toggles fehlen mögliche Punkte, und P10 der Skills-Routen (A-05) ist zu niedrig bewertet. Punkteregeln der Toggles aus dem Manual: vorher einen Menschen fragen (Regelauslegung), nicht raten. Entstanden aus A-05.
+Die Simulation kennt `toggle` aus der Route noch nicht (ADR-032): der Befehl kostet 0 s und die Toggles stehen von Anfang an auf der Zielfarbe. Damit ist der Gewinn der Toggles gratis, und P10 der Skills-Routen (A-05) ist zu hoch bewertet (nicht zu niedrig). Entstanden aus A-05.
 
 ## Fertig, wenn …
-- `toggle` aus einer Route löst im Spielzustand die Zustandsänderung aus und erscheint im `score` beider Logsn- Punkteregeln stehen mit Manual-Quelle in `sim/sim_params.json` oder im Code, keine geratenen Werten- Gleicher Seed = byte-gleiche Logs, Tests ohne `schaetzung`-Werte als Wahrheitn- Laptop-Tests grün, beide Roboter bauen, `python tools/board.py validate` grün
+- `toggle` aus einer Route löst im Spielzustand die Zustandsänderung aus (Dauer aus `sim_params.json`) und erscheint im `score` beider Logs
+- Anfangszustand der Toggles mit Manual-Quelle in `sim/sim_params.json` (kein geratener Wert), Dauer als `schaetzung` gekennzeichnet
+- Gleicher Seed = byte-gleiche Logs, Tests ohne `schaetzung`-Werte als Wahrheit
+- Laptop-Tests grün, beide Roboter bauen, `python tools/board.py validate` grün
 
 ## Kontext
 tasks/A-05.md (Übergabe), ADR-026, ADR-032, docs/route_format.md.
@@ -22,8 +25,9 @@ tasks/A-05.md (Übergabe), ADR-026, ADR-032, docs/route_format.md.
 —
 
 ## Übergabe
-—
+Implementiert auf ticket/sim-23, ADR-033. Am Roboter zu prüfen: Dauer des Toggle-Drehens (`spiel.toggle_dauer_s`, Schätzung 2,5 s) und ob der Arm den Toggle sicher auf alle drei Stellungen setzt.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-04 · arjanssen (KI) · Ticket angelegt (aus A-05) · –
+2026-11-04 · arjanssen (KI) · toggle im Spielzustand, Anfangszustand neutral (Regelheft Appendix A), ADR-033, Tests · ticket/sim-23

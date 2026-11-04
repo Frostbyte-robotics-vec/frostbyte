@@ -36,9 +36,19 @@ struct MidfieldSpec {
     double side_in = 0.0;
 };
 
+// Ein Toggle des Spielfelds: der Befehl toggle setzt ihn auf color (Zielfarbe des Quadranten); goals sind die Goals seines
+// Quadranten (Indizes in GameSetup::goals).
+struct ToggleSpec {
+    std::string name;
+    ToggleColor color = ToggleColor::neutral;
+    std::vector<int> goals;
+};
+
 struct GameSetup {
     std::vector<GoalState> goals;         // Anfangszustand (leere Stapel); leer = kein Spielzustand
     std::vector<std::string> goal_names;  // je Goal der Name aus field.json (für Routen, SIM-22); sonst leer
+    std::vector<ToggleSpec> toggles;      // je Toggle aus field.json (für Routen, SIM-23); sonst leer
+    int toggle_ms = 0;                    // Dauer des Befehls toggle (sim_params spiel.toggle_dauer_s)
     std::vector<GameCycle> cycles;
     EventParams events;
     MechanismParams mech[2];
@@ -86,6 +96,11 @@ public:
     void cancel(int t_ms, int robot);
     // Index des Goals mit diesem Namen (GameSetup::goal_names), -1 wenn unbekannt.
     int goal_index(const std::string& name) const;
+    // Toggle setzen (SIM-23): der Roboter ist toggle_ms beschäftigt, danach steht der Toggle auf seiner Farbe. Gleiche
+    // Antwort wie bei Zyklen; ein unbekannter Toggle oder ein beschäftigter Roboter wird abgelehnt.
+    CycleTicket start_toggle(int t_ms, int robot, int toggle);
+    // Index des Toggles mit diesem Namen (GameSetup::toggles), -1 wenn unbekannt.
+    int toggle_index(const std::string& name) const;
     int rejected_cycles() const { return rejected_; }  // von Routen abgelehnte Befehle
 
     // Punktestand, wenn das Match jetzt endete, mit so vielen Robotern im Midfield (0..max_scored_robots, sonst begrenzt).
@@ -103,6 +118,11 @@ private:
         int done_ms;
         int goal;
         bool yellow_up;
+        int robot;
+    };
+    struct PendingToggle {
+        int done_ms;
+        int toggle;
         int robot;
     };
     struct Held {
@@ -129,6 +149,7 @@ private:
     std::vector<GoalState> goals_;
     std::vector<bool> started_;
     std::vector<Pending> pending_;
+    std::vector<PendingToggle> pending_toggles_;
     int busy_until_[2] = {0, 0};
     Held held_[2];
     int score_[max_scored_robots + 1] = {0, 0, 0};  // je Zahl der Roboter im Midfield
