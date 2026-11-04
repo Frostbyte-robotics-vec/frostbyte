@@ -45,8 +45,9 @@
   "spiel": {
     "cup_undurchsichtig_unten": false,
     "toggle_anfang": "neutral",
+    "toggle_anfang_quelle": "Game Manual v2.1, Appendix A, PDF-Seite 71 (Toggle Assembly - Starting Orientation): Gelb zeigt nach oben und ins Feld; SC4: nicht gesetzt = neutral",
     "toggle_dauer_s": 2.5,
-    "quelle": "toggle_anfang: Game Manual v2.1, Appendix A (Field Element Locations): alle vier Toggles stehen gelb; SC4: nicht gesetzt = neutral. cup_undurchsichtig_unten und toggle_dauer_s: schaetzung (Cup-Lage ungeklärt, ADR-024; Dauer ungemessen, SIM-23)"
+    "quelle": "schaetzung (cup_undurchsichtig_unten: Cup-Lage ungeklärt, ADR-024; toggle_dauer_s: nie gemessen, SIM-23; toggle_anfang siehe toggle_anfang_quelle)"
   },
   "ereignisse": {
     "loader_einheit":   { "dauer_s": 1.2, "sigma_s": 0.3, "fehlschlag": 0.05, "quelle": "schaetzung" },

@@ -1,7 +1,7 @@
 ---
 id: SIM-23
 phase: "5"
-titel: Toggles in der Simulation modellieren (Zustand, Punkte, Fahrt zum Toggle)
+titel: Toggles in der Simulation modellieren (Anfangszustand, Dauer, Punkte)
 status: in_progress
 owner: arjanssen
 branch: ticket/sim-23
@@ -25,7 +25,7 @@ tasks/A-05.md (Übergabe), ADR-026, ADR-032, docs/route_format.md.
 —
 
 ## Übergabe
-Implementiert auf ticket/sim-23, ADR-033. Am Roboter zu prüfen: Dauer des Toggle-Drehens (`spiel.toggle_dauer_s`, Schätzung 2,5 s) und ob der Arm den Toggle sicher auf alle drei Stellungen setzt.
+Implementiert auf ticket/sim-23, ADR-033. Nicht enthalten: Fahrt zum Toggle und Reichweite (SIM-25). Nicht enthalten: Fahrt zum Toggle und Reichweite (SIM-25). Am Roboter zu prüfen: Dauer des Toggle-Drehens (`spiel.toggle_dauer_s`, Schätzung 2,5 s) und ob der Arm den Toggle sicher auf alle drei Stellungen setzt.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
