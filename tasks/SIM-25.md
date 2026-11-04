@@ -2,7 +2,7 @@
 id: SIM-25
 phase: "5"
 titel: Toggle-Reichweite in der Simulation (Befehl toggle nur nahe am Toggle)
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-25
 depends: [SIM-23]
