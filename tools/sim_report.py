@@ -5,8 +5,8 @@
                               [--stacker-route routes/skills_stacker.route] [--runner-route routes/skills_runner.route]
 
 Liest DIR/run<NNN>_<roboter>.csv (Log-Format v1, docs/log_format.md), schreibt summary.json und einen HTML-Bericht
-(P10/Median/P90 je Kennzahl und Roboter). Exit-Code 1 bei Regelverstoß (RULE:… im Log) oder wenn der P10 der Punkte unter
-target_p10 der Route liegt. Fehlt der Punktestand im Log (nur Demo-Läufe führen einen Spielzustand, ADR-026; Routen erst mit dem Routenspieler A-03), wird target_p10 ausdrücklich als „nicht geprüft“
+(P10/Median/P90 je Kennzahl und Roboter). Exit-Code 1 bei Regelverstoß (RULE:… im Log) oder wenn der P10 des Allianz-Punktestands unter
+dem höchsten target_p10 der Routen liegt (ein Ziel je Allianz, ADR-034). Fehlt der Punktestand im Log (nur Demo-Läufe führen einen Spielzustand, ADR-026; Routen erst mit dem Routenspieler A-03), wird target_p10 ausdrücklich als „nicht geprüft“
 gemeldet, nicht als bestanden gezählt.
 """
 import argparse
