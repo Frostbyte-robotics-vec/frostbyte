@@ -78,6 +78,18 @@ void DriveModel::step(double dt_s, double links_V, double rechts_V) {
     h_deg_ = wrap_deg(h_deg_ + dh_deg);
 }
 
+void DriveModel::set_position(double x_in, double y_in) {
+    const double h_rad = h_deg_ * pi / 180.0;
+    const double along_in = (x_in - x_in_) * std::cos(h_rad) + (y_in - y_in_) * std::sin(h_rad);
+    for (Side* s : {&links_, &rechts_}) {
+        s->dist_in += along_in;
+        if (s->v_in_s * along_in < 0.0)
+            s->v_in_s = 0.0;
+    }
+    x_in_ = x_in;
+    y_in_ = y_in;
+}
+
 Pose DriveModel::pose() const { return Pose{x_in_, y_in_, h_deg_}; }
 
 double DriveModel::heading_rate_deg_s() const {

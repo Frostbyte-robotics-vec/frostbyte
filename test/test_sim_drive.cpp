@@ -219,3 +219,32 @@ TEST_CASE("Fahrmodell: Parameter aus sim_params, fehlende Werte werden gemeldet"
     CHECK_THROWS_AS(load_drive_params(load_json_file(fixtures + "/sim_params_drive_kv0.json"), "stacker"),
                     std::runtime_error);
 }
+
+// SIM-26: Wird der Roboter von einem Hindernis festgehalten (Kollision schiebt die Pose zurück), stehen die Räder
+// still. Der Encoder darf den weggeschobenen Weg nicht als gefahren zählen.
+TEST_CASE("Kollision schiebt zurück: Radweg folgt der wahren Strecke, Tempo gegen das Hindernis ist null") {
+    DriveModel m(test_params(), Pose{0.0, 0.0, 0.0});
+    run(m, 0.5, 8.0, 8.0);
+    const double v_before = m.links_in_s();
+    REQUIRE(v_before > 10.0);
+    // Wand voraus: jeder Schritt wird auf x = 20 zurückgesetzt.
+    for (int i = 0; i < 2000; ++i) {
+        m.step(dt_s, 8.0, 8.0);
+        if (m.pose().x_in > 20.0)
+            m.set_position(20.0, m.pose().y_in);
+    }
+    CHECK(m.pose().x_in == doctest::Approx(20.0));
+    CHECK(m.links_in() == doctest::Approx(20.0).epsilon(0.01));
+    CHECK(m.rechts_in() == doctest::Approx(20.0).epsilon(0.01));
+    CHECK(m.links_in_s() == doctest::Approx(0.0).epsilon(0.01));
+}
+
+TEST_CASE("Seitliches Verschieben ändert Radweg und Tempo nicht") {
+    DriveModel m(test_params(), Pose{0.0, 0.0, 0.0});
+    run(m, 0.5, 8.0, 8.0);
+    const double d = m.links_in();
+    const double v = m.links_in_s();
+    m.set_position(m.pose().x_in, m.pose().y_in + 3.0);
+    CHECK(m.links_in() == doctest::Approx(d));
+    CHECK(m.links_in_s() == doctest::Approx(v));
+}

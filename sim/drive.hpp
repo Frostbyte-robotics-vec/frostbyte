@@ -40,11 +40,10 @@ public:
 
     // Wahre Pose; h_deg in (-180, 180].
     Pose pose() const;
-    // Nur für Kollisionen (SIM-09): setzt die Position, Tempo und Blickrichtung bleiben.
-    void set_position(double x_in, double y_in) {
-        x_in_ = x_in;
-        y_in_ = y_in;
-    }
+    // Nur für Kollisionen (SIM-09): setzt die Position, die Blickrichtung bleibt. Der Anteil der Verschiebung in
+    // Fahrtrichtung geht vom Radweg ab (festgehaltene Räder stehen, der Encoder zählt ihn nicht); Tempo gegen
+    // die Verschiebung wird null (SIM-26). Seitliches Verschieben ändert Radweg und Tempo nicht.
+    void set_position(double x_in, double y_in);
     double heading_rate_deg_s() const;
 
     // Weg und Tempo je Seite am Boden (was ein Encoder an dieser Seite ohne Fehler saehe).
