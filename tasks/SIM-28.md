@@ -21,7 +21,7 @@ M-04 (ADR-037) hat Stau-Erkennung und Rückwärtsimpuls als reine Logik, geteste
 docs/decisions/ADR-037-intake.md, lib/subsystems/intake.hpp. Baut auf M-04 auf (PR #69 muss gemergt sein; liegt die Datei nicht auf main → überspringen); keine Board-Abhängigkeit, da M-04 erst nach dem Roboter-Test done wird.
 
 ## Übergabe
-Fertig: sim/intake_model.{hpp,cpp}, Parameter ereignisse.intake_stau in sim/sim_params.json, test/test_sim_intake_jam.cpp, ADR-037-Nachtrag. Nicht im Match verdrahtet (siehe ADR). Am Roboter nichts zu prüfen (reine Simulation); echte Klemm-/Lösewerte kommen aus M-05.
+Fertig: sim/intake_model.{hpp,cpp}, Parameter ereignisse.intake_stau in sim/sim_params.json, test/test_sim_intake_jam.cpp, ADR-037-Nachtrag. Nicht im Match verdrahtet: Folgeticket SIM-31. Am Roboter nichts zu prüfen (reine Simulation); echte Klemm-/Lösewerte kommen aus M-05.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
