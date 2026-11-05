@@ -2,7 +2,7 @@
 id: SIM-30
 phase: "5"
 titel: Feldobjekte (Cups/Pins, Center-Stacks) sind keine Kollisionsobjekte – nur Roboter, Feldrand und Goals
-status: review
+status: blocked
 owner: DAVIDCOPCOP
 branch: ticket/sim-30
 depends: []
@@ -36,3 +36,4 @@ sim/collision.*, sim/world.cpp (Kollisionen), tools/viewer/livesim.js (loadEleme
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-05 · Máté (mit Claude) · Ticket angelegt (als SIM-30, da SIM-29 für Lift vergeben) · –
 2026-11-05 · arjanssen (KI-Review) · Review korrigiert: Empfehlung ändern, Richtung falsch (Objekte sollen kollidieren) · –
+2026-11-05 · DAVIDCOPCOP-Sitzung (KI) · blocked: Review verlangt Umbau (Center-Stacks als Kollisionsobjekte); offene Fragen für einen Menschen: nur Center-Stacks oder alle Objekte? blockiert, schiebt oder kippt der Roboter sie? · –
