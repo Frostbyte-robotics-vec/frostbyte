@@ -67,6 +67,8 @@ public:
     void request_stop(double now_s) {
         if (error_ == IntakeError::config)
             return;
+        error_ = IntakeError::
+            none;  // Stopp quittiert einen Fehler (Stau, Sensor); ein Sensorfehler kommt im nächsten update() wieder
         timed_out_ = false;
         sm_.enter(IntakeState::idle, now_s);
     }

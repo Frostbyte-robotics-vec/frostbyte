@@ -212,6 +212,20 @@ TEST_CASE("Intake: Stopp") {
     CHECK_FALSE(b.intake.timed_out());
 }
 
+TEST_CASE("Intake: Stopp quittiert den Stau-Fehler, Sensorfehler kommt wieder") {
+    Bench b;
+    b.jammed = true;
+    b.intake.request_run(b.t);
+    b.run(6.0);
+    REQUIRE(b.intake.error() == IntakeError::jam);
+    b.intake.request_stop(b.t);
+    CHECK(b.intake.error() == IntakeError::none);
+    CHECK(b.intake.state() == IntakeState::idle);
+    b.ok = false;
+    b.tick();
+    CHECK(b.intake.error() == IntakeError::sensor);
+}
+
 TEST_CASE("Intake: Sensor weg oder NaN -> Fehler und Rollen aus") {
     Bench b;
     b.intake.request_run(b.t);
