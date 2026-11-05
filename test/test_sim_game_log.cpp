@@ -87,7 +87,7 @@ TEST_CASE("Demo mit Spielzustand: gleicher Seed = byte-gleiche Logs, Spielzufall
         return s.str() + "|" + r.str();
     };
     CHECK(run(true, 3) == run(true, 3));
-    // Ohne die score-Spalte sind die Logs gleich: der Spielzufall zieht aus eigenen Strömen.
+    // Ohne die Spielspalten (score, Besitz, Lift) sind die Logs gleich: der Spielzufall zieht aus eigenen Strömen.
     const auto strip = [](const std::string& csv) {
         std::istringstream in(csv);
         std::string line, out;
@@ -105,6 +105,7 @@ TEST_CASE("Demo mit Spielzustand: gleicher Seed = byte-gleiche Logs, Spielzufall
                 cells.push_back("");
             if (cells.size() < 23)
                 cells.resize(23);                    // endet die Zeile auf leeren Zellen, fehlen sie hier
+            cells[12] = cells[15] = "";              // lift_deg, lift_set_deg (SIM-29)
             cells[19] = cells[20] = cells[22] = "";  // has_cup, has_pin, score
             for (const std::string& c : cells)
                 out += c + ",";

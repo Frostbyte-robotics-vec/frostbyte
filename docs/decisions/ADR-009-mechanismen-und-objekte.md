@@ -18,3 +18,15 @@ Status: angenommen (1. Nov 2026), Ticket SIM-04. docs/plan.md beschreibt SIM-04 
 ## Am Roboter zu prüfen
 - Dauer und Fehlschlagquote von Loader- und Bodenaufnahme, Greifererfolg, Setzerfolg je Ebene (Logs).
 - Ob Lift- und Armgrenzen (Geschwindigkeit/Beschleunigung) zur gewählten Kassette passen (TODO(HW)).
+
+## Nachtrag SIM-29 (5. Nov 2026): Lift im Match
+- **Bestand:** Das Log hat `lift_deg` und `lift_set_deg` seit v1, der Viewer (`tools/viewer/index.html`) zeichnet den Lift schon aus `lift_deg` (Bereich aus `robots.js`, gleich den Grenzen in `sim_params.json`). Es fehlte nur der Schreiber in `run_match`. **Kein neues Spaltenformat, keine neue Versionsnummer.**
+- `Game` hält je Roboter ein `Joint` für den Lift (Grenzen aus `roboter.<name>.mechanismen.lift`, Start auf der unteren Endlage). `ObjectModel::place_unit` meldet in `CycleResult::lift_start_s`, wann der Hub beginnt (nach Aufnahme und Schließen, `< 0` = kein Hub, z. B. bei Greiffehler). Es gibt keine neuen Zufallsziehungen: Dauer, Ergebnis und Punktestand bleiben gleich, die Posen auch.
+- `Game::launch` legt zwei Sollwerte ab: Hub zur Ebenenhöhe bei Beginn des Hubs, Rückfahrt nach unten bei Zyklusende (auch bei Setzfehler). `Game::step` setzt sie zeitgenau und schaltet das Gelenk um den echten Zeitschritt weiter (gleiches Trapezprofil wie `time_to_reach`). `cancel` löscht die Sollwerte und setzt den Sollwert sofort nach unten.
+- `run_match` schreibt `lift_deg` und `lift_set_deg` nur mit Spielzustand (wie `score`, `has_cup`); ohne bleiben sie leer (nichts erfunden). Arm und Greifer bleiben leer (noch nicht gefahren).
+- **Näherung:** Die Dauer des Hubs wird beim Start des Zyklus vom unteren Anschlag aus berechnet (`time_to_reach`). Beginnt ein Zyklus, solange der Lift noch zurückfährt, weicht der Ist-Winkel kurz vom Plan ab (Gelenk fährt vom echten Winkel); die Zyklusdauer ändert das nicht.
+- Ebene 0 = untere Endlage: der erste Stein je Goal bewegt den Lift nicht.
+- SG3 (Höhe) wird in der Simulation weiter nicht geprüft: die Höhe ist nicht modelliert (Geometrie aus M-09/M-11, Winkel-Höhen-Tabelle gesperrt bis gemessen). Der Lift bleibt nur durch das Gelenk in seinen Endlagen. Die Prüfung gehört zu einem eigenen Ticket nach der Messung.
+
+## Am Roboter zu prüfen (SIM-29)
+- Lift-Grenzen und -Geschwindigkeiten sind Schätzungen (M-01/M-11), ebenso die Ebenenhöhen als lineare Teilung von min..max.
