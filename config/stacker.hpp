@@ -3,6 +3,7 @@
 #include "control/motion_controller.hpp"
 #include "match/driver_map.hpp"
 #include "match/route_player.hpp"
+#include "subsystems/claw.hpp"
 #include "tasks/cycle_controller.hpp"
 #include "util/rule_guard.hpp"
 
@@ -88,5 +89,20 @@ inline constexpr frostbyte::RoutePlayerConfig route_player{.goto_s = 8.0,
                                                            .toggle_s = 4.0,
                                                            .wait_for_s = 10.0,
                                                            .other_s = 1.0};
+
+// Claw (M-03, ADR-038; ob dieser Roboter einen Greifer hat, ist offen): Startwerte (Software-Entscheidung), am Roboter pruefen.
+// TODO(HW): Motor-Port, Vorzeichen, empty_travel_deg (Weg offen -> ganz zu ohne Objekt, messen), Stromschwellen plateau_a je Modus
+// (aus Logs von 50 Griffen, nicht geraten), Schliess-/Haltespannungen (Objekt nicht zerdruecken, Motor nicht ueberhitzen).
+inline constexpr frostbyte::ClawConfig claw{.open_v = -4.0,
+                                            .empty_travel_deg = 90.0,
+                                            .empty_margin_deg = 5.0,
+                                            .grace_s = 0.2,
+                                            .stall_deg_s = 10.0,
+                                            .plateau_s = 0.1,
+                                            .open_settle_s = 0.1,
+                                            .open_timeout_s = 1.5,
+                                            .close_timeout_s = 1.5,
+                                            .cup = {.close_v = 6.0, .hold_v = 2.0, .plateau_a = 1.0},
+                                            .pin = {.close_v = 4.0, .hold_v = 1.0, .plateau_a = 0.6}};
 
 }  // namespace config::stacker
