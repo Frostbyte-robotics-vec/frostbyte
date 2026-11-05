@@ -17,3 +17,15 @@ Status: angenommen (1. Nov 2026), Ticket F-02. Der Advisor (Opus) hat den Entwur
 - Vorzeichen von IMU-Heading und GPS-Heading gegen die Feldkonvention (0° = rot -> blau); GPS-Ursprung und Achsen.
 - Geschwindigkeitseinheit des Motors (RPM, hier mal 6 zu Grad/s) und Encodereinheit nach `set_encoder_units`.
 - Kennlinie der Sim-Motoren gegen Messung (SIM-08).
+
+## Nachtrag F-08 (5. Nov 2026): Motorstrom
+Der Advisor (Opus) hat den Entwurf vor der Umsetzung geprüft (u. a.: Betrag statt Vorzeichen, damit nur die Einheit am Roboter zu prüfen ist; Stall-Hook minimal halten, das Stau-Modell bleibt SIM-28).
+- `Motor::current_a()` (rein virtuell): Stromaufnahme als **Betrag >= 0 in Ampere**; 0, wenn das Gerät nicht erkannt wird. Nutzer: Claw (ADR-038, Plateau), später Stau-Erkennung.
+- `ProsMotor`: `std::abs(get_current_draw()) / 1000.0` (mA -> A, nur dort). `PROS_ERR` zählt als 0, den Ausfall meldet `connected()`.
+- `SimMotor`: `I = |V - kV*v| / R`, begrenzt auf `max_current_A` (kV*v = Gegenspannung). Frei laufend im Beharrungszustand ca. `kS / R`, blockiert `V / R`. Bremse und Ausfall: 0. `SimMotorParams` bekommt `resistance_ohm` und `max_current_A` (weiter ohne Standardwerte). Sim-Hook `set_blocked(bool)` hält die Geschwindigkeit bei 0 (Stall); ein Lastmodell gehört nicht hierher.
+- Zahlen: `sim/sim_params.json` -> `motoren.v5` (`quelle: schaetzung`). Noch liest sie kein Lader; die Tests setzen eigene Werte.
+- Log-Format unverändert (Strom wird nicht geloggt; das wäre eine neue Versionsnummer).
+
+## Am Roboter zu prüfen (F-08)
+- Einheit von `get_current_draw()` (mA erwartet) und ob das Vorzeichen von der Drehrichtung abhängt (Betrag wird gebildet).
+- Stall-Strom eines V5-Motors bei 12 V gegen `max_strom_A`/`widerstand_ohm` (Schätzung).
