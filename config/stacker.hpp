@@ -5,6 +5,7 @@
 #include "match/route_player.hpp"
 #include "subsystems/claw.hpp"
 #include "tasks/cycle_controller.hpp"
+#include "util/port_check.hpp"
 #include "util/rule_guard.hpp"
 
 namespace config::stacker {
@@ -104,5 +105,12 @@ inline constexpr frostbyte::ClawConfig claw{.open_v = -4.0,
                                             .close_timeout_s = 1.5,
                                             .cup = {.close_v = 6.0, .hold_v = 2.0},
                                             .pin = {.close_v = 4.0, .hold_v = 1.0}};
+
+// port_check (F-03): Erwartung je Port (Port mit Vorzeichen, Art, Name, Bewegungstext fuer +Spannung). Leer, bis die
+// Ports feststehen (F-07). Mit port_check_enabled = true startet der Roboter nur das Pruefprogramm (src/port_check.hpp); im Match false.
+// TODO(HW): Eintraege aus docs/ports.md (F-07) uebernehmen; Ports und Richtungen werden nicht geraten.
+inline constexpr const frostbyte::PortExpect* port_expect = nullptr;
+inline constexpr int port_expect_count = 0;
+inline constexpr bool port_check_enabled = false;
 
 }  // namespace config::stacker

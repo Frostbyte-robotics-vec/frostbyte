@@ -5,7 +5,7 @@ titel: Stau-Modell für Intake-Rollen in der Simulation (Folge von M-04)
 status: todo
 owner:
 branch:
-depends: [M-04]
+depends: []
 hw: nein
 ---
 
@@ -18,7 +18,7 @@ M-04 (ADR-037) hat Stau-Erkennung und Rückwärtsimpuls als reine Logik, geteste
 - Laptop-Tests grün, beide Roboter bauen, `python tools/board.py validate` grün
 
 ## Kontext
-docs/decisions/ADR-037-intake.md, lib/subsystems/intake.hpp.
+docs/decisions/ADR-037-intake.md, lib/subsystems/intake.hpp. Baut auf M-04 auf (PR #69 muss gemergt sein; liegt die Datei nicht auf main → überspringen); keine Board-Abhängigkeit, da M-04 erst nach dem Roboter-Test done wird.
 
 ## Übergabe
 (aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
