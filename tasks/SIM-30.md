@@ -2,9 +2,9 @@
 id: SIM-30
 phase: "5"
 titel: Feldobjekte (Cups/Pins, Center-Stacks) sind keine Kollisionsobjekte – nur Roboter, Feldrand und Goals
-status: todo
-owner:
-branch:
+status: in_progress
+owner: DAVIDCOPCOP
+branch: ticket/sim-30
 depends: []
 hw: nein
 ---
