@@ -1,4 +1,5 @@
 # Runner, Autonomous Skills – Entwurf v0
+# SIM-27: Loader Süd (LOADER_RED_1) nahe der Startpose; der Stacker nutzt den nördlichen.
 target_p10 80
 start    START_RUNNER
 toggle   TOGGLE_RED_1   timeout=2.0
@@ -8,7 +9,7 @@ toggle   TOGGLE_BLUE_2  timeout=3.5
 signal   toggles_done
 cycle    source=preload  goal=RED_ALLIANCE_2  level=auto
 repeat 5 {
-  goto   LOADER_RED_2     tol=1.5  timeout=3.0
+  goto   LOADER_RED_1     tol=1.5  timeout=3.0
   intake until=unit       timeout=2.5
   cycle  goal=NEUTRAL_R2  level=auto  timeout=6.0
 }

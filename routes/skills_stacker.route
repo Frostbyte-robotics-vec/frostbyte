@@ -1,10 +1,11 @@
 # Stacker, Autonomous Skills – Zoll, Grad, Namen aus field/field.json
 # Entwurf v0: Struktur steht, Reihenfolge und Anzahl werden in A-05 per Simulation optimiert.
+# SIM-27: Loader Nord (LOADER_RED_2); der Runner nutzt den südlichen, so kreuzen sich die Wege nicht.
 target_p10 120
 start    START_STACKER
 cycle    source=preload  goal=RED_ALLIANCE_1  level=auto
 repeat 6 {
-  goto   LOADER_RED_1     tol=1.5  timeout=3.0
+  goto   LOADER_RED_2     tol=1.5  timeout=3.0
   intake until=unit       timeout=2.5
   cycle  goal=NEUTRAL_R1  level=auto  timeout=6.0
 }
