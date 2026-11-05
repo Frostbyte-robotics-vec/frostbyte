@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -124,8 +125,21 @@ TEST_CASE("Stau: cancel mitten im Stau verwirft die späteren Ereignisse") {
 TEST_CASE("Stau: Ereignisse nach Matchende werden nicht geloggt") {
     Game game(setup(1.0, 0.0), 1, 2, 1300);
     game.start_intake(1000, 0, Source::loader);
-    for (const std::string& e : all_events(game, 0, 1000, 3000))
-        CHECK(e != "INTAKE:ERROR_JAM");
+    CHECK(all_events(game, 0, 1000, 3000).empty());  // der erste Stau käme erst bei etwa 1550 ms
+}
+
+TEST_CASE("Stau: das Timeout des Laufs endet vor dem Fehler, wenn max_retries groß ist") {
+    GameSetup g = setup(1.0, 0.0);
+    g.intake_cfg[0].max_retries = 10;
+    g.intake_cfg[0].run_timeout_s = 1.2;
+    Game game(g, 1, 2, end_ms);
+    const CycleTicket t = game.start_intake(1000, 0, Source::loader);
+    CHECK_FALSE(t.ok);
+    CHECK(t.done_ms == 1000 + 1200);
+    const std::vector<std::string> ev = all_events(game, 0, 1000, t.done_ms);
+    REQUIRE_FALSE(ev.empty());
+    CHECK(ev.back() == "TIMEOUT:INTAKE");
+    CHECK(std::count(ev.begin(), ev.end(), "INTAKE:ERROR_JAM") == 0);
 }
 
 TEST_CASE("Stau: das Objektmodell zieht mit und ohne Stau gleich (nur der Verzug kommt dazu)") {
@@ -174,10 +188,22 @@ TEST_CASE("Stau im Routenlauf: Ereignisse stehen im Log; gleicher Seed = byte-gl
 }
 
 TEST_CASE("Stau: load_game_params liest ereignisse.intake_stau, fehlt der Block, bleibt das Modell aus") {
+    // Fixture mit eingesetztem Block: eigene Zahlen, unabhängig von sim/sim_params.json
+    std::ifstream in(fixtures + "/sim_params_game.json", std::ios::binary);
+    std::stringstream text;
+    text << in.rdbuf();
+    std::string with = text.str();
+    const std::string key = "\"ereignisse\": {";
+    const auto at = with.find(key);
+    REQUIRE(at != std::string::npos);
+    with.insert(at + key.size(),
+                "\"intake_stau\": {\"rollen_deg_s\": 250, \"klemmt\": 0.25, \"loest_nach_impuls\": 0.75},");
     GameSetup g;
-    load_game_params(load_json_file(std::string(FB_ROOT_DIR) + "/sim/sim_params.json"), g);
-    CHECK(g.jam.max_deg_s > 0.0);  // nur dass gelesen wurde, nicht die Platzhalterwerte
+    load_game_params(parse_json(with), g);
+    CHECK(g.jam.max_deg_s == 250.0);
+    CHECK(g.jam.jam_prob == 0.25);
+    CHECK(g.jam.clear_prob == 0.75);
     GameSetup h;
-    load_game_params(load_json_file(fixtures + "/sim_params_game.json"), h);
+    load_game_params(parse_json(text.str()), h);
     CHECK(h.jam.jam_prob == 0.0);
 }

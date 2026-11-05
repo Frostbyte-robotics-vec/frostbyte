@@ -24,7 +24,7 @@ docs/decisions/ADR-037-intake.md (Nachtrag SIM-28), sim/intake_model.*, sim/obje
 —
 
 ## Übergabe
-Umgesetzt und getestet (Laptop-Tests grün, beide Roboter bauen, Format ok). Stau läuft in Game::start_intake über das echte IntakeSubsystem (ADR-037 Nachtrag SIM-31). Offen: Advisor-Review, PR. Test: ctest --test-dir build-test; test/test_sim_game_intake_jam.cpp.
+Fertig, PR offen. Stau läuft in Game::start_intake über das echte IntakeSubsystem (ADR-037 Nachtrag SIM-31). Test: ctest --test-dir build-test (test/test_sim_game_intake_jam.cpp). Werte klemmt/loest_nach_impuls bleiben Schätzung bis M-05.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->

@@ -32,3 +32,6 @@ Status: angenommen (5. Nov 2026), Ticket M-04.
 - Log-Token (keine Formatänderung, Version bleibt v1): `INTAKE:JAM` (Stau erkannt), `INTAKE:IMPULSE` (Rückwärtsimpuls beginnt), `INTAKE:ERROR_JAM` (Fehler nach `max_retries + 1` Staus), `TIMEOUT:INTAKE` (Lauf in sein Timeout). Sie tragen die Zeit, zu der sie eintreten; `cancel` verwirft spätere, nach Matchende wird nichts geloggt.
 - **Nur Routenbefehl `intake`:** Szenario-Zyklen (Demo, `GameSetup::cycles`) klemmen nie.
 - Rollen und Subsystem sehen keinen Bumper: die Aufnahmezeit steckt in `ObjectModel::pick`, der Bumper wird nach dem Stau als erreicht angenommen.
+- Unterschied zum Roboter: `run_timeout_s` begrenzt in der Simulation nur die Stauphase; die Aufnahmezeit (`pick`) kommt danach dazu. Zwei Staus plus langsame Bodenaufnahme können so über 4 s liegen und zählen als ok; die Gesamtgrenze setzt der Routen-Timeout (`intake_s`).
+- Rat des Advisors (SIM-31), der die Form prägte: eigener Rng-Strom statt des Objektmodells, Stau nur als Verzug (Aufnahmezeit unverändert, mit Wahrscheinlichkeit 0 byte-gleich zu vorher), Ereignisse mit Zeitstempel in einer Warteschlange je Roboter.
+- Die JS-Live-Sim (`tools/viewer/livesim.js`) kennt keinen Intake und ist davon nicht betroffen.
