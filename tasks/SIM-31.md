@@ -24,8 +24,9 @@ docs/decisions/ADR-037-intake.md (Nachtrag SIM-28), sim/intake_model.*, sim/obje
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Umgesetzt und getestet (Laptop-Tests grün, beide Roboter bauen, Format ok). Stau läuft in Game::start_intake über das echte IntakeSubsystem (ADR-037 Nachtrag SIM-31). Offen: Advisor-Review, PR. Test: ctest --test-dir build-test; test/test_sim_game_intake_jam.cpp.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-05 · arjanssen (KI) · Ticket angelegt als Folge von SIM-28 · –
+2026-11-05 · arjanssen (KI) · Stau im Match-Sim: Game::run_jam, Token INTAKE:JAM/IMPULSE/ERROR_JAM, Tests, ADR · ticket/sim-31
