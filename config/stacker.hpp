@@ -5,6 +5,7 @@
 #include "match/route_player.hpp"
 #include "subsystems/intake.hpp"
 #include "tasks/cycle_controller.hpp"
+#include "util/port_check.hpp"
 #include "util/rule_guard.hpp"
 
 namespace config::stacker {
@@ -102,5 +103,12 @@ inline constexpr frostbyte::IntakeConfig intake{.run_v = 10.0,
                                                 .reverse_s = 0.4,
                                                 .max_retries = 2,
                                                 .bumper_debounce_s = 0.05};
+
+// port_check (F-03): Erwartung je Port (Port mit Vorzeichen, Art, Name, Bewegungstext fuer +Spannung). Leer, bis die
+// Ports feststehen (F-07). Mit port_check_enabled = true startet der Roboter nur das Pruefprogramm (src/port_check.hpp); im Match false.
+// TODO(HW): Eintraege aus docs/ports.md (F-07) uebernehmen; Ports und Richtungen werden nicht geraten.
+inline constexpr const frostbyte::PortExpect* port_expect = nullptr;
+inline constexpr int port_expect_count = 0;
+inline constexpr bool port_check_enabled = false;
 
 }  // namespace config::stacker
