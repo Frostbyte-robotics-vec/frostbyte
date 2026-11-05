@@ -4,6 +4,7 @@
 #include "match/driver_map.hpp"
 #include "match/route_player.hpp"
 #include "tasks/cycle_controller.hpp"
+#include "util/port_check.hpp"
 #include "util/rule_guard.hpp"
 
 namespace config::stacker {
@@ -88,5 +89,12 @@ inline constexpr frostbyte::RoutePlayerConfig route_player{.goto_s = 8.0,
                                                            .toggle_s = 4.0,
                                                            .wait_for_s = 10.0,
                                                            .other_s = 1.0};
+
+// port_check (F-03): Erwartung je Port (Port mit Vorzeichen, Art, Name, Bewegungstext fuer +Spannung). Leer, bis die
+// Ports feststehen (F-07). Mit port_check_enabled = true startet der Roboter nur das Pruefprogramm (src/port_check.hpp); im Match false.
+// TODO(HW): Eintraege aus docs/ports.md (F-07) uebernehmen; Ports und Richtungen werden nicht geraten.
+inline constexpr const frostbyte::PortExpect* port_expect = nullptr;
+inline constexpr int port_expect_count = 0;
+inline constexpr bool port_check_enabled = false;
 
 }  // namespace config::stacker
