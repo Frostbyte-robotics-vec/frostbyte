@@ -4,6 +4,7 @@
 #include "match/driver_map.hpp"
 #include "match/route_player.hpp"
 #include "subsystems/claw.hpp"
+#include "subsystems/intake.hpp"
 #include "util/port_check.hpp"
 #include "util/rule_guard.hpp"
 
@@ -98,6 +99,19 @@ inline constexpr frostbyte::ClawConfig claw{.open_v = -4.0,
                                             .close_timeout_s = 1.5,
                                             .cup = {.close_v = 6.0, .hold_v = 2.0},
                                             .pin = {.close_v = 4.0, .hold_v = 1.0}};
+
+// Intake (M-04, ADR-037; ob dieser Roboter einen Intake hat, ist offen): Startwerte (Software-Entscheidung), am Roboter pruefen. Richtung der Rollen legt das Port-Vorzeichen fest.
+// TODO(HW): run_v/reverse_v (Rollen duerfen die Einheit nicht zerquetschen), stall_deg_s und jam_s gegen echte Staus messen
+// (Logs von Hand ausgeloeste Staus), Bumper-Port und -Polaritaet. Stau-Erkennung nutzt nur die Rollen-Geschwindigkeit.
+inline constexpr frostbyte::IntakeConfig intake{.run_v = 10.0,
+                                                .reverse_v = -8.0,
+                                                .run_timeout_s = 4.0,
+                                                .grace_s = 0.3,
+                                                .stall_deg_s = 20.0,
+                                                .jam_s = 0.25,
+                                                .reverse_s = 0.4,
+                                                .max_retries = 2,
+                                                .bumper_debounce_s = 0.05};
 
 // port_check (F-03): Erwartung je Port (Port mit Vorzeichen, Art, Name, Bewegungstext fuer +Spannung). Leer, bis die
 // Ports feststehen (F-07). Mit port_check_enabled = true startet der Roboter nur das Pruefprogramm (src/port_check.hpp); im Match false.
