@@ -30,7 +30,7 @@ sim/collision.*, sim/world.cpp (Kollisionen), tools/viewer/livesim.js (loadEleme
 —
 
 ## Übergabe
-Fertig, siehe ADR-025 Nachtrag SIM-30. Positivliste `COLLIDING_SECTIONS` in livesim.js, C++-Test + JS-Tests grün. Lokal konnte der Roboter-Build (make ROBOT=…) nicht laufen: Toolchain meldet „Cannot create temporary file in C:\WINDOWS\“, identisch auf sauberem main (Umgebung, nicht Code); CI prüft. Am Roboter nichts zu prüfen (reine Simulation).
+Fertig, siehe ADR-025 Nachtrag SIM-30. Positivliste `COLLIDING_SECTIONS` in livesim.js; JS-Tests belegen Ignorieren mit Hinweis und freie Fahrt. Der C++-Test ist nur eine Vorwärtssicherung, weil die C++-Welt `objekte_start` nicht lädt (Advisor hat die Aussagekraft beanstandet; gelöst durch ehrlichen Testkommentar und ADR-Text). Beide Roboter bauen (in PowerShell; Git-Bash scheitert an der Toolchain-Temp-Umgebung, auch auf sauberem main). Am Roboter nichts zu prüfen (reine Simulation).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->

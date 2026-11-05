@@ -98,7 +98,8 @@ TEST_CASE("Integration: Feldrand hält den Roboter, Ereignis COLLISION:wall") {
 }
 
 TEST_CASE("Integration: Fahrt ueber Center-Stacks (Objekte) erzeugt keine Kollision und aendert die Pose nicht") {
-    // SIM-30 / ADR-025 Nachtrag: Cups und Pins sind fuer die Kollision unsichtbar.
+    // SIM-30 / ADR-025 Nachtrag: Cups und Pins sind fuer die Kollision unsichtbar. Vorwaertssicherung: die C++-Welt laedt
+    // objekte_start heute nicht (nur Goals/Zyklen); der Test schlaegt an, sobald jemand Objekte geometrisch einhaengt.
     auto drive_through = [](const std::string& field_file) {
         SimConfig cfg = load_config(fixtures + "/sim_params_min.json", fixtures + "/" + field_file,
                                     fixtures + "/empty.route", fixtures + "/empty.route", "none");
