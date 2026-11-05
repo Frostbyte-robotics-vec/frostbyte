@@ -3,6 +3,7 @@
 #include "control/motion_controller.hpp"
 #include "match/driver_map.hpp"
 #include "match/route_player.hpp"
+#include "subsystems/intake.hpp"
 #include "tasks/cycle_controller.hpp"
 #include "util/rule_guard.hpp"
 
@@ -88,5 +89,18 @@ inline constexpr frostbyte::RoutePlayerConfig route_player{.goto_s = 8.0,
                                                            .toggle_s = 4.0,
                                                            .wait_for_s = 10.0,
                                                            .other_s = 1.0};
+
+// Intake (M-04, ADR-037; ob dieser Roboter einen Intake hat, ist offen): Startwerte (Software-Entscheidung), am Roboter pruefen. Richtung der Rollen legt das Port-Vorzeichen fest.
+// TODO(HW): run_v/reverse_v (Rollen duerfen die Einheit nicht zerquetschen), stall_deg_s und jam_s gegen echte Staus messen
+// (Logs von Hand ausgeloeste Staus), Bumper-Port und -Polaritaet. Stau-Erkennung nutzt nur die Rollen-Geschwindigkeit.
+inline constexpr frostbyte::IntakeConfig intake{.run_v = 10.0,
+                                                .reverse_v = -8.0,
+                                                .run_timeout_s = 4.0,
+                                                .grace_s = 0.3,
+                                                .stall_deg_s = 20.0,
+                                                .jam_s = 0.25,
+                                                .reverse_s = 0.4,
+                                                .max_retries = 2,
+                                                .bumper_debounce_s = 0.05};
 
 }  // namespace config::stacker
