@@ -8,9 +8,9 @@
 
 // port_check (F-03): Hilfsprogramm fuer den aufgebockten Roboter, aktiv nur mit config::port_check_enabled (dann startet
 // initialize() keinen Steuer-Task). Ablauf: alle 21 Ports scannen, Ergebnis aufs LCD und ins Terminal; auf Taste A am
-// Controller jeden Motor mit Richtung != 0 kurz mit +4 V pulsen und die Drehrichtung des Encoders messen. Die Pulse laufen
-// ohne Port-Umkehr: "Richtung falsch" heisst, in config/ den Port negativ eintragen (oder die Erwartung korrigieren).
-// Eigene Schleife mit delay(), darum nie zusammen mit dem Steuer-Task.
+// Controller jeden Motor mit Bewegungstext kurz mit +4 V pulsen (Port mit Vorzeichen wie in config/). Der Encoder zeigt nur, ob
+// sich der Motor dreht; ob sich die Mechanik in die erwartete Richtung bewegt, bestaetigt der Mensch am Controller (A = richtig,
+// B = falsch). "Richtung falsch" heisst: Vorzeichen des Ports in config/ umdrehen. Eigene Schleife mit delay(), darum nie zusammen mit dem Steuer-Task.
 namespace frostbyte {
 
 inline DeviceKind to_device_kind(pros::DeviceType t) {
@@ -44,7 +44,7 @@ inline void port_check_run(const PortExpect* expect, int count) {
         if (kind != DeviceKind::none)
             std::printf("port %d: Geraeteart %d\n", port, static_cast<int>(kind));
     }
-    port_check_show(pc, "A: Motoren pulsen (aufgebockt!)");
+    port_check_show(pc, "A: Motoren pulsen (aufgebockt)");
 
     pros::Controller master(pros::E_CONTROLLER_MASTER);
     while (!master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A))
@@ -52,18 +52,40 @@ inline void port_check_run(const PortExpect* expect, int count) {
 
     for (int i = 0; i < count; ++i) {
         const PortExpect& e = expect[i];
-        if (e.kind != DeviceKind::motor || e.direction == 0 || pc.verdict(e.port) == PortVerdict::missing ||
-            pc.verdict(e.port) == PortVerdict::wrong_type)
+        const int port = e.port < 0 ? -e.port : e.port;
+        const PortVerdict v = pc.verdict(port);
+        if (e.kind != DeviceKind::motor || !e.motion || v == PortVerdict::missing || v == PortVerdict::wrong_type)
             continue;
+        pros::lcd::print(1, "P%d %s", port, e.name);
+        pros::lcd::print(2, "gleich +4V, erwartet:");
+        pros::lcd::print(3, "%s", e.motion);
+        pros::lcd::print(4, "(Lift/Arm abstuetzen)");
+        pros::delay(1500);
         pros::Motor m(static_cast<std::int8_t>(e.port));
         m.set_encoder_units(pros::v5::MotorUnits::degrees);
-        m.set_brake_mode(pros::v5::MotorBrake::coast);
+        m.set_brake_mode(pros::v5::MotorBrake::hold);  // Lift/Arm sacken nach dem Puls nicht ab
         const double start = m.get_position();
         m.move_voltage(static_cast<std::int32_t>(pulse_v * 1000.0));
         pros::delay(pulse_ms);
         m.move_voltage(0);
-        pc.record_pulse(e.port, m.get_position() - start);
-        std::printf("port %d (%s): Puls %s\n", e.port, e.name, PortCheck::text(pc.verdict(e.port)));
+        m.brake();
+        pc.record_pulse(port, m.get_position() - start);
+        if (pc.verdict(port) == PortVerdict::unconfirmed) {
+            pros::lcd::print(5, "A: richtig  B: falsch");
+            while (true) {
+                if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A)) {
+                    pc.record_confirm(port, true);
+                    break;
+                }
+                if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)) {
+                    pc.record_confirm(port, false);
+                    break;
+                }
+                pros::delay(20);
+            }
+        }
+        std::printf("port %d (%s): %s\n", port, e.name, PortCheck::text(pc.verdict(port)));
+        m.move_voltage(0);  // loest die Haltebremse
         pros::delay(200);
     }
     port_check_show(pc, pc.problem_count() == 0 ? "alles ok" : "Probleme: config/ korrigieren");

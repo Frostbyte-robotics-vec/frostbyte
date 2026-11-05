@@ -83,7 +83,7 @@ inline constexpr frostbyte::RoutePlayerConfig route_player{.goto_s = 8.0,
                                                            .wait_for_s = 10.0,
                                                            .other_s = 1.0};
 
-// port_check (F-03): Erwartung je Port (Art, Name, Drehrichtung des Encoders bei +Spannung ohne Port-Umkehr). Leer, bis die
+// port_check (F-03): Erwartung je Port (Port mit Vorzeichen, Art, Name, Bewegungstext fuer +Spannung). Leer, bis die
 // Ports feststehen (F-07). Mit port_check_enabled = true startet der Roboter nur das Pruefprogramm (src/port_check.hpp); im Match false.
 // TODO(HW): Eintraege aus docs/ports.md (F-07) uebernehmen; Ports und Richtungen werden nicht geraten.
 inline constexpr const frostbyte::PortExpect* port_expect = nullptr;
