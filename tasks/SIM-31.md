@@ -1,28 +1,31 @@
 ---
 id: SIM-31
 phase: "5"
-titel: SG3 (Höhe 50″) in der Simulation prüfen: Lifthöhe aus Winkel, RuleGuard im Match (Folge von SIM-29)
+titel: Intake-Rollenmodell mit Stau (SIM-28) in die Sim-Welt und den Zyklus verdrahten
 status: todo
 owner:
 branch:
-depends: [M-11]
+depends: []
 hw: nein
 ---
 
 ## Ziel
-SIM-29 lässt den Lift im Match fahren, aber die Höhe ist nicht modelliert; `run_match` prüft SG3 deshalb nicht. Hier kommt die Winkel→Höhe-Abbildung der Simulation dazu (aus den gemessenen Werten von M-11, nicht geraten), und der RuleGuard (sim/rules, SG3 50″) prüft die Höhe in jedem Takt des Matches.
+SIM-28 liefert `sim/intake_model.*` (`IntakeRollers`) und testet den IntakeSubsystem gegen diese Strecke. Im Match-Sim (`world`/`cycle`) läuft der Intake aber weiter über das Ereignismodell (SIM-04, `boden_einheit`/`loader_einheit`). Hier wird das Rollenmodell eingehängt: Aufnahmen können klemmen, der Impuls löst oder nicht, ein Dauerstau endet im Log als Fehler und kostet Zeit.
 
 ## Fertig, wenn …
-- Winkel→Höhe je Roboter nur aus sim/sim_params.json (Messwerte aus M-11; `quelle: schaetzung` zählt nicht als Wahrheit), Tests mit eigenen Werten
-- Ein Lauf, dessen Lift SG3 überschreitet, meldet `RULE:SG3` im Log; ein regelkonformer Lauf meldet nichts
+- Im Match-Sim klemmt eine Aufnahme mit der Wahrscheinlichkeit aus `ereignisse.intake_stau`; Stau, Impuls und `error (jam)` erscheinen als Ereignisse im Log (Format nur mit neuer Versionsnummer ändern, docs/log_format.md)
+- Gleicher Seed = byte-gleiches Ergebnis; Tests mit eigenen Wahrscheinlichkeiten (0/1), nicht von Platzhalterwerten abhängig
 - Laptop-Tests grün, beide Roboter bauen, `python tools/board.py validate` grün
 
 ## Kontext
-docs/decisions/ADR-009 (Nachtrag SIM-29), tasks/M-09.md, tasks/M-11.md, lib/subsystems/lift.hpp (height_for_angle), sim/rules.hpp.
+docs/decisions/ADR-037-intake.md (Nachtrag SIM-28), sim/intake_model.*, sim/objects.*, sim/game.cpp. Baut auf SIM-28 auf (PR muss gemergt sein; liegt sim/intake_model.hpp nicht auf main → überspringen).
+
+## Hardware-Prüfung
+—
 
 ## Übergabe
-—
+(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
-2026-11-05 · arjanssen (Claude) · Ticket angelegt (Folge von SIM-29, SG3 in der Simulation) · –
+2026-11-05 · arjanssen (KI) · Ticket angelegt als Folge von SIM-28 · –

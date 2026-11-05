@@ -16,6 +16,8 @@ public:
     virtual double position_deg() const = 0;
     virtual double velocity_deg_s() const = 0;
     virtual double temperature_c() const = 0;
+    // Stromaufnahme als Betrag (>= 0) in Ampere, für Stau-/Plateau-Erkennung. 0, wenn nicht erkannt.
+    virtual double current_a() const = 0;
     // false, wenn der Motor nicht am Port erkannt wird (SYS-12).
     virtual bool connected() const = 0;
 };

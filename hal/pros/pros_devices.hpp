@@ -36,6 +36,12 @@ public:
     double position_deg() const override { return motor_.get_position(); }
     double velocity_deg_s() const override { return motor_.get_actual_velocity() * 6.0; }  // RPM -> Grad/s
     double temperature_c() const override { return motor_.get_temperature(); }
+    // mA -> A. Betrag, weil das Vorzeichen von get_current_draw() nicht geprüft ist (TODO(HW), F-08).
+    // PROS_ERR (INT32_MAX, nicht erkannt) zählt als 0; den Ausfall meldet connected().
+    double current_a() const override {
+        const std::int32_t ma = motor_.get_current_draw();
+        return ma == PROS_ERR ? 0.0 : std::abs(static_cast<double>(ma)) / 1000.0;
+    }
     bool connected() const override { return motor_.is_installed(); }
 
 private:

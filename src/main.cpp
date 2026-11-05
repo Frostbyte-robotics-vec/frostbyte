@@ -9,6 +9,7 @@
 #include "hal/pros/pros_storage.hpp"  // SD-Karte fuer die Tuning-Werte (D-06)
 #include "lemlib/api.hpp"             // prueft nur, dass LemLib einbindbar ist; Aufrufe erst hinter hal/ (ADR-001)
 #include "lemlib_regulator.hpp"
+#include "port_check.hpp"
 #include "util/rule_guard.hpp"
 
 namespace {
@@ -96,6 +97,8 @@ void initialize() {
         if (frostbyte::load_tuning(g_tuning_store, tuned) == frostbyte::LoadResult::loaded)
             frostbyte::apply_tuning(tuned, g_lat_pid, g_ang_pid);
     }
+    if constexpr (config::port_check_enabled)
+        return;  // nur Pruefprogramm (F-03): kein Steuer-Task, opcontrol() startet den Scan
     static pros::Task task(control_task, nullptr, TASK_PRIORITY_MAX - 1, TASK_STACK_DEPTH_DEFAULT, "control");
     static pros::Task display(display_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "display");
 }
@@ -106,4 +109,8 @@ void competition_initialize() { g_phase.set(frostbyte::Phase::Disabled); }
 
 void autonomous() { g_phase.set(frostbyte::Phase::Autonomous); }
 
-void opcontrol() { g_phase.set(frostbyte::Phase::Driver); }
+void opcontrol() {
+    if constexpr (config::port_check_enabled)
+        frostbyte::port_check_run(config::port_expect, config::port_expect_count);
+    g_phase.set(frostbyte::Phase::Driver);
+}

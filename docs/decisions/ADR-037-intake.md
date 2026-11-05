@@ -1,0 +1,28 @@
+# ADR-037: Intake-Subsystem (Lauf bis Bumper, Stau-Erkennung, Rückwärtsimpuls)
+
+Status: angenommen (5. Nov 2026), Ticket M-04.
+
+## Entscheidung
+- `lib/subsystems/intake.hpp` (`IntakeSubsystem`), reine Logik ohne PROS. Schnittstelle wie Lift: `request_run`, `request_stop`, `state()`, `update(now_s, IntakeSensor{bumper_pressed, velocity_deg_s, ok}) -> IntakeOutput{volts}`.
+- **Zustände:** `idle → running → holding`, bei Stau `running → reversing → running`, dazu `error`. Im Leerlauf und im Fehler 0 V.
+- **Lauf bis Bumper:** `running` endet, sobald der Bumper entprellt (`bumper_debounce_s`) gedrückt ist; `holding` mit `unit_present()`. Löst der Bumper in `holding` entprellt, geht der Intake nach `idle`. Das Zählen von Pins/Cups bleibt beim RuleGuard/Zyklus (SG6), der Intake meldet nur „Einheit im Bumper“.
+- **Stau:** Rollen langsamer als `stall_deg_s` für `jam_s` in Folge, nach einer Anlaufzeit `grace_s` (nach Start und nach jedem Impuls neu). Bewusst nur aus der Geschwindigkeit, nicht aus dem Strom: `hal::Motor` bleibt unverändert, Strom wäre eine Schnittstellenerweiterung ohne Messwerte (Schwelle wäre geraten).
+- **Rückwärtsimpuls:** `reverse_v` für `reverse_s`, dann wieder `running`. Nach `max_retries` Impulsen ist der nächste Stau `error (jam)`, Rollen aus. Ein neues `request_run` setzt Fehler und Zähler zurück.
+- **Timeouts:** `run_timeout_s` gilt für den ganzen Lauf einschließlich der Impulse (nicht je Zustand), danach `idle` und `timed_out() == true`; der Impuls hat `reverse_s`. `holding` hat kein Timeout (Normalzustand).
+- **Sicher bei Ausfall:** Motor nicht erkannt oder Geschwindigkeit NaN → `error (sensor)`, 0 V. Ungültige Konfiguration (Vorzeichen von `run_v`/`reverse_v`, Zeiten ≤ 0) → `error (config)`, `request_run` gibt `false`.
+- Die Spannung wird auf ±12 V begrenzt. Richtung der Rollen bestimmt das Port-Vorzeichen in `config/` (F-07).
+
+## Grenzen / offen
+- Stau-Modell der Simulation: siehe Nachtrag SIM-28.
+- Verdrahtung an die HAL und in den Steuer-Task: nach F-07 (Ports) und M-10.
+- Werte in `config/` sind Startwerte (`TODO(HW)`), Tests nehmen eigene.
+- Ob der Runner einen Intake hat, ist offen; beide Konfigurationen sind gleich vorbelegt.
+
+## Am Roboter zu prüfen
+- Stau-Schwelle und -Zeit gegen echte Staus; Impulsstärke und -dauer; Bumper-Polarität und Entprellzeit; dass `grace_s` den Anlauf deckt.
+
+## Nachtrag SIM-28: Stau-Modell der Simulation
+- `sim/intake_model.*` (`IntakeRollers`): Rollengeschwindigkeit aus der Spannung (`max_deg_s` bei 12 V). Ein Lauf aus dem Stand (Spannung 0 → positiv) klemmt mit der Wahrscheinlichkeit `klemmt`; bei Vorwärtsspannung stehen die Rollen dann. Jeder Rückwärtsimpuls löst den Stau mit `loest_nach_impuls` (0 = nie, 1 = immer). Nur ein Rückwärtsimpuls löst einen Stau, Stopp und Neustart nicht (die Ziehung beim Start wirkt nur, wenn noch nichts klemmt). Nach einem Impuls zieht der Neustart keine neue Klemm-Ziehung, sonst käme ein gelöster Stau sofort zurück.
+- Zahlen nur in `sim/sim_params.json` unter `ereignisse.intake_stau`, `quelle: schaetzung` bis zur Messung (M-05). Rng pro Modell mit Seed vom Aufrufer: gleicher Seed = gleiche Folge.
+- Tests (`test/test_sim_intake_jam.cpp`) nehmen nur 0, 1 und 0.5 als eigene Wahrscheinlichkeiten und hängen nicht an den Platzhalterwerten: gelöster Stau → Lauf bis Bumper; nie gelöst → `error (jam)` nach `max_retries + 1` Staus, 0 V.
+- **Noch nicht im Match-Sim aktiv:** `world`/`cycle` nutzen den Intake weiter über das Ereignismodell (SIM-04). Das Rollenmodell ist die Strecke für den IntakeSubsystem-Test; die Verdrahtung in die Sim-Welt ist Folgeticket SIM-31.
