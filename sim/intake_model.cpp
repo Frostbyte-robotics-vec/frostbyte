@@ -31,9 +31,13 @@ IntakeJamParams load_intake_jam_params(const Json& params) {
 double IntakeRollers::step(double volts) {
     const double v = std::clamp(volts, -12.0, 12.0);
     if (v > 0.0) {
-        // Ein neuer Lauf aus dem Stand zieht eine Zahl; nach einem Rückwärtsimpuls bleibt der Zustand, wie der Impuls ihn ließ.
-        if (last_ == Last::idle)
-            jammed_ = rng_.uniform() < p_.jam_prob;
+        // Ein neuer Lauf aus dem Stand zieht immer eine Zahl (feste Zahl Ziehungen), sie wirkt nur, wenn noch nichts klemmt:
+        // Stopp und Neustart lösen keinen Stau, nur ein Rückwärtsimpuls. Nach einem Impuls bleibt der Zustand, wie er ihn ließ.
+        if (last_ == Last::idle) {
+            const bool jams = rng_.uniform() < p_.jam_prob;
+            if (!jammed_)
+                jammed_ = jams;
+        }
         last_ = Last::forward;
         return jammed_ ? 0.0 : p_.max_deg_s * v / 12.0;
     }

@@ -100,17 +100,24 @@ TEST_CASE("SimIntake: ohne Klemmen kein Stau und kein Impuls") {
     CHECK(r.vel > 100.0);
 }
 
-TEST_CASE("SimIntake: nach dem Fehler startet ein neuer Lauf mit frischer Ziehung") {
-    Run r(jam_params(1.0, 0.0), 3);
-    r.intake.request_run(r.t);
-    r.run(3.0);
-    REQUIRE(r.intake.error() == IntakeError::jam);
-    r.intake.request_stop(r.t);
-    r.run(0.1);
-    r.intake.request_run(r.t);
-    r.run(0.2);
-    CHECK(r.intake.error() == IntakeError::none);
-    CHECK(r.rollers.jammed());  // Wahrscheinlichkeit 1: auch der neue Lauf klemmt
+TEST_CASE("SimIntake: Stopp und Neustart lösen keinen Stau, nur ein Rückwärtsimpuls") {
+    int jammed_seeds = 0;
+    for (std::uint64_t seed = 1; seed <= 50; ++seed) {
+        IntakeRollers r(jam_params(0.5, 0.0), seed);
+        r.step(10.0);
+        if (!r.jammed())
+            continue;
+        ++jammed_seeds;
+        r.step(0.0);
+        r.step(10.0);
+        CHECK_MESSAGE(r.jammed(), "Seed " << seed << ": Neustart hat den Stau gelöst");
+    }
+    REQUIRE(jammed_seeds > 0);  // der Test sieht den Unterschied nur, wenn Staus vorkommen
+    IntakeRollers r(jam_params(1.0, 1.0), 1);
+    r.step(10.0);
+    REQUIRE(r.jammed());
+    r.step(-8.0);  // Impuls löst (Wahrscheinlichkeit 1)
+    CHECK_FALSE(r.jammed());
 }
 
 TEST_CASE("SimIntake: gleicher Seed gibt gleiche Folge, anderer Seed eine andere") {
