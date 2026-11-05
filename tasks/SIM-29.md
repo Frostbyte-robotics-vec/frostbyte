@@ -32,7 +32,7 @@ tasks/SIM-04.md, docs/decisions/ADR-009-mechanismen-und-objekte.md, ADR-032-zykl
 —  (reine Simulation; echte Lift-Grenzen kommen mit M-01/M-11, bis dahin sim_params „schaetzung“)
 
 ## Übergabe
-—
+KI-Review PR #72 (2026-11-05): Empfehlung ändern, nur Konflikt: main mergen, add/add in tasks/SIM-31.md (Version von main behalten). SG3-Prüfung in der Sim und Sicht im Viewer bewusst abnicken.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
