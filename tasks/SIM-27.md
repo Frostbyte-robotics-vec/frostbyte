@@ -24,8 +24,9 @@ docs/notes.md (SIM-26), tasks/SIM-26.md, tasks/A-05.md (blockiert), sim/world.cp
 —
 
 ## Übergabe
-—
+Stelle: Stacker (Start −59/0) fuhr zum südlichen Loader LOADER_RED_1, Runner (Start −40/−64,5) zum nördlichen LOADER_RED_2; die Wege kreuzten sich bei ~2 s um x≈−55, y≈−10. Fix: Loader getauscht (Stacker LOADER_RED_2, Runner LOADER_RED_1). 20 Läufe Seed 1–20 mit den Routen: Kontakte Roboter Median 9 → 0, Feldrand 8–10 → 7–8. Punkte unverändert 16 (Ziel 120 ist A-05, nicht dieses Ticket). Wirkt nur in der Simulation mit geschätzten Maßen (Footprint/Kollisionsumriss aus sim_params); echte Wege am Roboter nicht geprüft. Kein eigener Test, weil das Ergebnis an Platzhalterwerten in sim_params hängt (CLAUDE.md). Nächster Schritt: PR.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-04 · arjanssen (KI) · Ticket angelegt (aus SIM-26) · –
+2026-11-05 · arjanssen (KI) · Loader getauscht, Kontakte 9 → 0 · –
