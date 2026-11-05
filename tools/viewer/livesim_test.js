@@ -208,6 +208,21 @@ function runLivesimTests(FBLive, FBLog) {
   live = FBLive.create(params, fEl);
   check('Ohne Radius in den Parametern: keine Feldelemente', live.elements().length === 0);
 
+  // 12b Objekte sind keine Kollisionsobjekte (SIM-30): Abschnitt in den Parametern wird ignoriert, Fahrt über Center-Stacks bleibt frei
+  const stacks = [{ id: 'CENTER_STACK_R1', x_in: 10, y_in: 0 }, { id: 'CENTER_STACK_B1', x_in: 20, y_in: 0 }];
+  const fObj = cField({ objekte_start: { cups: [], pins: stacks }, pins: stacks, cups: stacks });
+  const pObj = Object.assign({}, params, { live: Object.assign({}, params.live, { kollision: { radius_in: { goals: 3, pins: 3, cups: 3, objekte_start: 3 } } }) });
+  live = FBLive.create(pObj, fObj);
+  check('Objekt-Abschnitte (pins, cups, objekte_start) erzeugen keine Elemente', live.elements().length === 0, JSON.stringify(live.elements()));
+  check('Objekt-Abschnitte werden mit Hinweis ignoriert', ['pins', 'cups', 'objekte_start'].every(s => live.notes.some(n => n.indexOf('"' + s + '"') >= 0 && n.indexOf('Positivliste') >= 0)), JSON.stringify(live.notes));
+  const free = FBLive.create(params, cField());
+  live.setKeys(press({ w: true })); free.setKeys(press({ w: true }));
+  run(live, 0.45, 10); run(free, 0.45, 10);
+  check('Fahrt über Center-Stacks: x überschreitet beide Stacks', live.pose('stacker').x_in > 25, JSON.stringify(live.pose('stacker')));
+  const evObj = live.takeEvents();
+  check('Fahrt über Center-Stacks: kein COLLISION-/BLOCKED-Ereignis', evObj.length === 0, JSON.stringify(evObj));
+  check('Fahrt über Center-Stacks: Pose wie ohne Objekte', JSON.stringify(live.pose('stacker')) === JSON.stringify(free.pose('stacker')), JSON.stringify([live.pose('stacker'), free.pose('stacker')]));
+
   // 13 Umriss für die Anzeige und Reset
   live = FBLive.create(params, cField());
   const ol = live.outline('stacker');

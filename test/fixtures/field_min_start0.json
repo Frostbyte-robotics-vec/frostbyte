@@ -1,0 +1,19 @@
+{
+  "_hinweis": "Gegenprobe zu field_stacks.json (SIM-30): gleiche Startpose, keine Objekte.",
+  "version": 1,
+  "feld_in": 144,
+  "posen": [
+    {
+      "id": "START_STACKER",
+      "x_in": -50.0,
+      "y_in": 0.0,
+      "h_deg": 0
+    },
+    {
+      "id": "START_RUNNER",
+      "x_in": null,
+      "y_in": null,
+      "h_deg": null
+    }
+  ]
+}

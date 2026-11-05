@@ -1,0 +1,16 @@
+{
+  "_hinweis": "Testfeld (SIM-30): Stacker startet links der Mitte und faehrt in +x ueber CENTER_STACK_R1 (x=-23,546) und CENTER_STACK_B1 (x=23,546). Eigene Werte, unabhaengig von field/field.json.",
+  "version": 1,
+  "feld_in": 144,
+  "posen": [
+    { "id": "START_STACKER", "x_in": -50.0, "y_in": 0.0, "h_deg": 0 },
+    { "id": "START_RUNNER", "x_in": null, "y_in": null, "h_deg": null }
+  ],
+  "objekte_start": {
+    "cups": [],
+    "pins": [
+      { "id": "CENTER_STACK_R1", "x_in": -23.546, "y_in": 0.0, "lage": "steht", "ebene": 0 },
+      { "id": "CENTER_STACK_B1", "x_in": 23.546, "y_in": 0.0, "lage": "steht", "ebene": 0 }
+    ]
+  }
+}
