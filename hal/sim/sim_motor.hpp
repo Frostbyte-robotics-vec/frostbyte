@@ -7,6 +7,7 @@
 
 // Fake-Motor mit Kennlinie: V = kS*sign(v) + kV*v + kA*a. Die Zahlen kommen aus sim/sim_params.json
 // (lädt ein späteres SIM-Ticket); hier gibt es absichtlich keine Standardwerte.
+// Strom: I = |V - kV*v| / R, begrenzt; kV*v ist die Gegenspannung. Blockiert (Stall) gilt v = 0.
 namespace frostbyte::hal {
 
 struct SimMotorParams {
@@ -14,6 +15,8 @@ struct SimMotorParams {
     double kV_V_per_deg_s;
     double kA_V_per_deg_s2;
     double max_voltage_V;
+    double resistance_ohm;  // Wicklung: I = (V - kV*v) / R
+    double max_current_A;   // Begrenzung (V5-Motor schützt sich)
 };
 
 class SimMotor : public Motor {
@@ -32,11 +35,17 @@ public:
     double position_deg() const override { return position_deg_; }
     double velocity_deg_s() const override { return velocity_deg_s_; }
     double temperature_c() const override { return temperature_c_; }
+    double current_a() const override {
+        if (!connected_ || braking_)
+            return 0.0;
+        const double i = std::abs(voltage_v_ - p_.kV_V_per_deg_s * velocity_deg_s_) / p_.resistance_ohm;
+        return std::min(i, p_.max_current_A);
+    }
     bool connected() const override { return connected_; }
 
     // Nur Simulation: Zeit um dt_s weiterschalten (halbimplizites Euler-Verfahren).
     void step(double dt_s) {
-        if (!connected_ || braking_) {
+        if (!connected_ || braking_ || blocked_) {
             velocity_deg_s_ = 0.0;
             return;
         }
@@ -53,6 +62,8 @@ public:
     }
 
     void set_connected(bool c) { connected_ = c; }
+    // Nur Simulation: Mechanik blockiert (Stall); Geschwindigkeit bleibt 0, Spannung liegt weiter an.
+    void set_blocked(bool b) { blocked_ = b; }
 
 private:
     SimMotorParams p_;
@@ -61,6 +72,7 @@ private:
     double velocity_deg_s_ = 0.0;
     double temperature_c_ = 25.0;  // kein Temperaturmodell
     bool braking_ = false;
+    bool blocked_ = false;
     bool connected_ = true;
 };
 
