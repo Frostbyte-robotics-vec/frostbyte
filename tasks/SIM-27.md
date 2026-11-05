@@ -2,8 +2,8 @@
 id: SIM-27
 phase: "5"
 titel: Kreuzende Routen von Stacker und Runner (Kollision bei ~2 s um x≈−55, y≈−10) auflösen
-status: todo
-owner: -
+status: in_progress
+owner: arjanssen
 branch: ticket/sim-27
 depends: [SIM-26]
 hw: nein
