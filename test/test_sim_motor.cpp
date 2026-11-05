@@ -14,8 +14,8 @@ SimMotorParams params() {
     p.kV_V_per_deg_s = 0.01;
     p.kA_V_per_deg_s2 = 0.002;
     p.max_voltage_V = 12.0;
-    p.resistance_ohm = 4.0;
-    p.max_current_A = 2.5;
+    p.resistance_ohm = 2.0;
+    p.max_current_A = 4.0;
     return p;
 }
 
@@ -127,8 +127,8 @@ TEST_CASE("SimMotor: blockiert (Stall) zieht viel Strom, frei laufend wenig") {
     run(stalled, 0.5);
 
     CHECK(stalled.velocity_deg_s() == doctest::Approx(0.0));
-    CHECK(stalled.current_a() == doctest::Approx(6.5 / 4.0));                 // V / R, unter der Grenze
-    CHECK(free_run.current_a() == doctest::Approx(0.5 / 4.0).epsilon(0.01));  // kS / R
+    CHECK(stalled.current_a() == doctest::Approx(6.5 / 2.0));                 // V / R, unter der Grenze
+    CHECK(free_run.current_a() == doctest::Approx(0.5 / 2.0).epsilon(0.01));  // kS / R
     CHECK(stalled.current_a() > 5.0 * free_run.current_a());
 }
 
@@ -139,7 +139,7 @@ TEST_CASE("SimMotor: Strom ist ein Betrag und auf max_current_A begrenzt") {
     b.set_blocked(true);
     a.set_voltage_v(12.0);
     b.set_voltage_v(-12.0);
-    CHECK(a.current_a() == doctest::Approx(2.5));  // 12 / 4 = 3 A, begrenzt
+    CHECK(a.current_a() == doctest::Approx(4.0));  // 12 / 2 = 6 A, begrenzt
     CHECK(b.current_a() == doctest::Approx(a.current_a()));
 }
 
