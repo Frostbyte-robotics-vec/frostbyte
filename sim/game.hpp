@@ -105,6 +105,10 @@ public:
     // Index des Toggles mit diesem Namen (GameSetup::toggles), -1 wenn unbekannt.
     int toggle_index(const std::string& name) const;
     int rejected_cycles() const { return rejected_; }  // von Routen abgelehnte Befehle
+    // Lift des Roboters (SIM-29): Ist- und Sollwinkel; vor dem ersten Zyklus steht er auf der unteren Endlage. Der Lift
+    // fährt mit jedem Zyklus zur Höhe der Ebene (nach der Aufnahme und dem Schließen) und danach zurück nach unten.
+    double lift_deg(int robot) const { return lift_[robot].pos(); }
+    double lift_set_deg(int robot) const { return lift_[robot].target(); }
 
     // Punktestand, wenn das Match jetzt endete, mit so vielen Robotern im Midfield (0..max_scored_robots, sonst begrenzt).
     int score(int robots_in_midfield = 0) const;
@@ -153,7 +157,14 @@ private:
     std::vector<bool> started_;
     std::vector<Pending> pending_;
     std::vector<PendingToggle> pending_toggles_;
+    struct LiftCmd {
+        int t_ms;
+        double target_deg;
+    };
     int busy_until_[2] = {0, 0};
+    Joint lift_[2];
+    std::vector<LiftCmd> lift_cmds_[2];  // zeitlich geordnet, ab t_ms gilt der Sollwert
+    int last_step_ms_ = -1;
     Held held_[2];
     int score_[max_scored_robots + 1] = {0, 0, 0};  // je Zahl der Roboter im Midfield
     int completed_ = 0;

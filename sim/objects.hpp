@@ -45,6 +45,8 @@ struct CycleResult {
     CycleOutcome outcome = CycleOutcome::ok;
     double time_s = 0.0;
     bool yellow_up = false;
+    // Lift (SIM-29): Zeit ab Zyklusstart, zu der er hochfährt; < 0, wenn der Zyklus davor endet (kein Hub).
+    double lift_start_s = -1.0;
 };
 
 class ObjectModel {

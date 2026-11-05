@@ -47,7 +47,8 @@ Game::Game(const GameSetup& setup, std::uint64_t seed_stacker, std::uint64_t see
       models_{ObjectModel(setup.events, seed_stacker), ObjectModel(setup.events, seed_runner)},
       end_ms_(end_ms),
       goals_(setup.goals),
-      started_(setup.cycles.size(), false) {
+      started_(setup.cycles.size(), false),
+      lift_{Joint(setup.mech[0].lift, setup.mech[0].lift.min), Joint(setup.mech[1].lift, setup.mech[1].lift.min)} {
     for (const GameCycle& c : setup_.cycles)
         if (c.robot < 0 || c.robot > 1 || c.goal < 0 || c.goal >= static_cast<int>(goals_.size()) || c.level < 0 ||
             c.level > game_max_level)
@@ -69,6 +70,16 @@ int Game::score(int robots_in_midfield) const { return score_[std::clamp(robots_
 
 void Game::step(int t_ms) {
     bool changed = false;
+    for (int robot = 0; robot < 2; ++robot) {
+        std::vector<LiftCmd>& cmds = lift_cmds_[robot];
+        std::size_t used = 0;
+        while (used < cmds.size() && cmds[used].t_ms <= t_ms)
+            lift_[robot].set_target(cmds[used++].target_deg);
+        cmds.erase(cmds.begin(), cmds.begin() + static_cast<std::ptrdiff_t>(used));
+        if (last_step_ms_ >= 0)
+            lift_[robot].step((t_ms - last_step_ms_) / 1000.0);
+    }
+    last_step_ms_ = t_ms;
     for (std::size_t i = 0; i < pending_.size();) {
         const Pending p = pending_[i];
         if (p.done_ms > t_ms) {
@@ -136,6 +147,10 @@ CycleTicket Game::launch(int t_ms, int robot, int goal, int level, const std::op
                                    : models_[robot].place_unit(yellow_up_in_hand, 0.0, level, lift, target, claw);
     const int done_ms = t_ms + static_cast<int>(std::ceil(r.time_s * 1000.0));
     busy_until_[robot] = done_ms;
+    if (r.lift_start_s >= 0.0) {  // Hub (auch bei Setzfehler), danach zurück nach unten
+        lift_cmds_[robot].push_back({t_ms + static_cast<int>(std::ceil(r.lift_start_s * 1000.0)), target});
+        lift_cmds_[robot].push_back({done_ms, m.lift.min});
+    }
     if (r.outcome == CycleOutcome::ok) {
         // Pin oder Cup wie beim Ablegen: nach der Stapelfolge, die Teile auf dem Weg zum Goal mitgezählt.
         (pieces_on(goal) % 2 == 0 ? held_[robot].pins : held_[robot].cups) = 1;
@@ -230,6 +245,8 @@ void Game::cancel(int t_ms, int robot) {
         else
             ++i;
     }
+    lift_cmds_[robot].clear();
+    lift_[robot].set_target(setup_.mech[robot].lift.min);
     Hand& h = hand_[robot];
     if (h.unit && h.unit_ready_ms > t_ms) {
         h.unit = false;
