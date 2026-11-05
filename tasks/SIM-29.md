@@ -2,7 +2,7 @@
 id: SIM-29
 phase: "5"
 titel: Lift-Bewegung in der Simulation: Liftwinkel im Match fahren, ins Log schreiben, im Viewer anzeigen
-status: review
+status: done
 owner: arjanssen
 branch: ticket/sim-29
 depends: [SIM-04, SIM-07, SIM-22]
