@@ -37,4 +37,4 @@ Stand: fertig, im PR. Schritt 1 ergab: Logspalten lift_deg/lift_set_deg und die 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-05 · Máté (mit Claude) · Ticket angelegt (als SIM-29, da SIM-28 belegt) · –
-2026-11-05 · arjanssen (Claude) · Lift im Match: Game-Joint, Log-Spalten, Tests, ADR-009 Nachtrag · siehe PR
+2026-11-05 · arjanssen (Claude) · Lift im Match: Game-Joint, Log-Spalten, Tests, ADR-009 Nachtrag · 87cc54c

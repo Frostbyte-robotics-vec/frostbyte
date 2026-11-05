@@ -26,7 +26,7 @@ Status: angenommen (1. Nov 2026), Ticket SIM-04. docs/plan.md beschreibt SIM-04 
 - `run_match` schreibt `lift_deg` und `lift_set_deg` nur mit Spielzustand (wie `score`, `has_cup`); ohne bleiben sie leer (nichts erfunden). Arm und Greifer bleiben leer (noch nicht gefahren).
 - **Näherung:** Die Dauer des Hubs wird beim Start des Zyklus vom unteren Anschlag aus berechnet (`time_to_reach`). Beginnt ein Zyklus, solange der Lift noch zurückfährt, weicht der Ist-Winkel kurz vom Plan ab (Gelenk fährt vom echten Winkel); die Zyklusdauer ändert das nicht.
 - Ebene 0 = untere Endlage: der erste Stein je Goal bewegt den Lift nicht.
-- Die Höhe über SG3 prüft weiter nur der RuleGuard (Höhe ist nicht modelliert); der Lift bleibt durch das Gelenk in seinen Endlagen.
+- SG3 (Höhe) wird in der Simulation weiter nicht geprüft: die Höhe ist nicht modelliert (Geometrie aus M-09/M-11, Winkel-Höhen-Tabelle gesperrt bis gemessen). Der Lift bleibt nur durch das Gelenk in seinen Endlagen. Die Prüfung gehört zu einem eigenen Ticket nach der Messung.
 
 ## Am Roboter zu prüfen (SIM-29)
 - Lift-Grenzen und -Geschwindigkeiten sind Schätzungen (M-01/M-11), ebenso die Ebenenhöhen als lineare Teilung von min..max.

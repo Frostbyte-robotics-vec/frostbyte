@@ -111,10 +111,29 @@ Rows parse(const std::string& csv) {
     return out;
 }
 
+RouteControl test_control() {
+    RouteControl c;
+    c.motion.max_volts = 11.5;
+    c.motion.track_width_in = 12.0;
+    c.motion.follow_max_volts = 8.0;
+    c.lateral.kp = 1.0;
+    c.lateral.kd = 0.08;
+    c.lateral.out_max_v = 12.0;
+    c.angular.kp = 0.15;
+    c.angular.ki = 0.5;
+    c.angular.kd = 0.01;
+    c.angular.i_zone = 10.0;
+    c.angular.i_max_v = 2.0;
+    c.angular.out_max_v = 12.0;
+    return c;
+}
+
 SimConfig load(const std::string& stacker, const std::string& runner) {
     const std::string fx = FB_TEST_FIXTURES;
     SimConfig cfg = load_config(fx + "/sim_params_game.json", fx + "/field_game.json", fx + "/" + stacker,
                                 fx + "/" + runner, "none");
+    cfg.stacker.control = test_control();
+    cfg.runner.control = test_control();
     return cfg;
 }
 
