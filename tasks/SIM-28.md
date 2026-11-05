@@ -2,7 +2,7 @@
 id: SIM-28
 phase: "5"
 titel: Stau-Modell für Intake-Rollen in der Simulation (Folge von M-04)
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-28
 depends: []
