@@ -13,10 +13,16 @@ Status: angenommen (5. Nov 2026), Ticket M-04.
 - Die Spannung wird auf ±12 V begrenzt. Richtung der Rollen bestimmt das Port-Vorzeichen in `config/` (F-07).
 
 ## Grenzen / offen
-- Die Simulation hat kein Stau-Modell; getestet wird gegen eine kleine Strecke im Test (Spannung → Geschwindigkeit, klemmt auf Wunsch). „Stau im Sim“ aus dem Ticket-Kriterium braucht ein Folgeticket.
+- Stau-Modell der Simulation: siehe Nachtrag SIM-28.
 - Verdrahtung an die HAL und in den Steuer-Task: nach F-07 (Ports) und M-10.
 - Werte in `config/` sind Startwerte (`TODO(HW)`), Tests nehmen eigene.
 - Ob der Runner einen Intake hat, ist offen; beide Konfigurationen sind gleich vorbelegt.
 
 ## Am Roboter zu prüfen
 - Stau-Schwelle und -Zeit gegen echte Staus; Impulsstärke und -dauer; Bumper-Polarität und Entprellzeit; dass `grace_s` den Anlauf deckt.
+
+## Nachtrag SIM-28: Stau-Modell der Simulation
+- `sim/intake_model.*` (`IntakeRollers`): Rollengeschwindigkeit aus der Spannung (`max_deg_s` bei 12 V). Ein Lauf aus dem Stand (Spannung 0 → positiv) klemmt mit der Wahrscheinlichkeit `klemmt`; bei Vorwärtsspannung stehen die Rollen dann. Jeder Rückwärtsimpuls löst den Stau mit `loest_nach_impuls` (0 = nie, 1 = immer). Nur ein Rückwärtsimpuls löst einen Stau, Stopp und Neustart nicht (die Ziehung beim Start wirkt nur, wenn noch nichts klemmt). Nach einem Impuls zieht der Neustart keine neue Klemm-Ziehung, sonst käme ein gelöster Stau sofort zurück.
+- Zahlen nur in `sim/sim_params.json` unter `ereignisse.intake_stau`, `quelle: schaetzung` bis zur Messung (M-05). Rng pro Modell mit Seed vom Aufrufer: gleicher Seed = gleiche Folge.
+- Tests (`test/test_sim_intake_jam.cpp`) nehmen nur 0, 1 und 0.5 als eigene Wahrscheinlichkeiten und hängen nicht an den Platzhalterwerten: gelöster Stau → Lauf bis Bumper; nie gelöst → `error (jam)` nach `max_retries + 1` Staus, 0 V.
+- **Noch nicht im Match-Sim aktiv:** `world`/`cycle` nutzen den Intake weiter über das Ereignismodell (SIM-04). Das Rollenmodell ist die Strecke für den IntakeSubsystem-Test; die Verdrahtung in die Sim-Welt ist Folgeticket SIM-31.

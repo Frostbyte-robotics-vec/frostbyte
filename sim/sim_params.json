@@ -58,6 +58,7 @@
     "boden_einheit":    { "dauer_s": 1.8, "sigma_s": 0.5, "fehlschlag": 0.10, "quelle": "schaetzung" },
     "pin_gelb_oben":    { "loader": 0.95, "boden": 0.50, "quelle": "schaetzung" },
     "greifer_fasst":    { "erfolg": 0.98, "quelle": "schaetzung" },
-    "setzen":           { "erfolg_ebene0": 0.98, "abzug_pro_ebene": 0.01, "quelle": "schaetzung" }
+    "setzen":           { "erfolg_ebene0": 0.98, "abzug_pro_ebene": 0.01, "quelle": "schaetzung" },
+    "intake_stau":      { "rollen_deg_s": 300, "klemmt": 0.10, "loest_nach_impuls": 0.80, "quelle": "schaetzung (SIM-28: nie gemessen; klemmt = Anteil der Läufe, loest_nach_impuls = Anteil der Impulse, die den Stau lösen; echte Werte aus M-05)" }
   }
 }
