@@ -2,7 +2,7 @@
 id: SIM-31
 phase: "5"
 titel: Intake-Rollenmodell mit Stau (SIM-28) in die Sim-Welt und den Zyklus verdrahten
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-31
 depends: []
