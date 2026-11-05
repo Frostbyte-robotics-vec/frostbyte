@@ -258,7 +258,29 @@ TEST_CASE("Claw: Spannung wird auf 12 V begrenzt") {
     CHECK(b.out.volts == doctest::Approx(-12.0));
 }
 
-TEST_CASE("Claw: config/ der beiden Roboter ist gueltig") {
-    CHECK(ClawSubsystem(config::stacker::claw, 0.0).error() == ClawError::none);
-    CHECK(ClawSubsystem(config::runner::claw, 0.0).error() == ClawError::none);
+TEST_CASE("Claw: config/ ist gesperrt, bis Weg und Stromschwellen gemessen sind (M-13)") {
+    CHECK(ClawSubsystem(config::stacker::claw, 0.0).error() == ClawError::config);
+    CHECK(ClawSubsystem(config::runner::claw, 0.0).error() == ClawError::config);
+    CHECK_FALSE(ClawSubsystem(ClawConfig{}, 0.0).request_open(0.0));  // Standardwerte raten nichts
+}
+
+TEST_CASE("Claw: Modi haben getrennte Schwellen") {
+    // Strom im Stall: Pin 4 V * 0.18 = 0.72 A >= 0.6 A -> Griff; Cup 6 V * 0.18 = 1.08 A < 1.2 A -> kein Griff.
+    Bench pin;
+    pin.open_it();
+    pin.plant.obj_deg = 40.0;
+    pin.plant.amps_per_v = 0.18;
+    pin.claw.request_close(ClawMode::pin, pin.t);
+    pin.run(1.0);
+    CHECK(pin.claw.state() == ClawState::held);
+
+    Bench cup;
+    cup.open_it();
+    cup.plant.obj_deg = 40.0;
+    cup.plant.amps_per_v = 0.18;
+    cup.claw.request_close(ClawMode::cup, cup.t);
+    cup.run(1.0);
+    CHECK(cup.claw.state() == ClawState::closing);
+    cup.run(0.6);
+    CHECK(cup.claw.result() == ClawResult::missed);
 }

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 #include "core/state_machine.hpp"
 
@@ -15,19 +16,21 @@ namespace frostbyte {
 enum class ClawMode { cup, pin };
 
 struct ClawModeConfig {
-    double close_v = 0.0;    // Schließspannung (positiv)
-    double hold_v = 0.0;     // Haltespannung nach dem Griff (>= 0), klein genug gegen Überhitzen
-    double plateau_a = 0.0;  // Strom, ab dem der Stillstand als Griff zählt
+    double close_v = 0.0;  // Schließspannung (positiv)
+    double hold_v = 0.0;   // Haltespannung nach dem Griff (>= 0), klein genug gegen Überhitzen
+    double plateau_a =
+        std::numeric_limits<double>::quiet_NaN();  // Strom, ab dem der Stillstand als Griff zählt (messen; NaN sperrt)
 };
 
 struct ClawConfig {
-    double open_v = 0.0;            // Öffnen (negativ); Anschlag = Stillstand trotz Spannung
-    double empty_travel_deg = 0.0;  // Weg von offen bis ganz geschlossen ohne Objekt
-    double empty_margin_deg = 5.0;  // näher als das am leeren Ende gilt als nichts gegriffen
-    double grace_s = 0.2;           // Anlaufzeit nach jedem Start, in der Stillstand/Strom nicht zählt
-    double stall_deg_s = 10.0;      // langsamer als das gilt als "steht"
-    double plateau_s = 0.1;         // so lange in Folge steht + Strom über Schwelle -> Griff
-    double open_settle_s = 0.1;     // so lange in Folge am Anschlag -> offen
+    double open_v = 0.0;  // Öffnen (negativ); Anschlag = Stillstand trotz Spannung
+    double empty_travel_deg =
+        std::numeric_limits<double>::quiet_NaN();  // Weg offen -> ganz zu ohne Objekt (messen; NaN sperrt)
+    double empty_margin_deg = 5.0;                 // näher als das am leeren Ende gilt als nichts gegriffen
+    double grace_s = 0.2;                          // Anlaufzeit nach jedem Start, in der Stillstand/Strom nicht zählt
+    double stall_deg_s = 10.0;                     // langsamer als das gilt als "steht"
+    double plateau_s = 0.1;                        // so lange in Folge steht + Strom über Schwelle -> Griff
+    double open_settle_s = 0.1;                    // so lange in Folge am Anschlag -> offen
     double open_timeout_s = 1.5;
     double close_timeout_s = 1.5;
     ClawModeConfig cup;

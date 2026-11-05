@@ -12,6 +12,8 @@ Status: angenommen (5. Nov 2026), Ticket M-03.
 - **Sicher bei Ausfall:** Motor weg oder NaN → `error (sensor)`, 0 V, Lage unbekannt; erst `request_open` heilt. Ungültige Konfiguration → `error (config)`, Befehle abgelehnt. Spannung ±12 V begrenzt.
 - **Strom als Eingang:** `hal::Motor` hat noch kein `current_a()`. Das Subsystem nimmt den Strom über `ClawSensor`; die HAL-Erweiterung (ProsMotor `get_current_draw`, SimMotor) ist ein eigenes Ticket (F-08), damit die Schnittstellenänderung in einem Zug mit ADR-006 passiert.
 
+- **Gesperrt bis gemessen:** `empty_travel_deg` und `plateau_a` haben als Standard NaN und stehen nicht in `config/`. Die Claw ist dann `error (config)` und fährt nicht, wie beim Lift (`lift_top_offset_in`). Sonst würde ein zu großer geratener Leerweg das Schließen ins Leere (hoher Strom am Anschlag) als Griff melden. Die Freigabe geschieht in M-13 mit gemessenen Werten.
+
 ## Grenzen / offen
 - Die Simulation hat keine Claw/Strommodell; getestet wird gegen eine Teststrecke (Spannung → Geschwindigkeit, Objekt, Strom im Stall).
 - „50 Griffe, ≥ 48 erkannt“ ist ein Roboter-Kriterium (Abnahme zusammen mit F-08 und der Verdrahtung in einem Folgeticket).
