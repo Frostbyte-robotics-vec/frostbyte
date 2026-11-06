@@ -309,6 +309,25 @@ TEST_CASE("Aufnahme im Lauf: ohne Block aufnahme bleibt es beim Verhalten von SI
     CHECK(br.str() == nr.str());
 }
 
+TEST_CASE("Aufnahme im Lauf: Brücke an, aber nichts in Reichweite -> Rückfallebene wie ohne Block, nichts entfernt") {
+    // Bewusste Rückfallebene (ADR-025, Nachtrag SIM-34): Objekte obenauf oder ohne Koordinaten fehlen im Feldmodell,
+    // deshalb scheitert die Aufnahme ohne Objekt in Reichweite nicht, sondern bleibt die abstrakte Bodeneinheit.
+    // Der Runner steht bei (20, 0): beide Cups des Testfelds liegen außerhalb der Reichweite.
+    const std::string f = FB_TEST_FIXTURES;
+    const auto run_with = [&](const char* params, std::ostringstream& s, std::ostringstream& r) {
+        SimConfig cfg = load_config(f + "/" + params, f + "/field_game_objects.json", f + "/empty.route",
+                                    f + "/game_floor_intake.route", "none");
+        return run_match(cfg, 1, s, r);
+    };
+    std::ostringstream bs, br, ns, nr;
+    const RunResult bridge = run_with("sim_params_game_objects.json", bs, br);
+    const RunResult off = run_with("sim_params_game_objects_noreach.json", ns, nr);
+    CHECK(bridge.object_picks == 0);
+    CHECK(off.object_picks == 0);
+    CHECK(br.str() == nr.str());  // gleiche Aufnahme, gleiche Ziehungen, gleiches Log
+    CHECK(bs.str() == ns.str());
+}
+
 TEST_CASE("Aufnahme im Lauf: ein umgestoßener Cup lässt sich nur mit dem Zuschlag schlechter aufnehmen") {
     const std::string f = FB_TEST_FIXTURES;
     const auto run_with = [&](const char* params) {

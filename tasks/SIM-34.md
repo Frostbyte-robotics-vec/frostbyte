@@ -35,3 +35,4 @@ Am echten Roboter zu prüfen: nichts (reine Simulation). Reichweite, Zuschläge 
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-06 · DAVIDCOPCOP (KI) · Ticket angelegt · board: SIM-34 angelegt
 2026-11-06 · arjanssen (KI) · Aufnahme vom Boden mit Objekten verknüpft, Tests, ADR-Nachtrag, SIM-35 angelegt · –
+2026-11-06 · arjanssen (KI) · Review-Punkt aus PR #77 abgearbeitet: Rückfallebene „Brücke an, nichts in Reichweite“ im ADR festgehalten und getestet, cancel-Verhalten im ADR · siehe Commit
