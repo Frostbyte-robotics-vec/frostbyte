@@ -374,3 +374,5 @@ footer .wrap{padding-block:56px 34px;display:grid;gap:40px}
 .page-head .eyebrow{color:var(--frost);margin-bottom:26px}
 .page-head .lead{color:var(--muted-dark)}
 .reach-list .chips{display:flex;padding:0;border:0;gap:8px}
+.credits{font-family:var(--f-mono);font-size:11px;line-height:1.6;color:var(--muted-dark);padding-top:22px;margin-top:22px;border-top:1px solid var(--line-dark)}
+.credits a{color:var(--frost)}

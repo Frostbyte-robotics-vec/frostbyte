@@ -93,6 +93,15 @@ class WebTest(unittest.TestCase):
         for name, html in HTML.items():
             self.assertNotIn('href="#"', html, name)
 
+    def test_freie_fotos_haben_bildnachweis(self):
+        h = HTML["index.html"]
+        for datei in ("worlds-match.jpg", "team-trophy.jpg"):
+            self.assertIn(f"assets/{datei}", h)
+        self.assertIn("Rick Tyler", h)
+        self.assertIn("CC BY-SA 3.0", h)
+        self.assertIn("Wrc Ynapmoc", h)
+        self.assertIn("CC BY 3.0", h)
+
     def test_skript_prueft_fehlende_elemente(self):
         # Beide Seiten teilen assets/site.js; die Sponsoringseite hat kein Hero (#snow) und keine Anker auf Fremdseiten.
         js = (WEB / "assets" / "site.js").read_text(encoding="utf-8")
