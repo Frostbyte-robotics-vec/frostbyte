@@ -30,6 +30,9 @@ sim/collision.*, sim/world.cpp (Kollisionen), tools/viewer/livesim.js (loadEleme
 —
 
 ## Übergabe
+ENTSCHEIDUNG DES MENSCHEN (2026-11-06, Máté): Die Kollision gilt für ALLE Objekte (Cups, Pins, Center-Stacks), nicht nur die Stacks. Der Roboter soll ein Objekt zuerst UMSTOSSEN und, wenn er weiterfährt, danach SCHIEBEN. Die frühere Entscheidung vom 2026-11-05 („Objekte sind unsichtbar“) ist damit überholt. Offen für die Umsetzung (Zahlen nur in sim_params.json, quelle: schaetzung, Tests unabhängig davon): Radius je Objektart, ab wann „umgestoßen“ (Berührung?), wie der Zustand „liegt“ aussieht (Auswirkung auf Punkte/Aufnahme, ADR nötig – Advisor fragen), Schiebe-Reibung/Widerstand für den Roboter, ob der Livesim im Browser dasselbe tut. Ticket-Ziel und Schritt 4 sind neu zu schreiben; PR #73 ist in dieser Richtung zu ersetzen. Ticket bleibt blocked/DAVIDCOPCOP, bis jemand es übernimmt.
+
+(Frühere Übergabe:)
 ÄNDERUNG NÖTIG (KI-Review PR #73, 2026-11-05): Das Ticket und der PR gehen in die falsche Richtung. Objekte sind nicht "nie Hindernis"; das eigentliche Problem war, dass die Center-Stacks (CENTER_STACK_R1/R2/B1/B2) in der Simulation KEIN Kollisionsobjekt sind, obwohl sie in echt im Weg stehen. Zu tun: Stacks als Kollisionskreise in C++ (sim/world.cpp) und im Browser (livesim.js), Radius nur in sim/sim_params.json (quelle: schaetzung), Tests umdrehen (Fahrt in einen Stack erzeugt COLLISION/BLOCKED, nicht vom Platzhalterwert abhängig), ADR-025-Nachtrag neu schreiben, Ziel/Schritt 4 oben anpassen. Offene Fragen an den Menschen: nur Center-Stacks oder alle Objekte? Blockiert, schiebt oder stößt der Roboter sie um? Details: Kommentar im PR #73.
 
 ## Verlauf
@@ -37,3 +40,4 @@ sim/collision.*, sim/world.cpp (Kollisionen), tools/viewer/livesim.js (loadEleme
 2026-11-05 · Máté (mit Claude) · Ticket angelegt (als SIM-30, da SIM-29 für Lift vergeben) · –
 2026-11-05 · arjanssen (KI-Review) · Review korrigiert: Empfehlung ändern, Richtung falsch (Objekte sollen kollidieren) · –
 2026-11-05 · DAVIDCOPCOP-Sitzung (KI) · blocked: Review verlangt Umbau (Center-Stacks als Kollisionsobjekte); offene Fragen für einen Menschen: nur Center-Stacks oder alle Objekte? blockiert, schiebt oder kippt der Roboter sie? · –
+2026-11-06 · matelechner01 (Claude) · Entscheidung des Menschen eingetragen: alle Objekte, erst umstoßen, dann schieben · –
