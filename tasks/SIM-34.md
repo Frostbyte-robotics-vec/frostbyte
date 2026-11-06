@@ -2,7 +2,7 @@
 id: SIM-34
 phase: "5"
 titel: Umgestoßene und verschobene Feldobjekte (SIM-30) wirken auf Aufnahme und Punkte
-status: review
+status: done
 owner: arjanssen
 branch: ticket/sim-34
 depends: [SIM-30]
