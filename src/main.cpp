@@ -11,6 +11,7 @@
 #include "lemlib/api.hpp"             // prueft nur, dass LemLib einbindbar ist; Aufrufe erst hinter hal/ (ADR-001)
 #include "lemlib_regulator.hpp"
 #include "match/controller_feedback.hpp"
+#include "match/routine_screen.hpp"
 #include "port_check.hpp"
 #include "util/rule_guard.hpp"
 
@@ -20,6 +21,7 @@ constexpr std::uint32_t control_period_ms = 10;
 constexpr std::uint32_t display_period_ms = 200;
 constexpr std::uint32_t feedback_period_ms = 100;
 constexpr double driver_run_s = 60.0;  // Skills: ein Fahrerlauf dauert 60 s
+constexpr std::uint32_t menu_period_ms = 100;
 
 // Alles statisch: der Steuer-Task legt nach dem Start nichts an.
 frostbyte::PhaseFlag g_phase;
@@ -47,6 +49,11 @@ frostbyte::MotionController g_motion(config::motion, lateral_regulator(), angula
 // SD-Karte gelesen. TODO(D-09): TuningMode im Steuer-Task mit dem Controller fuettern, take_save_request() im niedrig
 // priorisierten Task mit save_tuning() beantworten und take_event() ins Log schreiben (braucht Logger F-05); Fahrer-Aktionen sperren.
 frostbyte::hal::ProsStorage g_tuning_store("/usd/tuning.txt");
+
+// Routinenmenue (A-11, ADR-030): Auswahl auf der SD-Karte, geladen in initialize(), gespeichert nur im UI-Task (menu_task),
+// nie im Steuer-Task. TODO(A-12): autonomous() liest g_routine_screen.selected() und startet die Route (braucht A-10).
+frostbyte::hal::ProsStorage g_routine_store("/usd/routine.txt");
+frostbyte::RoutineScreen g_routine_screen(frostbyte::make_routine_menu());
 
 // RuleGuard (M-07, ADR-027): letzter Filter vor den Motoren. Noch nicht verdrahtet (Lift, Antrieb und Greifer haben noch keine
 // Ports, TODO(HW)); der Steuer-Task ruft g_rule_guard.filter() auf, sobald Motoren geschrieben werden, und gibt
@@ -91,6 +98,23 @@ void display_task(void*) {
     }
 }
 
+// Routinenmenue auf den LCD-Zeilen 4..7 (Zeile 1..3 gehoeren Name und Takt-Anzeige). Die drei Tasten des Brain-Displays
+// waehlen (links/rechts) und speichern (Mitte). Waehrend der Autonomie gesperrt; sonst (auch ohne Field Control) bedienbar.
+// TODO(HW): am Brain pruefen, ob read_buttons() links/Mitte/rechts so liefert (LCD_BTN_LEFT=4, CENTER=2, RIGHT=1).
+void menu_task(void*) {
+    std::uint32_t now_ms = pros::millis();
+    while (true) {
+        const std::uint8_t b = pros::lcd::read_buttons();
+        const frostbyte::Buttons buttons{(b & LCD_BTN_LEFT) != 0, (b & LCD_BTN_CENTER) != 0, (b & LCD_BTN_RIGHT) != 0};
+        g_routine_screen.update(g_routine_store, buttons, g_phase.get() != frostbyte::Phase::Autonomous);
+        frostbyte::ScreenText text;
+        g_routine_screen.render(text);
+        for (int i = 0; i < frostbyte::ScreenText::rows; ++i)
+            pros::lcd::print(4 + i, "%s", text.line[i]);  // leerer Text loescht eine alte Zeile
+        pros::c::task_delay_until(&now_ms, menu_period_ms);
+    }
+}
+
 }  // namespace
 
 void initialize() {
@@ -101,10 +125,12 @@ void initialize() {
         if (frostbyte::load_tuning(g_tuning_store, tuned) == frostbyte::LoadResult::loaded)
             frostbyte::apply_tuning(tuned, g_lat_pid, g_ang_pid);
     }
+    g_routine_screen.init(g_routine_store);
     if constexpr (config::port_check_enabled)
         return;  // nur Pruefprogramm (F-03): kein Steuer-Task, opcontrol() startet den Scan
     static pros::Task task(control_task, nullptr, TASK_PRIORITY_MAX - 1, TASK_STACK_DEPTH_DEFAULT, "control");
     static pros::Task display(display_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "display");
+    static pros::Task menu(menu_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "menu");
 }
 
 void disabled() { g_phase.set(frostbyte::Phase::Disabled); }

@@ -33,6 +33,8 @@ public:
     const char* selected() const { return count_ > 0 ? names_[index_] : ""; }
     int index() const { return index_; }
     int count() const { return count_; }
+    // Name des Eintrags k (für Anzeige); außerhalb des Katalogs leer.
+    const char* name(int k) const { return (k >= 0 && k < count_) ? names_[k] : ""; }
 
     void handle(MenuKey k) {
         if (count_ == 0)
