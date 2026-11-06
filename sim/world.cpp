@@ -350,7 +350,8 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
     for (RobotRun& r : runs)
         if (r.drive && !r.setup.cmds.empty() && !r.setup.closed_loop)
             r.route = std::make_unique<RouteRunner>(r.setup.cmds, cfg.points, bus, r.setup.self, r.setup.control,
-                                                    game ? &*game : nullptr);
+                                                    game ? &*game : nullptr,
+                                                    FloorObjects{&objects, r.setup.length_in, r.setup.width_in});
     const double dt_s = cfg.schritt_ms / 1000.0;
     const auto truth_of = [](const RobotRun& r) {
         return r.drive ? std::optional<Pose>(r.drive->pose()) : std::nullopt;
@@ -495,6 +496,8 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
             }
         }
     }
+    for (const FieldObject& o : objects.objects())
+        result.object_picks += o.taken ? 1 : 0;
     return result;
 }
 

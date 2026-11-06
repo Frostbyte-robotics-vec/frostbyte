@@ -33,6 +33,13 @@ struct EventParams {
 // Liest ereignisse. Wahrscheinlichkeiten außerhalb [0, 1] oder negative Zeiten: std::runtime_error.
 EventParams load_event_params(const Json& params);
 
+// Zuschlag auf eine Aufnahme (SIM-34): mehr Zeit, höhere Fehlschlagwahrscheinlichkeit (auf 1 begrenzt). Ändert nie die
+// Zahl der Ziehungen.
+struct PickMod {
+    double extra_time_s = 0.0;
+    double extra_fail = 0.0;
+};
+
 struct PickResult {
     bool success = false;
     bool yellow_up = false;  // nur sinnvoll, wenn success
@@ -55,7 +62,7 @@ public:
 
     // Eine Einheit vom Loader bzw. vom Boden aufnehmen: Dauer gleichverteilt mit Mittel duration_s und Streuung
     // sigma_s (nie unter 10 % der mittleren Dauer), Fehlschlag und Ausrichtung als Zufallsereignis.
-    PickResult pick(Source src);
+    PickResult pick(Source src, const PickMod& mod = {});
     bool grasp();
     // Setzen auf Ebene level >= 0: Erfolg = erfolg_ebene0 - abzug_pro_ebene * level, begrenzt auf [0, 1].
     bool place(int level);

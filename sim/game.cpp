@@ -196,13 +196,14 @@ CycleTicket Game::start_toggle(int t_ms, int robot, int toggle, double robot_x_i
     return {true, true, done_ms};
 }
 
-CycleTicket Game::start_intake(int t_ms, int robot, Source src) {
+CycleTicket Game::start_intake(int t_ms, int robot, Source src, const PickMod& mod) {
     Hand& h = hand_[robot];
     if (busy_until_[robot] > t_ms || h.unit) {
         ++rejected_;
         return {};
     }
-    const PickResult p = models_[robot].pick(src);  // immer zuerst und unverändert: gleiche Ziehungen mit und ohne Stau
+    const PickResult p =
+        models_[robot].pick(src, mod);  // immer zuerst und unverändert: gleiche Ziehungen mit und ohne Stau
     const bool jam_model = setup_.intake_cfg[robot].run_v > 0.0 && setup_.jam.jam_prob > 0.0;
     const JamRun jam = jam_model ? run_jam(t_ms, robot) : JamRun{};
     const bool ok = p.success && jam.ok;

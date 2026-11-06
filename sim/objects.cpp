@@ -45,18 +45,18 @@ EventParams load_event_params(const Json& params) {
     return p;
 }
 
-PickResult ObjectModel::pick(Source src) {
+PickResult ObjectModel::pick(Source src, const PickMod& mod) {
     const UnitEventParams& u = src == Source::loader ? p_.loader : p_.floor;
     const double yellow_up = src == Source::loader ? p_.yellow_up_loader : p_.yellow_up_floor;
 
     // Gleichverteilung mit Mittel duration_s und Standardabweichung sigma_s (Halbbreite sigma * sqrt(3)).
     const double spread = u.sigma_s * std::sqrt(3.0) * (2.0 * rng_.uniform() - 1.0);
     PickResult r;
-    r.time_s = std::max(u.duration_s + spread, 0.1 * u.duration_s);
+    r.time_s = std::max(u.duration_s + spread, 0.1 * u.duration_s) + mod.extra_time_s;
     // Feste Zahl Ziehungen je Aufruf: ein Fehlschlag verschiebt die Folge der übrigen nicht.
     const double fail_draw = rng_.uniform();
     const double yellow_draw = rng_.uniform();
-    r.success = fail_draw >= u.fail;
+    r.success = fail_draw >= std::min(u.fail + mod.extra_fail, 1.0);
     r.yellow_up = r.success && yellow_draw < yellow_up;
     return r;
 }

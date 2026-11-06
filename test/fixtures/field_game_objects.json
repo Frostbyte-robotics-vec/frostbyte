@@ -1,0 +1,82 @@
+{
+  "_hinweis": "Testfeld wie field_game.json plus ein Cup in Reichweite des Stackers (-10, 0) und einer weit weg (SIM-34).",
+  "version": 1,
+  "feld_in": 144,
+  "goals": [
+    {
+      "id": "GOAL_RED",
+      "typ": "alliance_red",
+      "hoehe_in": 3.25,
+      "quadrant": "RED_1",
+      "x_in": -30.0,
+      "y_in": -30.0,
+      "anfahrt_deg": 0,
+      "owner": "stacker"
+    },
+    {
+      "id": "GOAL_BLUE",
+      "typ": "alliance_blue",
+      "hoehe_in": 3.25,
+      "quadrant": "BLUE_1",
+      "x_in": 30.0,
+      "y_in": 30.0,
+      "anfahrt_deg": 0,
+      "owner": "runner"
+    }
+  ],
+  "loader": [
+    {
+      "id": "LOADER_T",
+      "x_in": 0.0,
+      "y_in": 40.0
+    }
+  ],
+  "toggles": [
+    {
+      "id": "TOGGLE_T",
+      "quadrant": "BLUE_1",
+      "x_in": 30.0,
+      "y_in": 30.0,
+      "zielfarbe": "blue"
+    }
+  ],
+  "posen": [
+    {
+      "id": "START_STACKER",
+      "x_in": -20.0,
+      "y_in": 0.0,
+      "h_deg": 0
+    },
+    {
+      "id": "START_RUNNER",
+      "x_in": 20.0,
+      "y_in": 0.0,
+      "h_deg": 180
+    },
+    {
+      "id": "NOWHERE",
+      "x_in": null,
+      "y_in": null,
+      "h_deg": null
+    }
+  ],
+  "objekte_start": {
+    "cups": [
+      {
+        "id": "CUP_NEAR",
+        "x_in": -10.0,
+        "y_in": 0.0,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "CUP_FAR",
+        "x_in": 30.0,
+        "y_in": -40.0,
+        "lage": "steht",
+        "ebene": 0
+      }
+    ],
+    "pins": []
+  }
+}

@@ -27,10 +27,14 @@ Zu entscheiden (ADR, Advisor fragen, Regelauslegung vor Annahme beim Menschen be
 tasks/SIM-30.md, docs/decisions/ADR-025-livesim-browser.md (Nachtrag SIM-30), sim/field_objects.*, sim/objects.*, sim/game.*.
 
 ## Übergabe
-Angelegt aus SIM-30 (Rat des Advisors: Brücke zu Aufnahme und Punkten als eigenes Ticket).
+Stand (2026-11-06): umgesetzt, bereit für /finish. ObjectField (nearest_pickup, pick_mod, take, fallen/taken), PickMod in ObjectModel::pick, RouteRunner/SimRouteExecutor (FloorObjects), RunResult.object_picks, sim_params.json feldobjekte.aufnahme, ADR-025-Nachtrag SIM-34 (Rat des Advisors dort festgehalten). Tests: test/test_sim_field_objects.cpp Abschnitt „SIM-34“. Der Browser wird nicht gespiegelt (livesim.js hat keine Aufnahme); Viewer-Anzeige der Objekte ist SIM-35.
+Offen für den Menschen (Regelfragen, im ADR): zählen Positionen verschobener Objekte für Punkte? Fällt Schieben mehrerer Objekte unter SG6? Bis dahin keine Wirkung auf Punkte.
+Am echten Roboter zu prüfen: nichts (reine Simulation). Reichweite, Zuschläge und Intake-Seite sind Schätzwerte; aus Aufnahmeversuchen bestimmen.
 
 **Review (KI, PR #77): Empfehlung ändern.** sim/route_runner.cpp (intake-Block): Brücke an, aber kein Objekt in Reichweite (auch schon aufgenommen) -> start_intake liefert trotzdem eine abstrakte Bodeneinheit. Entweder scheitern lassen oder im ADR als Rückfallebene festhalten; Test „Brücke an, nichts in Reichweite" ergänzen. Nebenbei: cancel() lässt Objekt entfernt (ADR erwähnen).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-06 · DAVIDCOPCOP (KI) · Ticket angelegt · board: SIM-34 angelegt
+2026-11-06 · arjanssen (KI) · Aufnahme vom Boden mit Objekten verknüpft, Tests, ADR-Nachtrag, SIM-35 angelegt · –
+2026-11-06 · arjanssen (KI) · Review-Punkt aus PR #77 abgearbeitet: Rückfallebene „Brücke an, nichts in Reichweite“ im ADR festgehalten und getestet, cancel-Verhalten im ADR · siehe Commit

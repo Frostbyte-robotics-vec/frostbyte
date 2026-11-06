@@ -1,0 +1,4 @@
+start START_STACKER
+goto pose x=-11 y=0 h=0 timeout=10.0
+intake until=unit timeout=6.0 on_timeout=abort
+end hold

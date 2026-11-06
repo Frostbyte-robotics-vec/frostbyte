@@ -153,3 +153,194 @@ TEST_CASE("Integration: Fahrt in einen Cup erzeugt genau ein TOPPLED, schiebt ih
     // Ändert sich das Modell bewusst, beide Zahlen zusammen neu erzeugen.
     CHECK(last_x(log) == doctest::Approx(-18.643).epsilon(0.0001));
 }
+
+// ---- SIM-34: Aufnahme vom Boden ----
+
+namespace {
+
+RouteControl route_control() {
+    RouteControl c;
+    c.motion.max_volts = 11.5;
+    c.motion.track_width_in = 12.0;
+    c.motion.follow_max_volts = 8.0;
+    c.lateral.kp = 1.0;
+    c.lateral.kd = 0.08;
+    c.lateral.out_max_v = 12.0;
+    c.angular.kp = 0.15;
+    c.angular.ki = 0.5;
+    c.angular.kd = 0.01;
+    c.angular.i_zone = 10.0;
+    c.angular.i_max_v = 2.0;
+    c.angular.out_max_v = 12.0;
+    return c;
+}
+
+ObjectField pickup_field(std::vector<FieldObject> list) {
+    ObjectField f(std::move(list), 0.25);
+    PickupParams p;
+    p.reach_in = 3.0;
+    p.fallen = PickMod{1.5, 0.5};
+    f.set_pickup(p);
+    return f;
+}
+
+}  // namespace
+
+TEST_CASE("Aufnahme: ohne Block aufnahme wird nichts gefunden") {
+    ObjectField f({cup("C1", 6.0, 0.0)}, 0.25);
+    CHECK(f.nearest_pickup(robot_at(0.0)) == -1);
+}
+
+TEST_CASE("Aufnahme: nur Objekte in Reichweite des Umrisses, das nächste zum Roboterzentrum gewinnt") {
+    // Roboter 10 x 10 bei 0: Vorderkante 5, Reichweite 3 -> Objekte bis Kreisrand x = 8 sind aufnehmbar.
+    ObjectField f = pickup_field({cup("FAR", 12.0, 0.0), cup("B", 9.5, 3.0), cup("A", 9.5, -1.0)});
+    CHECK(f.nearest_pickup(robot_at(0.0)) == 2);  // A: Kreis ab 7.5 in Reichweite und näher als B
+    ObjectField none = pickup_field({cup("FAR", 12.0, 0.0)});
+    CHECK(none.nearest_pickup(robot_at(0.0)) == -1);
+}
+
+TEST_CASE("Aufnahme: bei gleichem Abstand gewinnt das erste Objekt der Liste") {
+    ObjectField f = pickup_field({cup("A", 9.0, 1.0), cup("B", 9.0, -1.0)});
+    CHECK(f.nearest_pickup(robot_at(0.0)) == 0);
+}
+
+TEST_CASE("Aufnahme: nur ein vom Roboter umgestoßenes Objekt bekommt den Zuschlag") {
+    ObjectField f =
+        pickup_field({cup("STEHT", 9.0, 5.0), cup("LIEGT_VON_ANFANG", 9.0, -5.0, false), cup("KIPPT", 6.0, 0.0)});
+    f.step(robot_at(0.0), 144.0);  // KIPPT wird umgestoßen
+    CHECK(f.pick_mod(0).extra_time_s == 0.0);
+    CHECK(f.pick_mod(0).extra_fail == 0.0);
+    CHECK(f.pick_mod(1).extra_time_s == 0.0);  // Pin am Boden liegt normalerweise: kein Zuschlag
+    CHECK(f.pick_mod(2).extra_time_s == doctest::Approx(1.5));
+    CHECK(f.pick_mod(2).extra_fail == doctest::Approx(0.5));
+    CHECK(f.pick_mod(-1).extra_fail == 0.0);
+}
+
+TEST_CASE("Aufnahme: ein aufgenommenes Objekt stört die Kollision nicht mehr und wird nicht noch einmal gefunden") {
+    ObjectField f = pickup_field({cup("C1", 6.0, 0.0)});
+    const int i = f.nearest_pickup(robot_at(0.0));
+    REQUIRE(i == 0);
+    f.take(i);
+    const ObjectContact c = f.step(robot_at(0.0), 144.0);  // würde sonst kippen
+    CHECK(c.toppled.empty());
+    CHECK(c.robot_shift.x_in == 0.0);
+    CHECK(f.nearest_pickup(robot_at(0.0)) == -1);
+    f.take(7);  // ungültiger Index: keine Wirkung
+}
+
+TEST_CASE("Aufnahme: load_field_objects liest aufnahme, ungültige Zahlen werden abgelehnt") {
+    const Json field = parse_json(R"({"objekte_start": {"cups": [], "pins": []}})");
+    const ObjectField f =
+        load_field_objects(parse_json(R"({"feldobjekte": {"radius_in": {"cup": 1, "pin": 1}, "roboter_anteil": 0.5,
+            "aufnahme": {"reichweite_in": 2.5, "liegt_zusatz_dauer_s": 1.0, "liegt_zusatz_fehlschlag": 0.25}}})"),
+                           field);
+    CHECK(f.pickup().reach_in == doctest::Approx(2.5));
+    CHECK(f.pickup().fallen.extra_time_s == doctest::Approx(1.0));
+    CHECK(f.pickup().fallen.extra_fail == doctest::Approx(0.25));
+    CHECK(load_field_objects(
+              parse_json(R"({"feldobjekte": {"radius_in": {"cup": 1, "pin": 1}, "roboter_anteil": 0.5}})"), field)
+              .pickup()
+              .reach_in < 0.0);
+    CHECK_THROWS(
+        load_field_objects(parse_json(R"({"feldobjekte": {"radius_in": {"cup": 1, "pin": 1}, "roboter_anteil": 0.5,
+            "aufnahme": {"reichweite_in": -1, "liegt_zusatz_dauer_s": 1.0, "liegt_zusatz_fehlschlag": 0.25}}})"),
+                           field));
+    CHECK_THROWS(
+        load_field_objects(parse_json(R"({"feldobjekte": {"radius_in": {"cup": 1, "pin": 1}, "roboter_anteil": 0.5,
+            "aufnahme": {"reichweite_in": 1, "liegt_zusatz_dauer_s": 1.0, "liegt_zusatz_fehlschlag": 1.5}}})"),
+                           field));
+}
+
+TEST_CASE(
+    "Aufnahme: Zuschlag verlängert die Aufnahme und erhöht den Fehlschlag, die Zahl der Ziehungen bleibt gleich") {
+    EventParams e;
+    e.floor = {2.0, 0.5, 0.0};  // Streuung: die Dauer hängt von der Ziehung ab, Fehlschlag 0
+    e.yellow_up_floor = 1.0;
+    e.grasp_success = 0.5;
+    ObjectModel plain(e, 5);
+    ObjectModel modded(e, 5);
+    const PickResult a = plain.pick(Source::floor);
+    const PickResult b = modded.pick(Source::floor, PickMod{1.5, 0.0});
+    CHECK(b.time_s == doctest::Approx(a.time_s + 1.5));
+    CHECK(a.success);
+    CHECK(b.success);
+    // Gleiche Ziehungen: die Folge danach (Dauer der nächsten Aufnahme, dann Greifen) bleibt gleich.
+    const PickResult a2 = plain.pick(Source::floor);
+    const PickResult b2 = modded.pick(Source::floor, PickMod{1.5, 0.0});
+    CHECK(b2.time_s == doctest::Approx(a2.time_s + 1.5));
+    for (int i = 0; i < 20; ++i)
+        CHECK(plain.grasp() == modded.grasp());
+    ObjectModel sure_fail(e, 5);
+    CHECK_FALSE(sure_fail.pick(Source::floor, PickMod{0.0, 1.0}).success);
+}
+
+TEST_CASE("Aufnahme im Lauf: die Route nimmt den Cup in Reichweite, der Cup verschwindet aus dem Feld") {
+    const std::string f = FB_TEST_FIXTURES;
+    SimConfig cfg = load_config(f + "/sim_params_game_objects.json", f + "/field_game_objects.json",
+                                f + "/game_floor_intake.route", f + "/empty.route", "none");
+    std::ostringstream s, r;
+    const RunResult res = run_match(cfg, 1, s, r);
+    CHECK(res.object_picks == 1);
+    CHECK(res.object_topples == 0);  // der Roboter stand still: nichts umgestoßen
+}
+
+TEST_CASE("Aufnahme im Lauf: Fehlschlag lässt den Cup liegen") {
+    const std::string f = FB_TEST_FIXTURES;
+    SimConfig cfg = load_config(f + "/sim_params_game_objects_pickfail.json", f + "/field_game_objects.json",
+                                f + "/game_floor_intake.route", f + "/empty.route", "none");
+    std::ostringstream s, r;
+    CHECK(run_match(cfg, 1, s, r).object_picks == 0);
+}
+
+TEST_CASE("Aufnahme im Lauf: ohne Block aufnahme bleibt es beim Verhalten von SIM-22, Logs gleich") {
+    const std::string f = FB_TEST_FIXTURES;
+    // Referenz: Params ganz ohne feldobjekte. Vergleich: feldobjekte (Körper) vorhanden, aber ohne aufnahme.
+    SimConfig base = load_config(f + "/sim_params_game.json", f + "/field_game_objects.json",
+                                 f + "/game_floor_intake.route", f + "/empty.route", "none");
+    std::ostringstream bs, br;
+    const RunResult b = run_match(base, 1, bs, br);
+    SimConfig no_reach = load_config(f + "/sim_params_game_objects_noreach.json", f + "/field_game_objects.json",
+                                     f + "/game_floor_intake.route", f + "/empty.route", "none");
+    std::ostringstream ns, nr;
+    const RunResult n = run_match(no_reach, 1, ns, nr);
+    CHECK(b.object_picks == 0);
+    CHECK(n.object_picks == 0);
+    CHECK(bs.str() == ns.str());
+    CHECK(br.str() == nr.str());
+}
+
+TEST_CASE("Aufnahme im Lauf: Brücke an, aber nichts in Reichweite -> Rückfallebene wie ohne Block, nichts entfernt") {
+    // Bewusste Rückfallebene (ADR-025, Nachtrag SIM-34): Objekte obenauf oder ohne Koordinaten fehlen im Feldmodell,
+    // deshalb scheitert die Aufnahme ohne Objekt in Reichweite nicht, sondern bleibt die abstrakte Bodeneinheit.
+    // Der Runner steht bei (20, 0): beide Cups des Testfelds liegen außerhalb der Reichweite.
+    const std::string f = FB_TEST_FIXTURES;
+    const auto run_with = [&](const char* params, std::ostringstream& s, std::ostringstream& r) {
+        SimConfig cfg = load_config(f + "/" + params, f + "/field_game_objects.json", f + "/empty.route",
+                                    f + "/game_floor_intake.route", "none");
+        return run_match(cfg, 1, s, r);
+    };
+    std::ostringstream bs, br, ns, nr;
+    const RunResult bridge = run_with("sim_params_game_objects.json", bs, br);
+    const RunResult off = run_with("sim_params_game_objects_noreach.json", ns, nr);
+    CHECK(bridge.object_picks == 0);
+    CHECK(off.object_picks == 0);
+    CHECK(br.str() == nr.str());  // gleiche Aufnahme, gleiche Ziehungen, gleiches Log
+    CHECK(bs.str() == ns.str());
+}
+
+TEST_CASE("Aufnahme im Lauf: ein umgestoßener Cup lässt sich nur mit dem Zuschlag schlechter aufnehmen") {
+    const std::string f = FB_TEST_FIXTURES;
+    const auto run_with = [&](const char* params) {
+        SimConfig cfg = load_config(f + "/" + params, f + "/field_game_objects.json",
+                                    f + "/game_floor_topple_intake.route", f + "/empty.route", "none");
+        cfg.stacker.control = route_control();
+        std::ostringstream s, r;
+        return run_match(cfg, 1, s, r);
+    };
+    const RunResult free_pick = run_with("sim_params_game_objects_fallen_free.json");
+    CHECK(free_pick.object_topples == 1);  // die Fahrt stößt den Cup erst um, dann nimmt der Roboter ihn auf
+    CHECK(free_pick.object_picks == 1);
+    const RunResult sure_fail = run_with("sim_params_game_objects_fallen_sure.json");
+    CHECK(sure_fail.object_topples == 1);
+    CHECK(sure_fail.object_picks == 0);  // Zuschlag Fehlschlag 1: umgestoßen -> Aufnahme scheitert, Cup bleibt liegen
+}
