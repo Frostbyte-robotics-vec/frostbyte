@@ -199,11 +199,11 @@ var FBLive = (function () {
     var share = need(b, 'roboter_anteil', 'feldobjekte');
     if (!(share >= 0 && share <= 1)) throw new Error('sim_params feldobjekte.roboter_anteil muss in [0, 1] liegen');
     var list = [], start = field && field.objekte_start;
-    if (start) [['cups', rc], ['pins', rp]].forEach(function (kind) {
+    if (start) [['cups', rc, 'cup'], ['pins', rp, 'pin']].forEach(function (kind) {
       (start[kind[0]] || []).forEach(function (e) {
         if (typeof e.x_in !== 'number' || typeof e.y_in !== 'number') return;
         if (typeof e.ebene === 'number' && e.ebene !== 0) return;
-        list.push({ id: e.id, x_in: e.x_in, y_in: e.y_in, r_in: kind[1], standing: e.lage !== 'liegt' });
+        list.push({ id: e.id, x_in: e.x_in, y_in: e.y_in, r_in: kind[1], kind: kind[2], standing: e.lage !== 'liegt' });
       });
     });
     return { list: list, share: share };
@@ -387,7 +387,7 @@ var FBLive = (function () {
       // Umriss als geschlossenes Vieleck (4 Ecken, Zoll) für die Anzeige.
       outline: function (n) { var c = cornersOf(boxOf(robots[n])); return [c[0], c[1], c[3], c[2]]; },
       elements: function () { return elements.slice(); },
-      // Feldobjekte mit aktuellem Zustand (standing = steht, sonst liegt), Kopie.
+      // Feldobjekte mit aktuellem Zustand (kind = 'cup' | 'pin', standing = steht, sonst liegt), Kopie.
       objects: function () { return objects.map(function (o) { return Object.assign({}, o); }); },
       speed: function (n) { var r = robots[n]; return (r.left.v + r.right.v) / 2; }
     };
