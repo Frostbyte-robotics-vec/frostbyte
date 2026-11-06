@@ -91,6 +91,10 @@ void DriveModel::set_position(double x_in, double y_in) {
 }
 
 void DriveModel::displace(double dx_in, double dy_in) {
+    const double h_rad = h_deg_ * pi / 180.0;
+    const double along_in = dx_in * std::cos(h_rad) + dy_in * std::sin(h_rad);
+    for (Side* s : {&links_, &rechts_})
+        s->dist_in += along_in;
     x_in_ += dx_in;
     y_in_ += dy_in;
 }

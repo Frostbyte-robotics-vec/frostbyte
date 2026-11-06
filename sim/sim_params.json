@@ -7,7 +7,7 @@
   "feldobjekte": {
     "radius_in": { "cup": 1.58, "pin": 1.58 },
     "roboter_anteil": 0.5,
-    "quelle": "radius_in: Game Manual v2.1 S. A5/A6 (größter Ø 3.16), Zahl aus Ticket SIM-33, noch nicht am PDF geprüft; roboter_anteil: schaetzung (Anteil der Überlappung, den der Roboter beim Schieben eines liegenden Objekts zurückweicht; 0 = Objekt gibt ganz nach, 1 = Wand; Wert aus Fahrversuchen ersetzen, SIM-30)"
+    "quelle": "schaetzung (radius_in: Game Manual v2.1 S. A5/A6 (größter Ø 3.16), Zahl aus Ticket SIM-33, noch nicht am PDF geprüft; roboter_anteil: schaetzung (Anteil der Überlappung, den der Roboter beim Schieben eines liegenden Objekts zurückweicht; 0 = Objekt gibt ganz nach, 1 = Wand; Wert aus Fahrversuchen ersetzen, SIM-30))"
   },
   "motoren": {
     "v5": { "widerstand_ohm": 4.0, "max_strom_A": 2.5, "quelle": "schaetzung (V5-Motor 11 W: Stall bei 12 V etwa 2,5 A; Widerstand daraus grob; SIM-08/M-13 messen; noch von keinem Lader gelesen, F-08)" }

@@ -147,4 +147,9 @@ TEST_CASE("Integration: Fahrt in einen Cup erzeugt genau ein TOPPLED, schiebt ih
         return std::stod(c);  // Spalte tx_in
     };
     CHECK(last_x(log) < last_x(fs.str()) - 1.0);
+    // Dieselbe Endpose prüft der Browser (livesim_test.js, Abschnitt 13). Entstanden mit:
+    // frostbyte_sim --input test/fixtures/objects_input.csv --params test/fixtures/sim_params_objects.json
+    //   --field test/fixtures/field_objects.json --noise none  (Stacker, Zeile t = 3.000 s: tx_in -18.643).
+    // Ändert sich das Modell bewusst, beide Zahlen zusammen neu erzeugen.
+    CHECK(last_x(log) == doctest::Approx(-18.643).epsilon(0.0001));
 }

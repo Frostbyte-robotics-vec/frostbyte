@@ -362,7 +362,9 @@ function runLivesimReferenceTest(FBLive, fx, tolPos_in, tolHead_deg) {
     JSON.stringify(events));
 
   // 13 Feldobjekte (SIM-30): erst umstoßen, dann schieben. Gleiche Fixture-Werte wie test/test_sim_field_objects.cpp
-  // (sim_params_objects.json, field_objects.json, Stacker 6 V bis 1,5 s); Endpose aus frostbyte_sim.
+  // (sim_params_objects.json, field_objects.json, Stacker 6 V bis 1,5 s); Endpose aus frostbyte_sim, erzeugt mit:
+  // frostbyte_sim --input test/fixtures/objects_input.csv --params test/fixtures/sim_params_objects.json
+  //   --field test/fixtures/field_objects.json --noise none (Stacker, t = 3.000 s: tx_in -18.643). C++-Test prüft dieselbe Zahl.
   {
     const dr = (spur, mass) => ({ kS_V: 1.0, kV_V_per_in_s: 0.2, kA_V_per_in_s2: mass, spurbreite_in: spur, mu: 1.0, motor_max_V: 11.5 });
     const objParams = {

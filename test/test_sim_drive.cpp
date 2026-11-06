@@ -248,3 +248,21 @@ TEST_CASE("Seitliches Verschieben ändert Radweg und Tempo nicht") {
     CHECK(m.links_in() == doctest::Approx(d));
     CHECK(m.links_in_s() == doctest::Approx(v));
 }
+
+// SIM-30: Schiebt der Roboter ein Feldobjekt, weicht er zurück, bremst aber nicht auf null: Radweg folgt der wahren
+// Strecke, das Tempo bleibt.
+TEST_CASE("displace: Pose verschoben, Radweg folgt der Strecke in Fahrtrichtung, Tempo bleibt") {
+    DriveModel m(test_params(), Pose{0.0, 0.0, 0.0});
+    run(m, 0.5, 8.0, 8.0);
+    const double d = m.links_in();
+    const double v = m.links_in_s();
+    const double x = m.pose().x_in;
+    m.displace(-0.5, 0.0);
+    CHECK(m.pose().x_in == doctest::Approx(x - 0.5));
+    CHECK(m.links_in() == doctest::Approx(d - 0.5));
+    CHECK(m.rechts_in() == doctest::Approx(d - 0.5));
+    CHECK(m.links_in_s() == doctest::Approx(v));  // set_position würde das Tempo auf null setzen
+    m.displace(0.0, 2.0);                         // quer zur Fahrt: Radweg unverändert
+    CHECK(m.links_in() == doctest::Approx(d - 0.5));
+    CHECK(m.pose().y_in == doctest::Approx(2.0));
+}

@@ -44,8 +44,9 @@ public:
     // Fahrtrichtung geht vom Radweg ab (festgehaltene Räder stehen, der Encoder zählt ihn nicht); Tempo gegen
     // die Verschiebung wird null (SIM-26). Seitliches Verschieben ändert Radweg und Tempo nicht.
     void set_position(double x_in, double y_in);
-    // Nur für Feldobjekte (SIM-30): verschiebt die Pose, Tempo und Radweg bleiben (die Räder drehen weiter, der Roboter
-    // rutscht gegen den Widerstand des Objekts). Anders als set_position kein Anhalten: ein Cup ist keine Wand.
+    // Nur für Feldobjekte (SIM-30): verschiebt die Pose; der Anteil in Fahrtrichtung geht vom Radweg ab (der Roboter
+    // schiebt das Objekt, kommt langsamer voran, die Odometrie zählt nur die echte Strecke). Das Tempo bleibt: anders als
+    // set_position kein Anhalten, ein Cup ist keine Wand.
     void displace(double dx_in, double dy_in);
     double heading_rate_deg_s() const;
 
