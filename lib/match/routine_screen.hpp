@@ -7,11 +7,11 @@
 #include "match/routine_menu.hpp"
 
 // Bildschirm-Logik für das Routinenmenü (A-11, ADR-030): Tasten mit Flankenerkennung, Laden und Speichern mit Statusmeldung,
-// Anzeigezeilen als Text. Reine Logik ohne PROS (die drei Brain-Tasten lesen und zeichnen macht src/). Nur im niedrig
+// Anzeigezeilen als Text. Reine Logik ohne PROS (die drei LLEMU-Tasten lesen und zeichnen macht src/). Nur im niedrig
 // priorisierten UI-Task aufrufen: init() liest und update() schreibt die SD-Karte, nie im 10-ms-Steuer-Task.
 namespace frostbyte {
 
-// Die drei Tasten des Brain-Displays (links, Mitte, rechts); true = gerade gedrückt.
+// Die drei Touch-Tasten von LLEMU am Brain-Display (links, Mitte, rechts); true = gerade gedrückt.
 struct Buttons {
     bool left = false;
     bool center = false;
