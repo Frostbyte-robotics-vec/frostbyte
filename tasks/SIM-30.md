@@ -2,7 +2,7 @@
 id: SIM-30
 phase: "5"
 titel: Feldobjekte (Cups/Pins) sind Kollisionskörper – erst umstoßen, dann schieben
-status: review
+status: done
 owner: DAVIDCOPCOP
 branch: ticket/sim-30
 depends: []
