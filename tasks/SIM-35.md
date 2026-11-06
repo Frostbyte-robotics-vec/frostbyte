@@ -2,7 +2,7 @@
 id: SIM-35
 phase: "5"
 titel: Feldobjekte (Cups/Pins) im Browser-Viewer zeichnen
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-35
 depends: [SIM-30]
