@@ -1,8 +1,10 @@
 #pragma once
 
+#include <array>
 #include <string>
 
 #include "sim/json.hpp"
+#include "util/monotone_table.hpp"
 
 // Mechanismen der Simulation als Gelenke (SIM-04): Lift, Arm und Greifer folgen einem Sollwert mit
 // Geschwindigkeits- und Beschleunigungsgrenze und stoßen an Endlagen an. Alle Zahlen aus sim_params.json
@@ -64,8 +66,22 @@ private:
     Joint joint_;
 };
 
+// Höhe des Roboters (Oberkante) über dem Lift-Winkel (SIM-32): 5 Stützpunkte, monotone Interpolation wie am Roboter
+// (lib/util/monotone_table.hpp). Ohne gültige Tabelle ist die Höhe nicht modelliert; SG3 wird dann nicht geprüft.
+class HeightMap {
+public:
+    // Winkel und Höhe streng steigend und endlich; sonst false und ungültig.
+    bool set(const std::array<double, 5>& angle_deg, const std::array<double, 5>& height_in);
+    bool valid() const { return table_.valid(); }
+    double at(double angle_deg) const { return table_.eval(angle_deg); }
+
+private:
+    MonotoneTable<5> table_;
+};
+
 struct MechanismParams {
     JointParams lift;
+    HeightMap height;
     bool has_arm = false;  // nur der Stacker hat einen Arm
     JointParams arm;
     ClawParams claw;
