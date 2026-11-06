@@ -190,6 +190,25 @@ var FBLive = (function () {
     return out;
   }
 
+  /* Feldobjekte (SIM-30): wie sim/field_objects.cpp. Nur Objekte am Boden (ebene 0) mit Koordinaten; Pins mit lage "liegt"
+     liegen von Anfang an. Ohne params.feldobjekte keine Objekte. */
+  function loadObjects(params, field) {
+    var b = params.feldobjekte;
+    if (!b) return { list: [], share: 0.5 };
+    var rc = need(b.radius_in, 'cup', 'feldobjekte.radius_in', true), rp = need(b.radius_in, 'pin', 'feldobjekte.radius_in', true);
+    var share = need(b, 'roboter_anteil', 'feldobjekte');
+    if (!(share >= 0 && share <= 1)) throw new Error('sim_params feldobjekte.roboter_anteil muss in [0, 1] liegen');
+    var list = [], start = field && field.objekte_start;
+    if (start) [['cups', rc], ['pins', rp]].forEach(function (kind) {
+      (start[kind[0]] || []).forEach(function (e) {
+        if (typeof e.x_in !== 'number' || typeof e.y_in !== 'number') return;
+        if (typeof e.ebene === 'number' && e.ebene !== 0) return;
+        list.push({ id: e.id, x_in: e.x_in, y_in: e.y_in, r_in: kind[1], standing: e.lage !== 'liegt' });
+      });
+    });
+    return { list: list, share: share };
+  }
+
   function startPose(params, field, name, notes) {
     var list = (field && field.posen) || [];
     for (var i = 0; i < list.length; i++) {
@@ -224,6 +243,8 @@ var FBLive = (function () {
     var fieldIn = field && typeof field.feld_in === 'number' && field.feld_in > 0 ? field.feld_in : null;
     if (fieldIn === null) notes.push('Kollision: field.json fehlt oder ohne feld_in, kein Feldrand');
     var elements = loadElements(params, field, notes);
+    var objectCfg = loadObjects(params, field);
+    var objects = objectCfg.list.map(function (o) { return Object.assign({}, o); });
     var events = [];
     var keys = { w: false, a: false, s: false, d: false, shift: false };
     var active = 'stacker';
@@ -263,6 +284,19 @@ var FBLive = (function () {
     }
     function restartLog() { rows.stacker.length = 0; rows.runner.length = 0; pending.stacker.length = 0; pending.runner.length = 0; if (stepNo % logEvery === 0) record(); }
 
+    function touchObjects(r, name) {
+      var half = fieldIn === null ? Infinity : fieldIn / 2, share = objectCfg.share;
+      objects.forEach(function (o) {
+        var m = penetrationBoxCircle(boxOf(r), o);
+        if (!m) return;
+        if (o.standing) { o.standing = false; emit(name, 'TOPPLED:' + o.id); return; }
+        var wantX = o.x_in - m.x * (1 - share), wantY = o.y_in - m.y * (1 - share);
+        var nx = Math.min(Math.max(wantX, -half + o.r_in), half - o.r_in), ny = Math.min(Math.max(wantY, -half + o.r_in), half - o.r_in);
+        r.x_in += m.x * share - (wantX - nx); r.y_in += m.y * share - (wantY - ny);   // wie DriveModel::displace: Tempo bleibt
+        o.x_in = nx; o.y_in = ny;
+      });
+    }
+
     // Reihenfolge wie sim/world.cpp: Roboter untereinander (je zur Hälfte), dann Feldrand; Feldelemente zuletzt.
     function collide() {
       var a = robots.stacker, b = robots.runner;
@@ -274,6 +308,8 @@ var FBLive = (function () {
       var began0 = trackContact(!!mtv, contactOf(a, 'robot')), began1 = trackContact(!!mtv, contactOf(b, 'robot'));
       if (began0) emit('stacker', 'COLLISION:runner');
       if (began1) emit('runner', 'COLLISION:stacker');
+      // Feldobjekte (SIM-30): erst umstoßen, dann schieben; Roboter weicht um seinen Anteil (wie sim/field_objects.cpp).
+      ROBOTS.forEach(function (n) { touchObjects(robots[n], n); });
       ROBOTS.forEach(function (n) {
         var r = robots[n];
         if (fieldIn !== null) {
@@ -321,6 +357,7 @@ var FBLive = (function () {
           r.x_in = r.start.x_in; r.y_in = r.start.y_in; r.h_deg = r.start.h_deg;
           r.contact = {}; r.blockedS = 0; r.blockedSent = false;
         });
+        objects = objectCfg.list.map(function (o) { return Object.assign({}, o); });
         acc_ms = 0; stepNo = 0; events.length = 0;
         restartLog(); seedNotes(); // R beginnt eine neue Aufnahme
       },
@@ -350,6 +387,8 @@ var FBLive = (function () {
       // Umriss als geschlossenes Vieleck (4 Ecken, Zoll) für die Anzeige.
       outline: function (n) { var c = cornersOf(boxOf(robots[n])); return [c[0], c[1], c[3], c[2]]; },
       elements: function () { return elements.slice(); },
+      // Feldobjekte mit aktuellem Zustand (standing = steht, sonst liegt), Kopie.
+      objects: function () { return objects.map(function (o) { return Object.assign({}, o); }); },
       speed: function (n) { var r = robots[n]; return (r.left.v + r.right.v) / 2; }
     };
   }

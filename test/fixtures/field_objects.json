@@ -1,0 +1,38 @@
+{
+  "_hinweis": "Testfeld mit einem Cup direkt vor dem Stacker und einem weit weg (SIM-30), unabhängig von field/field.json.",
+  "version": 1,
+  "feld_in": 144,
+  "posen": [
+    {
+      "id": "START_STACKER",
+      "x_in": -40.0,
+      "y_in": 0.0,
+      "h_deg": 0
+    },
+    {
+      "id": "START_RUNNER",
+      "x_in": 40.0,
+      "y_in": 60.0,
+      "h_deg": 180
+    }
+  ],
+  "objekte_start": {
+    "cups": [
+      {
+        "id": "CUP_X",
+        "x_in": -25.0,
+        "y_in": 0.0,
+        "lage": "steht",
+        "ebene": 0
+      },
+      {
+        "id": "CUP_FAR",
+        "x_in": 0.0,
+        "y_in": -50.0,
+        "lage": "steht",
+        "ebene": 0
+      }
+    ],
+    "pins": []
+  }
+}

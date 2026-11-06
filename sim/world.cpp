@@ -246,6 +246,7 @@ SimConfig load_config(const std::string& params_path, const std::string& field_p
 
     std::optional<RouteNames> names;  // erst, wenn eine Route Zeilen hat (field_min.json u. ä. haben nicht alle Blöcke)
     cfg.points = load_field_points(field);
+    cfg.objects = load_field_objects(params, field);
     const auto robot = [&](const char* name, RouteRobot self, const char* start_id, const std::string& route) {
         RobotSetup r;
         r.name = name;
@@ -316,6 +317,7 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
     RobotRun runs[2] = {RobotRun(cfg.stacker, rng.next()), RobotRun(cfg.runner, rng.next())};
     RobotLog* logs[2] = {&stacker_log, &runner_log};
     // Eigene Zufallsströme des Spiels, nach den Sensor-Seeds gezogen: die Posen bleiben mit und ohne Spielzustand gleich.
+    ObjectField objects = cfg.objects;  // Zustand der Objekte gehört zum Lauf, cfg bleibt unverändert
     std::optional<Game> game;
     if (cfg.game.enabled()) {
         const std::uint64_t seed_stacker = rng.next();
@@ -464,6 +466,19 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
                 runs[1].add_event("COLLISION:" + runs[0].setup.name);
             if (began0)
                 ++result.robot_contacts;
+        }
+        // Feldobjekte: erst umstoßen, dann schieben (SIM-30); Roboter weicht um seinen Anteil.
+        for (RobotRun& r : runs) {
+            if (!r.drive)
+                continue;
+            const ObjectContact oc = objects.step(r.box(), cfg.field_in);
+            for (const std::string& id : oc.toppled) {
+                r.add_event("TOPPLED:" + id);
+                ++result.object_topples;
+            }
+            if (oc.robot_shift.x_in != 0.0 || oc.robot_shift.y_in != 0.0) {
+                r.drive->displace(oc.robot_shift.x_in, oc.robot_shift.y_in);
+            }
         }
         for (RobotRun& r : runs) {
             if (!r.drive)

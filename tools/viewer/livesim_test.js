@@ -360,6 +360,44 @@ function runLivesimReferenceTest(FBLive, fx, tolPos_in, tolHead_deg) {
   check('Referenz enthält Kollisionen (Roboter und Rand)', collisions === 4, collisions);
   check('Livesim erzeugt keine zusätzlichen Kollisionsereignisse', events.stacker.length + events.runner.length === collisions,
     JSON.stringify(events));
+
+  // 13 Feldobjekte (SIM-30): erst umstoßen, dann schieben. Gleiche Fixture-Werte wie test/test_sim_field_objects.cpp
+  // (sim_params_objects.json, field_objects.json, Stacker 6 V bis 1,5 s); Endpose aus frostbyte_sim, erzeugt mit:
+  // frostbyte_sim --input test/fixtures/objects_input.csv --params test/fixtures/sim_params_objects.json
+  //   --field test/fixtures/field_objects.json --noise none (Stacker, t = 3.000 s: tx_in -18.643). C++-Test prüft dieselbe Zahl.
+  {
+    const dr = (spur, mass) => ({ kS_V: 1.0, kV_V_per_in_s: 0.2, kA_V_per_in_s2: mass, spurbreite_in: spur, mu: 1.0, motor_max_V: 11.5 });
+    const objParams = {
+      welt: { schritt_ms: 1, steuer_ms: 10, log_ms: 20, g_in_s2: 386.1 },
+      live: { langsam_faktor: 0.4, ersatzpose_in: { stacker: { x_in: 0, y_in: 0, h_deg: 0 }, runner: { x_in: 0, y_in: 0, h_deg: 0 } } },
+      roboter: { stacker: { antrieb: dr(12, 0.04), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 12, breite: 12 } },
+                 runner: { antrieb: dr(10, 0.03), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 10, breite: 10 } } },
+      feldobjekte: { radius_in: { cup: 2.0, pin: 2.0 }, roboter_anteil: 0.5 }
+    };
+    const objField = { feld_in: 144,
+      posen: [{ id: 'START_STACKER', x_in: -40, y_in: 0, h_deg: 0 }, { id: 'START_RUNNER', x_in: 40, y_in: 60, h_deg: 180 }],
+      objekte_start: { cups: [{ id: 'CUP_X', x_in: -25, y_in: 0, lage: 'steht', ebene: 0 }, { id: 'CUP_FAR', x_in: 0, y_in: -50, lage: 'steht', ebene: 0 },
+                              { id: 'CUP_NULL', x_in: null, y_in: null, lage: 'steht', ebene: 0 }],
+                       pins: [{ id: 'PIN_LIEGT', x_in: 20, y_in: 20, lage: 'liegt', ebene: 0 }, { id: 'PIN_OBEN', x_in: -25, y_in: 0, lage: 'steht', ebene: 1 }] } };
+    const volts = (n, t_ms) => (n === 'stacker' && t_ms < 1500 ? { left_V: 6, right_V: 6 } : { left_V: 0, right_V: 0 });
+    const live = FBLive.create(objParams, objField, { voltsAt: volts });
+    check('Objekte: nur Bodenobjekte mit Koordinaten (CUP_X, CUP_FAR, PIN_LIEGT)', live.objects().map((o) => o.id).join() === 'CUP_X,CUP_FAR,PIN_LIEGT',
+      live.objects().map((o) => o.id).join());
+    check('Objekte: Pin am Boden liegt, Cup steht', live.objects()[2].standing === false && live.objects()[0].standing === true);
+    const topples = [];
+    for (let t = 0; t < 3000; t++) { live.advance(0.001); live.takeEvents().forEach((e) => { if (/^TOPPLED:/.test(e.text)) topples.push(e.text); }); }
+    check('Objekte: genau ein TOPPLED:CUP_X, sonst keins', topples.join() === 'TOPPLED:CUP_X', topples.join());
+    const cup = live.objects()[0];
+    check('Objekte: Cup liegt und wurde nach vorn geschoben', cup.standing === false && cup.x_in > -25 + 1 && Math.abs(cup.y_in) < 1e-6, JSON.stringify(cup));
+    check('Objekte: fernes Objekt unberührt', live.objects()[1].standing === true && live.objects()[1].x_in === 0);
+    const q = live.pose('stacker');
+    check('Objekte: Endpose wie frostbyte_sim (-18.643 in)', Math.abs(q.x_in - (-18.643)) <= 0.1, q.x_in);
+    live.reset();
+    check('Reset stellt die Objekte wieder auf', live.objects()[0].standing === true && live.objects()[0].x_in === -25);
+    const none = FBLive.create(Object.assign({}, objParams, { feldobjekte: undefined }), objField, { voltsAt: volts });
+    check('Ohne feldobjekte in sim_params keine Objekte', none.objects().length === 0);
+  }
+
   return { ok, fail, msgs, maxPos_in: maxPos, maxHead_deg: maxHead };
 }
 if (typeof module !== 'undefined') module.exports = runLivesimTests;
