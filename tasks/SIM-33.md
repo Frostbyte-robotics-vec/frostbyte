@@ -2,9 +2,9 @@
 id: SIM-33
 phase: "5"
 titel: Maße aus dem offiziellen Game Manual v2.1 übernehmen (Spielfeld innen 140.4″ statt 144″, Objektmaße)
-status: todo
-owner:
-branch:
+status: blocked
+owner: DAVIDCOPCOP
+branch: ticket/sim-33
 depends: []
 hw: nein
 ---
@@ -36,8 +36,9 @@ Mit offen: Stufe im Stapel (C-06) steht NICHT im Manual als Zahl; nur Bilder (SC
 tasks/C-08.md, tasks/C-06.md, tasks/SIM-30.md, docs/ref/README.md, field/field.json (`feld_in`), sim/collision.cpp.
 
 ## Übergabe
-Noch nicht begonnen. Die PDF-Datei liegt aktuell nur im Chat (WhatsApp-Export, DOC-20261019-WA0024.pdf); für das Ersetzen in docs/ref/ braucht die Sitzung den Dateipfad vom Menschen.
+Blockiert (2026-11-06, DAVIDCOPCOP/KI): zwei Fragen nur für den Menschen: (1) Welcher Perimeter am Wettkampf/Testfeld: Portable (140.4″) oder Metal (140.5″)? (2) Dateipfad des offiziellen PDF (docs/ref/game_manual_v2.1.txt enthält 140.4 nicht, ist also nicht die offizielle Fassung). Danach frei zur Übernahme. Die PDF-Datei liegt aktuell nur im Chat (WhatsApp-Export, DOC-20261019-WA0024.pdf); für das Ersetzen in docs/ref/ braucht die Sitzung den Dateipfad vom Menschen.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-06 · matelechner01 (Claude) · Ticket angelegt: Maße aus dem offiziellen Manual, Abweichung feld_in 144 vs. 140.4 gefunden · –
+2026-11-06 · DAVIDCOPCOP (KI) · übernommen, auf blocked gesetzt: Perimeter-Entscheidung und PDF-Pfad fehlen · –
