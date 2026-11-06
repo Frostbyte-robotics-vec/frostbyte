@@ -1,7 +1,7 @@
 ---
 id: SIM-30
 phase: "5"
-titel: Feldobjekte (Cups/Pins, Center-Stacks) sind keine Kollisionsobjekte – nur Roboter, Feldrand und Goals
+titel: Feldobjekte (Cups/Pins) sind Kollisionskörper – erst umstoßen, dann schieben
 status: in_progress
 owner: DAVIDCOPCOP
 branch: ticket/sim-30
@@ -10,17 +10,17 @@ hw: nein
 ---
 
 ## Ziel
-Cups (Cones) und Pins, insbesondere die Center-Stacks in der Feldmitte (CENTER_STACK_R1/R2/B1/B2 in field/field.json, objekte_start), dürfen in der Simulation nie als Hindernis wirken: Kein COLLISION-Ereignis, kein Wegschieben, kein BLOCKED, weder in der C++-Simulation (frostbyte_sim) noch im Browser-Livesim. Heute kollidieren in der Simulation nur Roboter untereinander, der Feldrand und (nur im Browser) die Goals mit 4 in (sim_params live.kollision.radius_in.goals); Objekte sind nicht dabei. Dieses Ticket sichert das ab und schließt Lücken.
+Cups und Pins am Boden (objekte_start, ebene 0) sind in der Simulation Kollisionskörper (Entscheidung des Menschen 2026-11-06): Berührt ein Roboter ein stehendes Objekt, kippt es (Ereignis `TOPPLED:<id>`, einmal je Objekt); fährt er weiter, wird es geschoben. In der C++-Simulation (frostbyte_sim) und im Browser-Livesim gleich. Auswirkungen auf Aufnahme und Punkte sind NICHT Teil dieses Tickets (siehe SIM-34).
 
 Schritte:
-1. Prüfen (C++ und tools/viewer/livesim.js): Kann ein Objekt aus objekte_start (Cup/Pin, auch Center-Stack) irgendwo als Kreis/Box in die Kollision geraten, z. B. über live.kollision.radius_in mit einem Abschnitt wie „objekte_start“ oder durch spätere Erweiterung? Ergebnis im Ticket festhalten.
-2. Eine feste Regel: Kollisionsabschnitte sind eine Positivliste (aktuell nur goals, später ggf. toggles/loader nach Messung). Objekt-Abschnitte werden beim Laden von sim_params abgelehnt oder ignoriert, mit Hinweis.
-3. Tests (C++ und JS, test_livesim.py / livesim_test.js): Roboter fährt durch die Feldmitte über CENTER_STACK_*: keine COLLISION-/BLOCKED-Ereignisse, Pose ungestört. Gegenprobe: Goal-Kollision im Browser bleibt wie bisher.
-4. Als ADR-Nachtrag festhalten (Entscheidung des Menschen 2026-11-05): Objekte sind für die Kollision unsichtbar; Aufnahme und Setzen laufen über Ereignisse (SIM-04), nicht über Geometrie.
+1. Kreismodell mit Zustand steht/liegt, Schiebe-Anteil des Roboters (`roboter_anteil`), Objekte bleiben im Feld, keine Objekt-Objekt-Kollision (sim/field_objects.*, DriveModel::displace).
+2. Zahlen nur in sim/sim_params.json, Block `feldobjekte` (Radius je Art, Anteil, mit quelle); ohne Block keine Objekte.
+3. Livesim (livesim.js) spiegelt das Modell, `live.objects()`.
+4. Tests mit eigenen Fixture-Werten (C++ und JS, gleiche Szene, Endpose aus frostbyte_sim); ADR-025-Nachtrag SIM-30; Token `TOPPLED:<id>` in docs/log_format.md.
 
 ## Fertig, wenn …
-- Tests in C++ und Browser belegen: Fahrt über Center-Stacks und andere Objekte erzeugt keine Kollision und verändert die Pose nicht
-- Ein Kollisionsabschnitt für Objekte wird abgelehnt oder ignoriert; Goals-Kollision unverändert
+- Test: Fahrt in einen Cup erzeugt genau ein TOPPLED, danach wird er geschoben und der Roboter gebremst; Gegenprobe ohne Objekte ist unverändert; Berührung ohne Überlappung tut nichts; Objekt an der Wand bleibt im Feld (C++ und Browser)
+- Livesim und C++ erreichen in der gemeinsamen Szene dieselbe Endpose (≤ 0,1 in); Goal-Kollision im Browser unverändert
 - ADR-Nachtrag geschrieben; Laptop-Tests grün, `python tools/board.py validate` grün
 
 ## Kontext
@@ -30,10 +30,8 @@ sim/collision.*, sim/world.cpp (Kollisionen), tools/viewer/livesim.js (loadEleme
 —
 
 ## Übergabe
-ENTSCHEIDUNG DES MENSCHEN (2026-11-06, Máté): Die Kollision gilt für ALLE Objekte (Cups, Pins, Center-Stacks), nicht nur die Stacks. Der Roboter soll ein Objekt zuerst UMSTOSSEN und, wenn er weiterfährt, danach SCHIEBEN. Die frühere Entscheidung vom 2026-11-05 („Objekte sind unsichtbar“) ist damit überholt. Offen für die Umsetzung (Zahlen nur in sim_params.json, quelle: schaetzung, Tests unabhängig davon): Radius je Objektart, ab wann „umgestoßen“ (Berührung?), wie der Zustand „liegt“ aussieht (Auswirkung auf Punkte/Aufnahme, ADR nötig – Advisor fragen), Schiebe-Reibung/Widerstand für den Roboter, ob der Livesim im Browser dasselbe tut. Ticket-Ziel und Schritt 4 sind neu zu schreiben; PR #73 ist in dieser Richtung zu ersetzen. Ticket bleibt blocked/DAVIDCOPCOP, bis jemand es übernimmt.
-
-(Frühere Übergabe:)
-ÄNDERUNG NÖTIG (KI-Review PR #73, 2026-11-05): Das Ticket und der PR gehen in die falsche Richtung. Objekte sind nicht "nie Hindernis"; das eigentliche Problem war, dass die Center-Stacks (CENTER_STACK_R1/R2/B1/B2) in der Simulation KEIN Kollisionsobjekt sind, obwohl sie in echt im Weg stehen. Zu tun: Stacks als Kollisionskreise in C++ (sim/world.cpp) und im Browser (livesim.js), Radius nur in sim/sim_params.json (quelle: schaetzung), Tests umdrehen (Fahrt in einen Stack erzeugt COLLISION/BLOCKED, nicht vom Platzhalterwert abhängig), ADR-025-Nachtrag neu schreiben, Ziel/Schritt 4 oben anpassen. Offene Fragen an den Menschen: nur Center-Stacks oder alle Objekte? Blockiert, schiebt oder stößt der Roboter sie um? Details: Kommentar im PR #73.
+Stand (2026-11-06): umgesetzt und getestet, bereit für Review. C++: sim/field_objects.*, world.cpp (nach Roboter–Roboter, vor Feldrand), DriveModel::displace; Browser: livesim.js (touchObjects); Tests test/test_sim_field_objects.cpp und livesim_test.js Abschnitt 13; ADR-025-Nachtrag SIM-30. Folgeticket SIM-34 (Wirkung auf Aufnahme/Punkte). Alter PR #73 (Richtung „unsichtbar“) wurde auf demselben Branch zurückgebaut und weiterverwendet.
+Am echten Roboter zu prüfen: nichts (reine Simulation). Offen: `roboter_anteil` und Radien sind Schätzwerte bzw. Manualwerte (SIM-33 prüft gegen das PDF); Anteil aus echten Schiebeversuchen bestimmen.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
@@ -41,3 +39,4 @@ ENTSCHEIDUNG DES MENSCHEN (2026-11-06, Máté): Die Kollision gilt für ALLE Obj
 2026-11-05 · arjanssen (KI-Review) · Review korrigiert: Empfehlung ändern, Richtung falsch (Objekte sollen kollidieren) · –
 2026-11-05 · DAVIDCOPCOP-Sitzung (KI) · blocked: Review verlangt Umbau (Center-Stacks als Kollisionsobjekte); offene Fragen für einen Menschen: nur Center-Stacks oder alle Objekte? blockiert, schiebt oder kippt der Roboter sie? · –
 2026-11-06 · matelechner01 (Claude) · Entscheidung des Menschen eingetragen: alle Objekte, erst umstoßen, dann schieben · –
+2026-11-06 · DAVIDCOPCOP (KI) · umgesetzt: Objekte kippen und werden geschoben (C++ und Livesim), ADR-Nachtrag, SIM-34 angelegt · –

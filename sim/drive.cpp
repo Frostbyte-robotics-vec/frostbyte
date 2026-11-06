@@ -90,6 +90,11 @@ void DriveModel::set_position(double x_in, double y_in) {
     y_in_ = y_in;
 }
 
+void DriveModel::displace(double dx_in, double dy_in) {
+    x_in_ += dx_in;
+    y_in_ += dy_in;
+}
+
 Pose DriveModel::pose() const { return Pose{x_in_, y_in_, h_deg_}; }
 
 double DriveModel::heading_rate_deg_s() const {

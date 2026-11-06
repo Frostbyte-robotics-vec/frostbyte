@@ -22,7 +22,7 @@ struct FieldObject {
 };
 
 struct ObjectContact {
-    Vec2 robot_shift;                 // Verschiebung des Roboters, damit er das Objekt nicht durchdringt
+    Vec2 robot_shift;                  // Verschiebung des Roboters, damit er das Objekt nicht durchdringt
     std::vector<std::string> toppled;  // ids der in diesem Schritt umgestoßenen Objekte, in Listenreihenfolge
 };
 

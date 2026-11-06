@@ -28,7 +28,8 @@ ObjectContact ObjectField::step(const Box& robot, double field_in) {
         const double new_x = std::clamp(want_x, -half + o.r_in, half - o.r_in);
         const double new_y = std::clamp(want_y, -half + o.r_in, half - o.r_in);
         // Was das Objekt nicht abfängt (Wand), trägt der Roboter.
-        const Vec2 shift{mtv->x_in * robot_share_ + (want_x - new_x) * -1.0, mtv->y_in * robot_share_ + (want_y - new_y) * -1.0};
+        const Vec2 shift{mtv->x_in * robot_share_ + (want_x - new_x) * -1.0,
+                         mtv->y_in * robot_share_ + (want_y - new_y) * -1.0};
         o.x_in = new_x;
         o.y_in = new_y;
         out.robot_shift.x_in += shift.x_in;

@@ -82,7 +82,8 @@ TEST_CASE("Objekte: Objekt an der Wand wird nicht aus dem Feld geschoben, der Ro
 }
 
 TEST_CASE("Objekte: load_field_objects nimmt nur Objekte am Boden mit Koordinaten, Radius je Art") {
-    const Json params = parse_json(R"({"feldobjekte": {"radius_in": {"cup": 1.5, "pin": 1.25}, "roboter_anteil": 0.4}})");
+    const Json params =
+        parse_json(R"({"feldobjekte": {"radius_in": {"cup": 1.5, "pin": 1.25}, "roboter_anteil": 0.4}})");
     const Json field = parse_json(R"({"objekte_start": {
         "cups": [ {"id":"C1","x_in":1,"y_in":2,"lage":"steht","ebene":0}, {"id":"C2","x_in":null,"y_in":null,"lage":"steht","ebene":0} ],
         "pins": [ {"id":"P1","x_in":3,"y_in":4,"lage":"liegt","ebene":0}, {"id":"P2","x_in":5,"y_in":6,"lage":"steht","ebene":1} ] }})");
@@ -98,14 +99,17 @@ TEST_CASE("Objekte: load_field_objects nimmt nur Objekte am Boden mit Koordinate
 }
 
 TEST_CASE("Objekte: ohne Block feldobjekte in sim_params gibt es keine Objekte") {
-    const Json field = parse_json(R"({"objekte_start": {"cups": [ {"id":"C1","x_in":1,"y_in":2,"lage":"steht","ebene":0} ], "pins": []}})");
+    const Json field = parse_json(
+        R"({"objekte_start": {"cups": [ {"id":"C1","x_in":1,"y_in":2,"lage":"steht","ebene":0} ], "pins": []}})");
     CHECK(load_field_objects(parse_json(R"({"welt": {}})"), field).objects().empty());
 }
 
 TEST_CASE("Objekte: ungültige Params werden abgelehnt") {
     const Json field = parse_json(R"({"objekte_start": {"cups": [], "pins": []}})");
-    CHECK_THROWS(load_field_objects(parse_json(R"({"feldobjekte": {"radius_in": {"cup": 0, "pin": 1}, "roboter_anteil": 0.5}})"), field));
-    CHECK_THROWS(load_field_objects(parse_json(R"({"feldobjekte": {"radius_in": {"cup": 1, "pin": 1}, "roboter_anteil": 1.5}})"), field));
+    CHECK_THROWS(load_field_objects(
+        parse_json(R"({"feldobjekte": {"radius_in": {"cup": 0, "pin": 1}, "roboter_anteil": 0.5}})"), field));
+    CHECK_THROWS(load_field_objects(
+        parse_json(R"({"feldobjekte": {"radius_in": {"cup": 1, "pin": 1}, "roboter_anteil": 1.5}})"), field));
 }
 
 TEST_CASE("Integration: Fahrt in einen Cup erzeugt genau ein TOPPLED, schiebt ihn danach und bremst den Roboter") {
@@ -117,7 +121,8 @@ TEST_CASE("Integration: Fahrt in einen Cup erzeugt genau ein TOPPLED, schiebt ih
     const RunResult res = run_match(cfg, 1, s, r);
     const std::string log = s.str();
     std::size_t count = 0;
-    for (std::size_t pos = log.find("TOPPLED:CUP_X"); pos != std::string::npos; pos = log.find("TOPPLED:CUP_X", pos + 1))
+    for (std::size_t pos = log.find("TOPPLED:CUP_X"); pos != std::string::npos;
+         pos = log.find("TOPPLED:CUP_X", pos + 1))
         ++count;
     CHECK(count == 1);
     CHECK(log.find("TOPPLED:CUP_FAR") == std::string::npos);  // weit weg, nie berührt

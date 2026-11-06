@@ -459,8 +459,7 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
                 ++result.object_topples;
             }
             if (oc.robot_shift.x_in != 0.0 || oc.robot_shift.y_in != 0.0) {
-                const Pose p = r.drive->pose();
-                r.drive->set_position(p.x_in + oc.robot_shift.x_in, p.y_in + oc.robot_shift.y_in);
+                r.drive->displace(oc.robot_shift.x_in, oc.robot_shift.y_in);
             }
         }
         for (RobotRun& r : runs) {
