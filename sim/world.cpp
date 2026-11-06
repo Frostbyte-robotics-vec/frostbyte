@@ -398,6 +398,9 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
 
         if (game) {
             game->step(t_ms);
+            for (int i = 0; i < 2; ++i)
+                for (const std::string& e : game->take_events(i, t_ms))
+                    runs[i].add_event(e);
             // SG3 in jedem Schritt (SIM-32): ein Ereignis je Überschreitung, nicht je Schritt. Ohne Höhentabelle nichts.
             for (int i = 0; i < 2; ++i) {
                 const std::optional<double> h = game->lift_height_in(i);

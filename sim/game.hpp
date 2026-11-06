@@ -6,10 +6,12 @@
 #include <vector>
 
 #include "sim/collision.hpp"
+#include "sim/intake_model.hpp"
 #include "sim/json.hpp"
 #include "sim/mechanism.hpp"
 #include "sim/objects.hpp"
 #include "sim/scorer.hpp"
+#include "subsystems/intake.hpp"
 
 // Spielzustand der Simulation (SIM-20, ADR-026): Goals mit Stapel, dazu Zyklen, die ein Szenario (Demo, später der
 // Routenspieler) zu festen Zeiten startet. Ein Zyklus läuft über ObjectModel::run_cycle (Dauer und Zufall), das Ergebnis
@@ -59,6 +61,11 @@ struct GameSetup {
     bool cup_opaque_lower = false;
     // Midfield aus field.json (Quadrat, um 45° gedreht); present = false: kein Roboter zählt dort.
     MidfieldSpec midfield;
+    // Stau der Intake-Rollen (SIM-31, ADR-037): sim_params ereignisse.intake_stau (load_game_params) und die Regelwerte des
+    // IntakeSubsystem je Roboter (config/, setzt frostbyte_sim). Aktiv für start_intake, wenn intake_cfg[robot].run_v > 0
+    // und jam.jam_prob > 0; sonst läuft die Aufnahme wie in SIM-22 ohne Stau. Szenario-Zyklen (cycles) klemmen nie.
+    IntakeJamParams jam;
+    IntakeConfig intake_cfg[2];
 
     bool enabled() const { return !goals.empty(); }
 };
@@ -104,6 +111,8 @@ public:
     CycleTicket start_toggle(int t_ms, int robot, int toggle, double robot_x_in, double robot_y_in);
     // Index des Toggles mit diesem Namen (GameSetup::toggles), -1 wenn unbekannt.
     int toggle_index(const std::string& name) const;
+    // Ereignisse des Roboters (Log-Token, z. B. INTAKE:JAM), die bis t_ms fällig wurden, in zeitlicher Folge (SIM-31).
+    std::vector<std::string> take_events(int robot, int t_ms);
     int rejected_cycles() const { return rejected_; }  // von Routen abgelehnte Befehle
     // Lift des Roboters (SIM-29): Ist- und Sollwinkel; vor dem ersten Zyklus steht er auf der unteren Endlage. Der Lift
     // fährt mit jedem Zyklus zur Höhe der Ebene (nach der Aufnahme und dem Schließen) und danach zurück nach unten.
@@ -151,6 +160,12 @@ private:
     };
 
     void rescore();
+    struct JamRun {
+        bool ok = true;
+        int delay_ms = 0;  // Zeit bis die Rollen wieder ziehen (ok) bzw. bis zum Fehler
+    };
+    // Lässt das echte IntakeSubsystem gegen die Rollen laufen, bis sie ziehen oder der Fehler kommt; Ereignisse landen in events_.
+    JamRun run_jam(int t_ms, int robot);
     int pieces_on(int goal) const;  // Teile auf dem Goal, die unterwegs mitgezählt
     // Zyklus starten (gemeinsam für Szenario und Route); pick_src leer = Einheit ist schon in der Hand.
     CycleTicket launch(int t_ms, int robot, int goal, int level, const std::optional<Source>& pick_src,
@@ -178,6 +193,12 @@ private:
     int skipped_ = 0;
     int rejected_ = 0;
     Hand hand_[2];
+    struct TimedEvent {
+        int t_ms;
+        std::string token;
+    };
+    IntakeRollers rollers_[2];
+    std::vector<TimedEvent> events_[2];  // zeitlich geordnet
 };
 
 }  // namespace frostbyte::sim

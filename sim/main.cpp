@@ -93,6 +93,9 @@ int main(int argc, char** argv) {
                                config::stacker::route_player};
         cfg.runner.control = {config::runner::motion, config::runner::lateral_pid, config::runner::angular_pid,
                               config::runner::route_player};
+        cfg.game.intake_cfg[0] =
+            config::stacker::intake;  // Staus des Intakes laufen mit den Regelwerten des Roboters (SIM-31)
+        cfg.game.intake_cfg[1] = config::runner::intake;
         if (demo)
             frostbyte::sim::apply_demo(cfg, params);
         if (!input.empty()) {
