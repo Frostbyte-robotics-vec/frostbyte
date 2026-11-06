@@ -172,10 +172,6 @@ var FBLive = (function () {
     return { length_in: need(u, 'laenge', 'roboter.' + name + '.umriss_in', true), width_in: need(u, 'breite', 'roboter.' + name + '.umriss_in', true) };
   }
 
-  /* Positivliste (SIM-30): nur diese Abschnitte dürfen Kollisionskreise erzeugen. Cups, Pins und Center-Stacks
-     (objekte_start) sind für die Kollision unsichtbar; spätere Ergänzungen (toggles/loader) erst nach Messung. */
-  var COLLIDING_SECTIONS = ['goals'];
-
   /* Feldelemente als Kreise: Radius je Abschnitt aus params.live.kollision.radius_in (optional; ohne Radius kein Element,
      die C++-Simulation kennt keine Feldelement-Kollision). Punkte mit null-Koordinaten werden übersprungen. */
   function loadElements(params, field, notes) {
@@ -184,10 +180,6 @@ var FBLive = (function () {
     if (!field || !radii) return out;
     Object.keys(radii).forEach(function (section) {
       var r = radii[section];
-      if (COLLIDING_SECTIONS.indexOf(section) < 0) {
-        notes.push('Kollision: Abschnitt "' + section + '" steht nicht auf der Positivliste (' + COLLIDING_SECTIONS.join(', ') + ') und wird ignoriert; Objekte kollidieren nie');
-        return;
-      }
       if (typeof r !== 'number' || !isFinite(r) || r <= 0) throw new Error('sim_params live.kollision.radius_in.' + section + ' ist ungültig');
       var list = field[section];
       if (!Array.isArray(list)) { notes.push('Kollision: field.json hat keinen Abschnitt "' + section + '"'); return; }

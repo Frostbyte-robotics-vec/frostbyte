@@ -1,7 +1,6 @@
 #include <cmath>
 #include <sstream>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -95,29 +94,6 @@ TEST_CASE("Integration: Feldrand hält den Roboter, Ereignis COLLISION:wall") {
     CHECK(std::stod(c[col_ty]) > 72.0 - cfg.stacker.length_in / 2.0 - 1.0);  // und liegt an der Wand
     CHECK(s.str().find("COLLISION:wall") != std::string::npos);
     CHECK(res.wall_contacts == 1);  // ein Kontakt, auch wenn der Roboter weiter gegen die Wand fährt
-}
-
-TEST_CASE("Integration: Fahrt ueber Center-Stacks (Objekte) erzeugt keine Kollision und aendert die Pose nicht") {
-    // SIM-30 / ADR-025 Nachtrag: Cups und Pins sind fuer die Kollision unsichtbar. Vorwaertssicherung: die C++-Welt laedt
-    // objekte_start heute nicht (nur Goals/Zyklen); der Test schlaegt an, sobald jemand Objekte geometrisch einhaengt.
-    auto drive_through = [](const std::string& field_file) {
-        SimConfig cfg = load_config(fixtures + "/sim_params_min.json", fixtures + "/" + field_file,
-                                    fixtures + "/empty.route", fixtures + "/empty.route", "none");
-        cfg.stacker.open_loop = [](int t_ms) {
-            return t_ms < 3800 ? std::make_pair(6.0, 6.0) : std::make_pair(0.0, 0.0);
-        };
-        std::ostringstream s, r;
-        const RunResult res = run_match(cfg, 1, s, r);
-        return std::make_tuple(s.str(), res, std::stod(cells(last_line(s.str()))[col_tx]));
-    };
-    const auto with = drive_through("field_stacks.json");
-    const auto without = drive_through("field_min_start0.json");
-    const double end_x = std::get<2>(with);
-    CHECK(end_x > 23.546 + 5.0);  // ist ueber beide Stacks hinweggefahren
-    CHECK(std::get<0>(with).find("COLLISION") == std::string::npos);
-    CHECK(std::get<1>(with).wall_contacts == 0);
-    CHECK(std::get<1>(with).robot_contacts == 0);
-    CHECK(std::get<0>(with) == std::get<0>(without));  // Pose und Log byte-gleich wie ohne Objekte
 }
 
 TEST_CASE("Integration: zwei Roboter fahren aufeinander zu, überlappen nie und melden COLLISION") {
