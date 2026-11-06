@@ -136,6 +136,7 @@ struct RobotRun {
     std::string route_step;                        // Stand beim letzten Steuertakt
     bool wall_contact = false;
     bool robot_contact = false;
+    bool height_over = false;  // SG3 gerade überschritten (SIM-32)
     int wall_free_steps = 0;
     int robot_free_steps = 0;
 
@@ -333,7 +334,7 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
         r.imu.emplace(s.sensors.imu, s.sensors.noise_scale, r.sensor_seed);
         r.gps.emplace(s.sensors.gps, s.sensors.noise_scale, r.sensor_seed);
         r.est = *s.start;  // der Roboter kennt seine Startpose
-        // Höhe ist nicht modelliert (steht nicht in sim_params.json): SG3 wird hier nicht geprüft.
+        // SG3 (Höhe) prüft die Schleife unten in jedem Schritt aus dem Lift-Winkel (SIM-32); beim Start steht der Lift unten.
         RobotRuleState rs;
         rs.length_in = s.length_in;
         rs.width_in = s.width_in;
@@ -400,6 +401,23 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
             for (int i = 0; i < 2; ++i)
                 for (const std::string& e : game->take_events(i, t_ms))
                     runs[i].add_event(e);
+            // SG3 in jedem Schritt (SIM-32): ein Ereignis je Überschreitung, nicht je Schritt. Ohne Höhentabelle nichts.
+            for (int i = 0; i < 2; ++i) {
+                const std::optional<double> h = game->lift_height_in(i);
+                if (!h)
+                    continue;
+                RobotRun& r = runs[i];
+                RobotRuleState rs;
+                rs.height_in = *h;
+                bool over = false;
+                for (const RuleViolation& v : check_rules(rs))
+                    over = over || v.rule == "SG3";
+                if (over && !r.height_over) {
+                    r.add_event("RULE:SG3");
+                    ++result.rule_violations;
+                }
+                r.height_over = over;
+            }
         }
         if (t_ms % cfg.log_ms == 0) {
             int mid = 0;

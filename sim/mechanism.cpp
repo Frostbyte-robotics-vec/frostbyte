@@ -84,10 +84,28 @@ double Claw::time_to_settle_after_close(bool holding_pin) const {
     return joint_.time_to_reach(holding_pin ? p_.pin_in : 0.0);
 }
 
+bool HeightMap::set(const std::array<double, 5>& angle_deg, const std::array<double, 5>& height_in) {
+    return table_.set(angle_deg, height_in);
+}
+
 MechanismParams load_mechanism_params(const Json& params, const std::string& robot) {
     const Json& m = params.at("roboter").at(robot).at("mechanismen");
     MechanismParams out;
     out.lift = joint_from_json(m.at("lift"), "lift");
+    if (const Json* h = m.at("lift").find("hoehe")) {  // optional (SIM-32): ohne sie ist die Höhe nicht modelliert
+        std::array<double, 5> angle{}, height{};
+        const Json& a = h->at("winkel_deg");
+        const Json& v = h->at("hoehe_in");
+        if (a.size() != 5 || v.size() != 5)
+            throw std::runtime_error("sim_params mechanismen.lift.hoehe: genau 5 Stützpunkte nötig");
+        for (std::size_t i = 0; i < 5; ++i) {
+            angle[i] = a[i].as_number();
+            height[i] = v[i].as_number();
+        }
+        if (!out.height.set(angle, height))
+            throw std::runtime_error(
+                "sim_params mechanismen.lift.hoehe: Werte nicht endlich oder nicht streng steigend");
+    }
     if (const Json* arm = m.find("arm")) {
         out.has_arm = true;
         out.arm = joint_from_json(*arm, "arm");
