@@ -5,10 +5,12 @@
 #include "control/tuning_store.hpp"
 #include "core/control_loop.hpp"
 #include "core/log_format.hpp"  // prueft nur, dass der Log-v1-Schreiber fuer ARM kompiliert; genutzt ab F-05 (ADR-007)
+#include "hal/pros/pros_controller_output.hpp"  // Vibration und Anzeige am Controller (C-04)
 #include "hal/pros/pros_devices.hpp"  // prueft nur, dass die PROS-Wrapper kompilieren; instanziert wird erst mit den Ports (TODO(HW))
 #include "hal/pros/pros_storage.hpp"  // SD-Karte fuer die Tuning-Werte (D-06)
 #include "lemlib/api.hpp"             // prueft nur, dass LemLib einbindbar ist; Aufrufe erst hinter hal/ (ADR-001)
 #include "lemlib_regulator.hpp"
+#include "match/controller_feedback.hpp"
 #include "port_check.hpp"
 #include "util/rule_guard.hpp"
 
@@ -16,6 +18,8 @@ namespace {
 
 constexpr std::uint32_t control_period_ms = 10;
 constexpr std::uint32_t display_period_ms = 200;
+constexpr std::uint32_t feedback_period_ms = 100;
+constexpr double driver_run_s = 60.0;  // Skills: ein Fahrerlauf dauert 60 s
 
 // Alles statisch: der Steuer-Task legt nach dem Start nichts an.
 frostbyte::PhaseFlag g_phase;
@@ -113,4 +117,13 @@ void opcontrol() {
     if constexpr (config::port_check_enabled)
         frostbyte::port_check_run(config::port_expect, config::port_expect_count);
     g_phase.set(frostbyte::Phase::Driver);
+    // Rückmeldung an den Fahrer (C-04) hier, nicht im Steuer-Task: Controllerbefehle blockieren und sind auf 50 ms getaktet.
+    static frostbyte::hal::ProsControllerOutput controller;
+    frostbyte::ControllerFeedback feedback(controller, driver_run_s);
+    const std::uint32_t start_ms = pros::millis();
+    std::uint32_t now_ms = start_ms;
+    while (true) {  // PROS beendet opcontrol(), sobald der Roboter deaktiviert wird
+        feedback.update((now_ms - start_ms) / 1000.0, config::robot_name);
+        pros::c::task_delay_until(&now_ms, feedback_period_ms);
+    }
 }
