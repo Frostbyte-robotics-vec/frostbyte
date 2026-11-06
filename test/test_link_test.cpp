@@ -1,5 +1,8 @@
 #include <cstdint>
 #include <cstring>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include "doctest/doctest.h"
@@ -215,4 +218,26 @@ TEST_CASE("Zeilen fuer das Protokoll: Kopf und Zeile mit Verlust") {
     CHECK(link_log_row(line, sizeof line, LinkRecord{4, 2000, LinkRecord::lost_rtt}) > 0);
     CHECK(std::strcmp(line, "4,2.000,\n") == 0);                // leere Zelle = verloren
     CHECK(link_log_row(line, 4, LinkRecord{4, 2000, 1}) == 0);  // Puffer zu klein -> nichts schreiben
+}
+
+TEST_CASE("Beispiellog: der Schreiber erzeugt Byte fuer Byte die Datei, die link_report.py liest") {
+    std::string path = std::string(FB_TEST_FIXTURES) + "/linklog_example.csv";
+    std::ifstream f(path, std::ios::binary);
+    REQUIRE(f.good());
+    std::stringstream expected;
+    expected << f.rdbuf();
+
+    char line[96];
+    std::string got;
+    REQUIRE(link_log_header(line, sizeof line, "stacker", "ping", "abc123") > 0);
+    got += line;
+    REQUIRE(link_log_columns(line, sizeof line) > 0);
+    got += line;
+    const LinkRecord recs[] = {
+        {0, 12000, 8}, {1, 12050, 9}, {2, 12100, LinkRecord::lost_rtt}, {3, 12150, 11}, {4, 12200, 40}};
+    for (const LinkRecord& r : recs) {
+        REQUIRE(link_log_row(line, sizeof line, r) > 0);
+        got += line;
+    }
+    CHECK(got == expected.str());
 }

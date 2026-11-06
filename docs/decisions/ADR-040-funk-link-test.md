@@ -1,12 +1,12 @@
 # ADR-040: Funk-Link-Test (Ping/Pong, Latenz und Verlust)
 
-Status: angenommen (L-01, 2026-11-06)
+Status: Entwurf (L-01, 2026-11-06); wird angenommen, sobald L-04 die Grenzwerte liefert
 
 ## Entscheidung
-- Logik in `lib/util/link_test.hpp` ohne PROS und ohne dynamischen Speicher: `LinkPacket` (14 Byte: Art, Nummer, `t_ping_ms`, `t_pong_ms`, Prüfsumme), `LinkPinger`, `LinkReflector`. Senden und Empfangen in `src/link_test.hpp` (`pros::Link`, Paketmodus), eigene Schleife mit `delay()`, aktiv nur mit `config::link_test_enabled`; nie zusammen mit dem Steuer-Task und nie im Match (`static_assert` gegen `port_check_enabled`).
+- Logik in `lib/util/link_test.hpp` ohne PROS und ohne dynamischen Speicher: `LinkPacket` (14 Byte: Art, Nummer, `t_ping_ms`, `t_pong_ms`, Prüfsumme), `LinkPinger`, `LinkReflector`. Senden und Empfangen in `src/link_test.hpp` (`pros::Link`, Paketmodus), eigene Schleife mit `delay()`, aktiv nur mit `config::link_test_enabled`; nie zusammen mit dem Steuer-Task. Dass es im Match nicht läuft, sichert nur das Config-Flag (`link_test_enabled = false` in beiden `config/`); das `static_assert` verbietet lediglich, dass es zusammen mit dem Prüfprogramm F-03 aktiv ist.
 - Gemessen wird nur auf dem Pinger mit seiner eigenen Uhr (Differenz `pros::millis()`, überlaufsicher). Die Uhren der Roboter sind nicht synchron; `t_pong_ms` steht nur zur Diagnose im Paket. Gemessen wird die Umlaufzeit (RTT); Einweglatenz ≈ RTT/2 ist eine Annahme und wird nicht ausgewiesen.
 - Mehrere Pings gleichzeitig unterwegs (32 Plätze, Platz = Nummer mod 32). Je Ping genau ein Eintrag, sobald der Ausgang feststeht: Pong (RTT) oder Timeout (verloren). Spätere Pongs zählen getrennt: `late` (nach Timeout), `duplicate` (zweimal), `reordered` (nach dem Pong eines neueren Pings, zählt auch als `received`), `unmatched` (unbekannt/zu alt/Sendezeit passt nicht). Läuft der Platz über, gilt der älteste offene Ping als verloren.
-- Protokoll `frostbyte-linklog v1` (eigene kleine Datei `/usd/linklog_<roboter>.csv`, nicht das Roboter-Log aus `docs/log_format.md`): Kopfzeile `# frostbyte-linklog v1 robot=<..> role=<ping|echo> build=<..>`, Spalten `seq,t_send_s,rtt_ms`, leere `rtt_ms`-Zelle = verloren. Änderungen nur mit neuer Versionsnummer.
+- Protokoll `frostbyte-linklog v1` (eigene kleine Datei `/usd/linklog_<roboter>.csv`, nicht das Roboter-Log aus `docs/log_format.md`): Kopfzeile `# frostbyte-linklog v1 robot=<..> role=<ping|echo> build=<..>`, Spalten `seq,t_send_s,rtt_ms`, leere `rtt_ms`-Zelle = verloren. Änderungen nur mit neuer Versionsnummer. Beispieldatei `test/fixtures/linklog_example.csv`: `test_link_test.cpp` prüft, dass der C++-Schreiber sie Byte für Byte erzeugt, `test_link_report.py`, dass der Leser sie versteht.
 - `tools/link_report.py` wertet es aus: gesendet/beantwortet/verloren, Verlustrate, längste Verlustserie, RTT min/Median/P95/max. Mit `--max-loss` / `--max-p95-ms` Exit 1 bei Überschreitung oder wenn nichts gemessen wurde.
 
 ## Messgrößen und Grenzwerte (TODO(HW), L-04)

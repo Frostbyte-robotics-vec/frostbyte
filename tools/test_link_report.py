@@ -15,6 +15,15 @@ def write(d, body, head=HEAD, name="link.csv"):
 
 
 class ReportTest(unittest.TestCase):
+    def test_example_log_from_cpp_tests(self):
+        # dieselbe Datei prüft test/test_link_test.cpp gegen den C++-Schreiber
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "test", "fixtures", "linklog_example.csv")
+        r = link_report.analyse(path)
+        self.assertEqual((r["sent"], r["received"], r["lost"]), (5, 4, 1))
+        self.assertEqual(r["rtt_ms"]["min"], 8)
+        self.assertEqual(r["rtt_ms"]["max"], 40)
+        self.assertEqual(r["build"], "abc123")
+
     def test_latency_and_loss(self):
         rows = [f"{i},{i * 0.05:.3f},{rtt}" for i, rtt in enumerate([10, 12, 14, 16, 18, 20, 22, 24, 26, 100])]
         rows += ["10,0.500,", "11,0.550,", "12,0.600,8"]  # zwei verloren hintereinander
