@@ -10,6 +10,7 @@
 
 #include "sim/collision.hpp"
 #include "sim/drive.hpp"
+#include "sim/field_objects.hpp"
 #include "sim/game.hpp"
 #include "sim/rng.hpp"
 #include "sim/route_runner.hpp"
@@ -52,6 +53,8 @@ struct SimConfig {
     std::vector<FieldPoint> points;  // Feldpunkte mit Koordinaten (null = leer), für goto <NAME>
     // Spielzustand und Punktestand (SIM-20). Leer (kein Goal) = Spalte score bleibt leer; gefüllt nur vom Demo.
     GameSetup game;
+    // Cups/Pins am Boden als Kollisionskörper (SIM-30); leer, wenn sim_params.json keinen Block feldobjekte hat.
+    ObjectField objects;
 };
 
 struct RunResult {
@@ -59,6 +62,7 @@ struct RunResult {
     int control_ticks = 0;   // je Roboter
     int wall_contacts = 0;   // Kontakte mit dem Feldrand (je Beginn), beide Roboter zusammen
     int robot_contacts = 0;  // Kontakte der Roboter untereinander (je Beginn)
+    int object_topples = 0;  // umgestoßene Feldobjekte (SIM-30), beide Roboter zusammen
     int rule_violations = 0;
 };
 
