@@ -39,4 +39,5 @@ Am echten Roboter zu prüfen: nichts (reine Simulation). Offen: `roboter_anteil`
 2026-11-05 · arjanssen (KI-Review) · Review korrigiert: Empfehlung ändern, Richtung falsch (Objekte sollen kollidieren) · –
 2026-11-05 · DAVIDCOPCOP-Sitzung (KI) · blocked: Review verlangt Umbau (Center-Stacks als Kollisionsobjekte); offene Fragen für einen Menschen: nur Center-Stacks oder alle Objekte? blockiert, schiebt oder kippt der Roboter sie? · –
 2026-11-06 · matelechner01 (Claude) · Entscheidung des Menschen eingetragen: alle Objekte, erst umstoßen, dann schieben · –
-2026-11-06 · DAVIDCOPCOP (KI) · umgesetzt: Objekte kippen und werden geschoben (C++ und Livesim), ADR-Nachtrag, SIM-34 angelegt · –
+2026-11-06 · DAVIDCOPCOP (KI) · umgesetzt: Objekte kippen und werden geschoben (C++ und Livesim), ADR-Nachtrag, SIM-34 angelegt · 5796eea
+2026-11-06 · DAVIDCOPCOP (KI) · Advisor-Review: Routen vorher/nachher verglichen, displace zieht Radweg ab (Score gleich), Endpose in C++ und Browser geprüft · 5796eea

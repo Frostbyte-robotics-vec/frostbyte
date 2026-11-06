@@ -31,4 +31,4 @@ Angelegt aus SIM-30 (Rat des Advisors: Brücke zu Aufnahme und Punkten als eigen
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
-2026-11-06 · DAVIDCOPCOP (KI) · Ticket angelegt · –
+2026-11-06 · DAVIDCOPCOP (KI) · Ticket angelegt · board: SIM-34 angelegt
