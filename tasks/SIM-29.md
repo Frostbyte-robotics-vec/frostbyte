@@ -2,9 +2,9 @@
 id: SIM-29
 phase: "5"
 titel: Lift-Bewegung in der Simulation: Liftwinkel im Match fahren, ins Log schreiben, im Viewer anzeigen
-status: todo
-owner:
-branch:
+status: done
+owner: arjanssen
+branch: ticket/sim-29
 depends: [SIM-04, SIM-07, SIM-22]
 hw: nein
 ---
@@ -32,8 +32,10 @@ tasks/SIM-04.md, docs/decisions/ADR-009-mechanismen-und-objekte.md, ADR-032-zykl
 —  (reine Simulation; echte Lift-Grenzen kommen mit M-01/M-11, bis dahin sim_params „schaetzung“)
 
 ## Übergabe
-—
+Stand: fertig, im PR. Schritt 1 ergab: Logspalten lift_deg/lift_set_deg und die Viewer-Anzeige gab es schon, es fehlte nur das Schreiben in run_match → kein Formatwechsel (siehe ADR-009 Nachtrag). Game hält Lift-Joint je Roboter, Hub/Rückfahrt je Zyklus, cancel setzt auf unten. Test: test/test_sim_game_lift.cpp. Viewer nicht im Browser angesehen (kein Browser in der Sitzung); Logik liest unverändert lift_deg.
+KI-Review PR #72 abgearbeitet: main gemergt. Das SG3-Ticket (Folge von SIM-29) heißt jetzt SIM-32, weil SIM-31 auf main schon vergeben war. SG3-Prüfung in der Sim und Sicht im Viewer bewusst abnicken.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-05 · Máté (mit Claude) · Ticket angelegt (als SIM-29, da SIM-28 belegt) · –
+2026-11-05 · arjanssen (Claude) · Lift im Match: Game-Joint, Log-Spalten, Tests, ADR-009 Nachtrag · 87cc54c

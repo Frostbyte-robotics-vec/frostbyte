@@ -16,6 +16,9 @@ void load_game_params(const Json& params, GameSetup& g) {
     if (!(toggle_s > 0.0))
         throw std::runtime_error("sim_params spiel.toggle_dauer_s: Zahl größer 0 erwartet");
     g.toggle_ms = static_cast<int>(std::lround(toggle_s * 1000.0));
+    g.jam = IntakeJamParams{};
+    if (params.at("ereignisse").find("intake_stau"))
+        g.jam = load_intake_jam_params(params);
     g.toggle_reach_in = spiel.at("toggle_reichweite_in").as_number();
     if (!(g.toggle_reach_in > 0.0))
         throw std::runtime_error("sim_params spiel.toggle_reichweite_in: Zahl größer 0 erwartet");
@@ -47,7 +50,11 @@ Game::Game(const GameSetup& setup, std::uint64_t seed_stacker, std::uint64_t see
       models_{ObjectModel(setup.events, seed_stacker), ObjectModel(setup.events, seed_runner)},
       end_ms_(end_ms),
       goals_(setup.goals),
-      started_(setup.cycles.size(), false) {
+      started_(setup.cycles.size(), false),
+      lift_{Joint(setup.mech[0].lift, setup.mech[0].lift.min), Joint(setup.mech[1].lift, setup.mech[1].lift.min)},
+      // eigene Ströme (nicht die der ObjectModel): die Ziehungen der Objekte bleiben mit und ohne Stau gleich
+      rollers_{IntakeRollers(setup.jam, seed_stacker ^ 0x9e3779b97f4a7c15ULL),
+               IntakeRollers(setup.jam, seed_runner ^ 0x9e3779b97f4a7c15ULL)} {
     for (const GameCycle& c : setup_.cycles)
         if (c.robot < 0 || c.robot > 1 || c.goal < 0 || c.goal >= static_cast<int>(goals_.size()) || c.level < 0 ||
             c.level > game_max_level)
@@ -69,6 +76,16 @@ int Game::score(int robots_in_midfield) const { return score_[std::clamp(robots_
 
 void Game::step(int t_ms) {
     bool changed = false;
+    for (int robot = 0; robot < 2; ++robot) {
+        std::vector<LiftCmd>& cmds = lift_cmds_[robot];
+        std::size_t used = 0;
+        while (used < cmds.size() && cmds[used].t_ms <= t_ms)
+            lift_[robot].set_target(cmds[used++].target_deg);
+        cmds.erase(cmds.begin(), cmds.begin() + static_cast<std::ptrdiff_t>(used));
+        if (last_step_ms_ >= 0)
+            lift_[robot].step((t_ms - last_step_ms_) / 1000.0);
+    }
+    last_step_ms_ = t_ms;
     for (std::size_t i = 0; i < pending_.size();) {
         const Pending p = pending_[i];
         if (p.done_ms > t_ms) {
@@ -136,6 +153,10 @@ CycleTicket Game::launch(int t_ms, int robot, int goal, int level, const std::op
                                    : models_[robot].place_unit(yellow_up_in_hand, 0.0, level, lift, target, claw);
     const int done_ms = t_ms + static_cast<int>(std::ceil(r.time_s * 1000.0));
     busy_until_[robot] = done_ms;
+    if (r.lift_start_s >= 0.0) {  // Hub (auch bei Setzfehler), danach zurück nach unten
+        lift_cmds_[robot].push_back({t_ms + static_cast<int>(std::ceil(r.lift_start_s * 1000.0)), target});
+        lift_cmds_[robot].push_back({done_ms, m.lift.min});
+    }
     if (r.outcome == CycleOutcome::ok) {
         // Pin oder Cup wie beim Ablegen: nach der Stapelfolge, die Teile auf dem Weg zum Goal mitgezählt.
         (pieces_on(goal) % 2 == 0 ? held_[robot].pins : held_[robot].cups) = 1;
@@ -181,13 +202,66 @@ CycleTicket Game::start_intake(int t_ms, int robot, Source src) {
         ++rejected_;
         return {};
     }
-    const PickResult p = models_[robot].pick(src);
-    const int done_ms = t_ms + static_cast<int>(std::ceil(p.time_s * 1000.0));
+    const PickResult p = models_[robot].pick(src);  // immer zuerst und unverändert: gleiche Ziehungen mit und ohne Stau
+    const bool jam_model = setup_.intake_cfg[robot].run_v > 0.0 && setup_.jam.jam_prob > 0.0;
+    const JamRun jam = jam_model ? run_jam(t_ms, robot) : JamRun{};
+    const bool ok = p.success && jam.ok;
+    const int done_ms = t_ms + jam.delay_ms + (jam.ok ? static_cast<int>(std::ceil(p.time_s * 1000.0)) : 0);
     busy_until_[robot] = done_ms;
-    h.unit = p.success;
+    h.unit = ok;
     h.unit_ready_ms = done_ms;
     h.unit_yellow_up = p.yellow_up;
-    return {true, p.success, done_ms};
+    return {true, ok, done_ms};
+}
+
+Game::JamRun Game::run_jam(int t_ms, int robot) {
+    const IntakeConfig& cfg = setup_.intake_cfg[robot];
+    IntakeRollers& rollers = rollers_[robot];
+    rollers.step(0.0);  // jeder Lauf beginnt aus dem Stand
+    IntakeSubsystem intake(cfg, 0.0);
+    intake.request_run(0.0);
+    const auto emit = [&](int rel_ms, const char* token) {
+        const int at = t_ms + rel_ms;
+        if (at < end_ms_)  // nach 0:00 zählt und loggt nichts mehr
+            events_[robot].push_back({at, token});
+    };
+    constexpr int tick_ms = 10;  // Steuertakt
+    double vel = 0.0;
+    int jams = 0;
+    IntakeState prev = intake.state();
+    for (int rel_ms = tick_ms; rel_ms <= static_cast<int>(std::ceil(cfg.run_timeout_s * 1000.0)); rel_ms += tick_ms) {
+        const IntakeOutput out = intake.update(rel_ms / 1000.0, IntakeSensor{false, vel, true});
+        vel = rollers.step(out.volts);
+        if (intake.jam_count() > jams) {
+            jams = intake.jam_count();
+            emit(rel_ms, "INTAKE:JAM");
+        }
+        if (intake.state() == IntakeState::reversing && prev != IntakeState::reversing)
+            emit(rel_ms, "INTAKE:IMPULSE");
+        if (intake.state() == IntakeState::error) {
+            emit(rel_ms, "INTAKE:ERROR_JAM");
+            rollers.step(0.0);
+            return {false, rel_ms};
+        }
+        if (intake.state() == IntakeState::running && !rollers.jammed()) {  // die Rollen ziehen wieder
+            rollers.step(0.0);
+            return {true, jams > 0 ? rel_ms : 0};
+        }
+        prev = intake.state();
+    }
+    emit(static_cast<int>(std::ceil(cfg.run_timeout_s * 1000.0)), "TIMEOUT:INTAKE");
+    rollers.step(0.0);
+    return {false, static_cast<int>(std::ceil(cfg.run_timeout_s * 1000.0))};
+}
+
+std::vector<std::string> Game::take_events(int robot, int t_ms) {
+    std::vector<std::string> out;
+    std::vector<TimedEvent>& q = events_[robot];
+    std::size_t n = 0;
+    while (n < q.size() && q[n].t_ms <= t_ms)
+        out.push_back(q[n++].token);
+    q.erase(q.begin(), q.begin() + static_cast<std::ptrdiff_t>(n));
+    return out;
 }
 
 CycleTicket Game::start_cycle(int t_ms, int robot, int goal, int level, bool preload) {
@@ -230,6 +304,10 @@ void Game::cancel(int t_ms, int robot) {
         else
             ++i;
     }
+    lift_cmds_[robot].clear();
+    std::erase_if(events_[robot],
+                  [t_ms](const TimedEvent& e) { return e.t_ms > t_ms; });  // der Abbruch beendet den Stau
+    lift_[robot].set_target(setup_.mech[robot].lift.min);
     Hand& h = hand_[robot];
     if (h.unit && h.unit_ready_ms > t_ms) {
         h.unit = false;

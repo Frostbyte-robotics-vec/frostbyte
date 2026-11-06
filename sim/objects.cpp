@@ -93,6 +93,7 @@ CycleResult ObjectModel::place_unit(bool yellow_up, double time_before_s, int le
         return r;
     }
 
+    r.lift_start_s = r.time_s;
     r.time_s += lift.time_to_reach(lift_target_deg);
     if (!place(level))
         r.outcome = CycleOutcome::place_failed;

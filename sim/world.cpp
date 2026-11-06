@@ -52,6 +52,8 @@ struct GameCols {
     int score;
     int has_cup;
     int has_pin;
+    double lift_deg;
+    double lift_set_deg;
 };
 
 class RobotLog {
@@ -95,6 +97,8 @@ public:
             r.score = game->score;
             r.has_cup = game->has_cup;
             r.has_pin = game->has_pin;
+            r.lift_deg = game->lift_deg;
+            r.lift_set_deg = game->lift_set_deg;
         }
         if (!route_step.empty())
             r.route_step = route_step.c_str();
@@ -391,8 +395,12 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
             }
         }
 
-        if (game)
+        if (game) {
             game->step(t_ms);
+            for (int i = 0; i < 2; ++i)
+                for (const std::string& e : game->take_events(i, t_ms))
+                    runs[i].add_event(e);
+        }
         if (t_ms % cfg.log_ms == 0) {
             int mid = 0;
             if (game) {
@@ -409,7 +417,8 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
                     r.gps_sample = r.gps->measure(p.x_in, p.y_in, p.h_deg, r.speed_in_s());
                 }
                 logs[i]->row(t_ms, truth_of(r), r.est, r.drive ? &r.gps_sample : nullptr, r.events, r.route_step,
-                             game ? std::optional<GameCols>(GameCols{game->score(mid), game->cups(i), game->pins(i)})
+                             game ? std::optional<GameCols>(GameCols{game->score(mid), game->cups(i), game->pins(i),
+                                                                     game->lift_deg(i), game->lift_set_deg(i)})
                                   : std::nullopt);
                 r.events.clear();
             }
