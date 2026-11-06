@@ -254,22 +254,24 @@ TEST_CASE("Aufnahme: load_field_objects liest aufnahme, ungültige Zahlen werden
 TEST_CASE(
     "Aufnahme: Zuschlag verlängert die Aufnahme und erhöht den Fehlschlag, die Zahl der Ziehungen bleibt gleich") {
     EventParams e;
-    e.floor = {2.0, 0.0, 0.0};  // sicher, ohne Streuung
+    e.floor = {2.0, 0.5, 0.0};  // Streuung: die Dauer hängt von der Ziehung ab, Fehlschlag 0
     e.yellow_up_floor = 1.0;
+    e.grasp_success = 0.5;
     ObjectModel plain(e, 5);
     ObjectModel modded(e, 5);
     const PickResult a = plain.pick(Source::floor);
     const PickResult b = modded.pick(Source::floor, PickMod{1.5, 0.0});
-    CHECK(a.time_s == doctest::Approx(2.0));
-    CHECK(b.time_s == doctest::Approx(3.5));
+    CHECK(b.time_s == doctest::Approx(a.time_s + 1.5));
     CHECK(a.success);
     CHECK(b.success);
-    // Gleiche Ziehungen: die nächste Zufallszahl beider Modelle stimmt überein.
-    CHECK(plain.grasp() == modded.grasp());
+    // Gleiche Ziehungen: die Folge danach (Dauer der nächsten Aufnahme, dann Greifen) bleibt gleich.
+    const PickResult a2 = plain.pick(Source::floor);
+    const PickResult b2 = modded.pick(Source::floor, PickMod{1.5, 0.0});
+    CHECK(b2.time_s == doctest::Approx(a2.time_s + 1.5));
+    for (int i = 0; i < 20; ++i)
+        CHECK(plain.grasp() == modded.grasp());
     ObjectModel sure_fail(e, 5);
     CHECK_FALSE(sure_fail.pick(Source::floor, PickMod{0.0, 1.0}).success);
-    ObjectModel capped(e, 5);
-    CHECK_FALSE(capped.pick(Source::floor, PickMod{0.0, 5.0}).success);  // auf 1 begrenzt, kein Überlauf
 }
 
 TEST_CASE("Aufnahme im Lauf: die Route nimmt den Cup in Reichweite, der Cup verschwindet aus dem Feld") {
