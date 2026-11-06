@@ -86,6 +86,13 @@ class WebTest(unittest.TestCase):
         for html in HTML.values():
             self.assertNotIn("Ziel: Top 16", html)
 
+    def test_social_links_sind_echt(self):
+        h = HTML["index.html"]
+        self.assertIn('href="https://www.instagram.com/frostbyte.robotics/"', h)
+        self.assertIn('href="https://www.linkedin.com/company/frostbyterobotics"', h)
+        for name, html in HTML.items():
+            self.assertNotIn('href="#"', html, name)
+
     def test_skript_prueft_fehlende_elemente(self):
         # Beide Seiten teilen assets/site.js; die Sponsoringseite hat kein Hero (#snow) und keine Anker auf Fremdseiten.
         js = (WEB / "assets" / "site.js").read_text(encoding="utf-8")

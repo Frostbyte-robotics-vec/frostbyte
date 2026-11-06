@@ -21,7 +21,6 @@ Wunsch des Menschen: Die öffentliche Seite soll sich an alle richten, nicht nur
 - **Social Media:** nur Instagram und LinkedIn (kein YouTube); Links stehen weiter auf `#`.
 - **Livestream-Zahl:** Der Mensch bestätigte (2026-11-06) „rund 160'000 Menschen haben den Livestream des letzten Weltfinales angesehen“; Text im Abschnitt Reichweite. Eine Quelle dafür liegt nicht im Repo (Websuche fand keine); wer sie hat, trägt sie hier ein.
 - **Kontakt:** frostbyte.eth.robotics@gmail.com (Hauptseite und Sponsoringseite, Kopier-Knopf, Fusszeile); kein Personenname mehr im Kontaktblock. Fusszeile ohne Zielsatz.
-- **Instagram/LinkedIn:** Konto heisst „vexobotics“ (Schreibweise ungeprüft), Links folgen vom Menschen.
+- **Instagram/LinkedIn:** vom Menschen genannt: instagram.com/frostbyte.robotics und linkedin.com/company/frostbyterobotics; auf der Seite verlinkt (Instagram-Adresse aus dem Namen abgeleitet, Link nicht geprüft).
 - **Offen (Mensch):**
   1. Bilder: `arena.jpg`, `champions.jpg`, `vex-stage.jpg` sind nur 990 px breit und wirken als Vollbild unscharf. Der Mensch erlaubte Bilder aus der Google-Suche; die KI hat keine übernommen (Rechte liegen bei Fotografen/VEX, öffentlich gehostet nicht ohne Weiteres zulässig). Ersatz: eigene Fotos des Teams oder Bilder mit Freigabe/Lizenz (z. B. Wikimedia Commons), Originale in `web/assets/` ablegen.
-  2. Instagram-/LinkedIn-Links eintragen.
