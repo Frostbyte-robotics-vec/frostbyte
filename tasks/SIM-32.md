@@ -2,9 +2,9 @@
 id: SIM-32
 phase: "5"
 titel: SG3 (Höhe 50″) in der Simulation prüfen: Lifthöhe aus Winkel, RuleGuard im Match (Folge von SIM-29)
-status: todo
-owner:
-branch:
+status: in_progress
+owner: matelechner01
+branch: ticket/sim-32
 depends: [M-11]
 hw: nein
 ---
