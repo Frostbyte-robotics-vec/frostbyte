@@ -383,6 +383,7 @@ function runLivesimReferenceTest(FBLive, fx, tolPos_in, tolHead_deg) {
     const live = FBLive.create(objParams, objField, { voltsAt: volts });
     check('Objekte: nur Bodenobjekte mit Koordinaten (CUP_X, CUP_FAR, PIN_LIEGT)', live.objects().map((o) => o.id).join() === 'CUP_X,CUP_FAR,PIN_LIEGT',
       live.objects().map((o) => o.id).join());
+    check('Objekte: kind je Objekt (cup, cup, pin) für die Anzeige', live.objects().map((o) => o.kind).join() === 'cup,cup,pin', live.objects().map((o) => o.kind).join());
     check('Objekte: Pin am Boden liegt, Cup steht', live.objects()[2].standing === false && live.objects()[0].standing === true);
     const topples = [];
     for (let t = 0; t < 3000; t++) { live.advance(0.001); live.takeEvents().forEach((e) => { if (/^TOPPLED:/.test(e.text)) topples.push(e.text); }); }

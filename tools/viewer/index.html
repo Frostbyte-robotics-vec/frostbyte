@@ -655,8 +655,25 @@ window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; docume
 const LIVE_KEYS = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd' };
 const liveHeld = { w: false, a: false, s: false, d: false, shift: false };
 function liveSend(){ if (S.live) S.live.sim.setKeys(liveHeld); }
+/* Feldobjekte der Live-Simulation (SIM-35): Cup = Zylinder, Pin = schlanker Zylinder; liegend auf der Seite. Die Netze
+   entstehen einmal je Objekt; Lage und Zustand kommen bei jedem Bild aus live.objects(). Maße nur zur Anzeige (Radius aus
+   sim_params, Höhe Schätzung). */
+const OBJ_HEIGHT_IN = { cup: 4.5, pin: 6.5 }, OBJ_COLOR = { cup: 0xd9d2c3, pin: 0xe0b341 };
+function updateObjects(L){
+  L.sim.objects().forEach((o, i) => {
+    let m = L.objects[i];
+    if (!m) {
+      const h = OBJ_HEIGHT_IN[o.kind] || 4.5;
+      m = new THREE.Mesh(new THREE.CylinderGeometry(o.r_in, o.r_in, h, 20), new THREE.MeshStandardMaterial({ color: OBJ_COLOR[o.kind] || 0xcccccc, roughness: .8 }));
+      m.userData.h = h; m.castShadow = true; scene.add(m); L.objects[i] = m;
+    }
+    m.position.set(o.x_in, o.standing ? m.userData.h / 2 : o.r_in, -o.y_in);
+    m.rotation.set(o.standing ? 0 : Math.PI / 2, 0, 0);
+  });
+}
 function updateLive(){
   const L = S.live, a = L.sim.active();
+  updateObjects(L);
   ['stacker', 'runner'].forEach(n => {
     const p = L.sim.pose(n);
     placeOnField(L.models[n], p.x_in, p.y_in, p.h_deg);
@@ -687,7 +704,7 @@ async function startLive(){
     const l = new THREE.LineLoop(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: n === 'stacker' ? 0xff5a4e : 0x4e9bff }));
     l.frustumCulled = false; l.visible = false; scene.add(l); outlines[n] = l;
   });
-  S.live = { sim, models, outlines, showOutline: false, log: [], entries: [] };
+  S.live = { sim, models, outlines, objects: [], showOutline: false, log: [], entries: [] };
   $('bLogClear').disabled = false; $('bLogCsv').disabled = false;
   liveSeed(); renderLiveEvents();
   $('bLive').setAttribute('aria-pressed', true); $('liveinfo').hidden = false;
@@ -698,6 +715,7 @@ function stopLive(){
   if (!S.live) return;
   Object.values(S.live.models).forEach(m => scene.remove(m));
   Object.values(S.live.outlines).forEach(l => scene.remove(l));
+  S.live.objects.forEach(m => scene.remove(m));
   S.live = null; document.body.dataset.live = '';
   $('bLogClear').disabled = true; $('bLogCsv').disabled = true; renderEvents();
   $('bLive').setAttribute('aria-pressed', false); $('liveinfo').hidden = true; S.dirty = true;

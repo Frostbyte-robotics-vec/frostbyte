@@ -21,8 +21,10 @@ hw: nein
 docs/decisions/ADR-025-livesim-browser.md (Nachträge SIM-30, SIM-34), tools/viewer/livesim.js, tools/viewer/index.html.
 
 ## Übergabe
-Angelegt aus SIM-34 (Anzeige war dort im „Zu entscheiden“, aber nicht in „Fertig, wenn“; livesim.js kennt keine Aufnahme, nur Kollision).
+Stand (2026-11-06): umgesetzt. index.html: updateObjects() zeichnet live.objects() (Cup/Pin als Zylinder, stehend aufrecht, liegend auf der Seite), livesim.js liefert dafür `kind`. Test: livesim_test.js (kind). Lokal ohne node mit jsc (macOS) ausgeführt: 80 ok, 0 Fehler; die Inline-Skripte von index.html auf Syntax geprüft. Das Zeichnen selbst wurde NICHT im Browser gesehen.
+Am Rechner zu prüfen: index.html im Browser öffnen, Live starten, in einen Cup fahren: er kippt, wird geschoben; Farben/Größen passen? (Höhen 4,5/6,5 in sind Anzeigeschätzung.)
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-06 · arjanssen (KI) · Ticket angelegt · –
+2026-11-06 · arjanssen (KI) · Objekte im Viewer gezeichnet, kind in livesim.js, Test · –
