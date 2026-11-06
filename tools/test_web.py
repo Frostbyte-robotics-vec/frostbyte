@@ -73,6 +73,19 @@ class WebTest(unittest.TestCase):
         for name, html in HTML.items():
             self.assertNotIn("youtube", html.lower(), name)
 
+    def test_kontakt_ist_die_teamadresse_ohne_personenname(self):
+        for name, html in HTML.items():
+            self.assertNotIn("lechnerm", html, name)
+            self.assertIn("frostbyte.eth.robotics@gmail.com", html, name)
+            self.assertNotIn("Lechner · Frostbyte", html, name)
+        self.assertNotIn("lechnerm", (WEB / "assets" / "site.js").read_text(encoding="utf-8"))
+        self.assertIn("frostbyte.eth.robotics@gmail.com", (WEB / "assets" / "site.js").read_text(encoding="utf-8"))
+
+    def test_livestream_zahl_und_fusszeile(self):
+        self.assertIn("160'000", HTML["index.html"])
+        for html in HTML.values():
+            self.assertNotIn("Ziel: Top 16", html)
+
     def test_skript_prueft_fehlende_elemente(self):
         # Beide Seiten teilen assets/site.js; die Sponsoringseite hat kein Hero (#snow) und keine Anker auf Fremdseiten.
         js = (WEB / "assets" / "site.js").read_text(encoding="utf-8")

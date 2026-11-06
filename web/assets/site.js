@@ -48,7 +48,7 @@
   function say(m){toast.textContent=m;toast.classList.add('show');clearTimeout(say.t);say.t=setTimeout(function(){toast.classList.remove('show');},2200);}
   var copyBtn=document.getElementById('copy');
   if(copyBtn)copyBtn.addEventListener('click',function(){
-    var txt='lechnerm@ethz.ch';
+    var txt='frostbyte.eth.robotics@gmail.com';
     function fallback(){var r=document.createRange();r.selectNodeContents(document.getElementById('mail'));var s=getSelection();s.removeAllRanges();s.addRange(r);say('Adresse markiert – jetzt kopieren');}
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){say('E-Mail-Adresse kopiert');},fallback);}else fallback();
   });

@@ -19,6 +19,9 @@ Wunsch des Menschen: Die öffentliche Seite soll sich an alle richten, nicht nur
 - **Gemeinsame Dateien:** CSS in `web/assets/style.css`, Skript in `web/assets/site.js` (jede Funktion prüft, ob ihr Element existiert). Weiterhin kein Build-Skript.
 - **Laufband** ohne Werkzeugnamen: Zwei Roboter · Ein Team · Gebaut in Zürich · Erste Saison · Override 2026/27 · Ziel Las Vegas · Top 16. Werkzeug-Buttons im Prozess-Abschnitt entfernt, Prozesstexte ohne Softwarenamen. Saison-Zeitleiste mit Phasenmarken, „Wir sind hier“ und hervorgehobenem Ziel.
 - **Social Media:** nur Instagram und LinkedIn (kein YouTube); Links stehen weiter auf `#`.
+- **Livestream-Zahl:** Der Mensch bestätigte (2026-11-06) „rund 160'000 Menschen haben den Livestream des letzten Weltfinales angesehen“; Text im Abschnitt Reichweite. Eine Quelle dafür liegt nicht im Repo (Websuche fand keine); wer sie hat, trägt sie hier ein.
+- **Kontakt:** frostbyte.eth.robotics@gmail.com (Hauptseite und Sponsoringseite, Kopier-Knopf, Fusszeile); kein Personenname mehr im Kontaktblock. Fusszeile ohne Zielsatz.
+- **Instagram/LinkedIn:** Konto heisst „vexobotics“ (Schreibweise ungeprüft), Links folgen vom Menschen.
 - **Offen (Mensch):**
-  1. Livestream-Zahl des Vorjahres (genannt: etwa 160'000): ohne Quelle nicht auf der Seite; Platz und Hinweis als HTML-Kommentar im Abschnitt Reichweite. Eine Websuche fand keine belegte Zahl.
-  2. Bilder: `arena.jpg`, `champions.jpg`, `vex-stage.jpg` sind nur 990 px breit und wirken als Vollbild unscharf. Ersatz nur mit geklärten Rechten (eigene Fotos des Teams, oder schriftliche Freigabe von REC Foundation/VEX); eine gefundene Quelle erlaubt ausdrücklich nichts. Bitte Originale ablegen, die KI bindet sie ein.
+  1. Bilder: `arena.jpg`, `champions.jpg`, `vex-stage.jpg` sind nur 990 px breit und wirken als Vollbild unscharf. Der Mensch erlaubte Bilder aus der Google-Suche; die KI hat keine übernommen (Rechte liegen bei Fotografen/VEX, öffentlich gehostet nicht ohne Weiteres zulässig). Ersatz: eigene Fotos des Teams oder Bilder mit Freigabe/Lizenz (z. B. Wikimedia Commons), Originale in `web/assets/` ablegen.
+  2. Instagram-/LinkedIn-Links eintragen.
