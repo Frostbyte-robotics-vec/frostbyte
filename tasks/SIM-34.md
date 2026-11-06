@@ -29,6 +29,8 @@ tasks/SIM-30.md, docs/decisions/ADR-025-livesim-browser.md (Nachtrag SIM-30), si
 ## Übergabe
 Angelegt aus SIM-30 (Rat des Advisors: Brücke zu Aufnahme und Punkten als eigenes Ticket).
 
+**Review (KI, PR #77): Empfehlung ändern.** sim/route_runner.cpp (intake-Block): Brücke an, aber kein Objekt in Reichweite (auch schon aufgenommen) -> start_intake liefert trotzdem eine abstrakte Bodeneinheit. Entweder scheitern lassen oder im ADR als Rückfallebene festhalten; Test „Brücke an, nichts in Reichweite" ergänzen. Nebenbei: cancel() lässt Objekt entfernt (ADR erwähnen).
+
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-06 · DAVIDCOPCOP (KI) · Ticket angelegt · board: SIM-34 angelegt
