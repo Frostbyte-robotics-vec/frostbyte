@@ -102,6 +102,22 @@ class WebTest(unittest.TestCase):
         self.assertIn("Wrc Ynapmoc", h)
         self.assertIn("CC BY 3.0", h)
 
+    def test_mosaik_fotos_haben_bildnachweis_und_alte_dateien_sind_weg(self):
+        h = HTML["index.html"]
+        for i in range(1, 5):
+            self.assertIn(f"assets/liga-{i}.jpg", h)
+            self.assertTrue((WEB / "assets" / f"liga-{i}.jpg").is_file())
+        for titel in ("One last adjustment", "VEX Starstruck Standard Fields",
+                      "Fine-tuning Stubmeister the Stubbier", "Judgment day at Sunset Station"):
+            self.assertIn(titel, h)
+        self.assertIn("Sean Spicer", h)
+        self.assertIn("CC BY-SA 4.0", h)
+        self.assertIn("Lisa Litchfield", h)
+        # Herkunft und Rechte undokumentiert: darf nicht zurückkommen
+        for alt in ("event-field", "vex-stage", "champions.jpg", "arena.jpg"):
+            self.assertNotIn(alt, h)
+            self.assertFalse((WEB / "assets" / alt).exists() if alt.endswith(".jpg") else False)
+
     def test_skript_prueft_fehlende_elemente(self):
         # Beide Seiten teilen assets/site.js; die Sponsoringseite hat kein Hero (#snow) und keine Anker auf Fremdseiten.
         js = (WEB / "assets" / "site.js").read_text(encoding="utf-8")
