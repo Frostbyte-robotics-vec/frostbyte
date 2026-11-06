@@ -14,11 +14,14 @@ ObjectContact ObjectField::step(const Box& robot, double field_in) {
     Box box = robot;
     const double half = field_in / 2.0;
     for (FieldObject& o : objects_) {
+        if (o.taken)
+            continue;
         const auto mtv = penetration(box, Circle{o.x_in, o.y_in, o.r_in});
         if (!mtv)
             continue;
         if (o.standing) {
             o.standing = false;
+            o.fallen = true;
             out.toppled.push_back(o.id);
             continue;
         }
@@ -38,6 +41,38 @@ ObjectContact ObjectField::step(const Box& robot, double field_in) {
         box.y_in += shift.y_in;
     }
     return out;
+}
+
+int ObjectField::nearest_pickup(const Box& robot) const {
+    if (pickup_.reach_in < 0.0)
+        return -1;
+    Box reach = robot;
+    reach.length_in += 2.0 * pickup_.reach_in;
+    reach.width_in += 2.0 * pickup_.reach_in;
+    int best = -1;
+    double best_d2 = 0.0;
+    for (std::size_t i = 0; i < objects_.size(); ++i) {
+        const FieldObject& o = objects_[i];
+        if (o.taken || !penetration(reach, Circle{o.x_in, o.y_in, o.r_in}))
+            continue;
+        const double d2 = (o.x_in - robot.x_in) * (o.x_in - robot.x_in) + (o.y_in - robot.y_in) * (o.y_in - robot.y_in);
+        if (best < 0 || d2 < best_d2) {
+            best = static_cast<int>(i);
+            best_d2 = d2;
+        }
+    }
+    return best;
+}
+
+PickMod ObjectField::pick_mod(int index) const {
+    if (index < 0 || index >= static_cast<int>(objects_.size()) || !objects_[index].fallen)
+        return {};
+    return pickup_.fallen;
+}
+
+void ObjectField::take(int index) {
+    if (index >= 0 && index < static_cast<int>(objects_.size()))
+        objects_[index].taken = true;
 }
 
 namespace {
@@ -85,7 +120,17 @@ ObjectField load_field_objects(const Json& params, const Json& field) {
         add("cups", r_cup);
         add("pins", r_pin);
     }
-    return ObjectField(std::move(list), share);
+    ObjectField result(std::move(list), share);
+    if (const Json* pick = block->find("aufnahme")) {
+        PickupParams p;
+        p.reach_in = pick->at("reichweite_in").as_number();
+        p.fallen.extra_time_s = pick->at("liegt_zusatz_dauer_s").as_number();
+        p.fallen.extra_fail = pick->at("liegt_zusatz_fehlschlag").as_number();
+        if (p.reach_in < 0.0 || p.fallen.extra_time_s < 0.0 || p.fallen.extra_fail < 0.0 || p.fallen.extra_fail > 1.0)
+            throw std::runtime_error("sim_params feldobjekte.aufnahme: Reichweite und Zuschläge >= 0, Fehlschlag <= 1");
+        result.set_pickup(p);
+    }
+    return result;
 }
 
 }  // namespace frostbyte::sim

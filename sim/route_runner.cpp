@@ -118,8 +118,21 @@ void SimRouteExecutor::start(int lane, const RouteCmd& cmd, double now_s) {
                 l.status = StepStatus::done;
                 break;
             }
-            begin_game_op(lane, game_->start_intake(now_ms(now_s), robot_index(),
-                                                    last_goto_loader_ ? Source::loader : Source::floor));
+            {
+                const bool loader = last_goto_loader_;
+                // Vom Boden: das nächste Objekt in Reichweite (SIM-34). Umgestoßen heißt langsamer und unsicherer;
+                // geglückt heißt weg aus dem Kollisionsfeld (entschieden beim Start, wie das Ergebnis der Aufnahme).
+                const int obj = !loader && floor_.field
+                                    ? floor_.field->nearest_pickup(
+                                          Box{pose_.x_in, pose_.y_in, floor_.length_in, floor_.width_in, pose_.h_deg})
+                                    : -1;
+                const CycleTicket t =
+                    game_->start_intake(now_ms(now_s), robot_index(), loader ? Source::loader : Source::floor,
+                                        obj >= 0 ? floor_.field->pick_mod(obj) : PickMod{});
+                if (t.accepted && t.ok && obj >= 0)
+                    floor_.field->take(obj);
+                begin_game_op(lane, t);
+            }
             break;
         case RouteOp::cycle:
             if (game_ == nullptr) {
@@ -187,12 +200,12 @@ StepStatus SimRouteExecutor::cancel(int lane, double now_s) {
 }
 
 RouteRunner::RouteRunner(std::vector<RouteCmd> cmds, const std::vector<FieldPoint>& points, SignalBus& bus,
-                         RouteRobot self, const RouteControl& ctl, Game* game)
+                         RouteRobot self, const RouteControl& ctl, Game* game, FloorObjects floor)
     : cmds_(std::move(cmds)),
       lat_(ctl.lateral),
       ang_(ctl.angular),
       motion_(ctl.motion, lat_, ang_),
-      exec_(motion_, points, bus, self, ctl.player, game),
+      exec_(motion_, points, bus, self, ctl.player, game, floor),
       player_(cmds_.data(), static_cast<int>(cmds_.size()), exec_, ctl.player) {
     if (player_.status() == RouteStatus::invalid)
         throw std::runtime_error("Route für den RoutePlayer ungültig (Struktur, Lanes oder Tiefe)");

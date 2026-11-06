@@ -12,6 +12,7 @@
 #include "match/route.hpp"
 #include "match/route_player.hpp"
 #include "sim/drive.hpp"
+#include "sim/field_objects.hpp"
 #include "sim/game.hpp"
 #include "sim/json.hpp"
 
@@ -40,6 +41,14 @@ struct RouteControl {
     RoutePlayerConfig player;
 };
 
+// Feldobjekte des Laufs für die Aufnahme vom Boden (SIM-34): field darf nullptr sein (dann wie SIM-22); Umrissmaße des
+// Roboters, damit die Reichweite vom Umriss aus gilt.
+struct FloorObjects {
+    ObjectField* field = nullptr;
+    double length_in = 0.0;
+    double width_in = 0.0;
+};
+
 // Ereignisse, die ein Roboter sendet und der andere abwartet ("stacker.<name>").
 using SignalBus = std::set<std::string>;
 
@@ -48,8 +57,8 @@ class SimRouteExecutor : public RouteExecutor {
 public:
     // game: Spielzustand der Simulation oder nullptr (dann sind intake und cycle Platzhalter); self wählt den Roboter darin.
     SimRouteExecutor(MotionController& motion, const std::vector<FieldPoint>& points, SignalBus& bus, RouteRobot self,
-                     const RoutePlayerConfig& cfg, Game* game = nullptr)
-        : motion_(motion), points_(points), bus_(bus), self_(self), cfg_(cfg), game_(game) {}
+                     const RoutePlayerConfig& cfg, Game* game = nullptr, FloorObjects floor = {})
+        : motion_(motion), points_(points), bus_(bus), self_(self), cfg_(cfg), game_(game), floor_(floor) {}
 
     void start(int lane, const RouteCmd& cmd, double now_s) override;
     StepStatus poll(int lane, double now_s) override;
@@ -83,6 +92,7 @@ private:
     RouteRobot self_;
     RoutePlayerConfig cfg_;
     Game* game_;
+    FloorObjects floor_;  // eine geglückte Aufnahme vom Boden nimmt das nächste Objekt weg (SIM-34)
     Pose pose_;
     bool last_goto_loader_ =
         false;  // letztes goto-Ziel war ein Ladepunkt: intake nimmt dann vom Loader, sonst vom Boden
@@ -94,7 +104,7 @@ private:
 class RouteRunner {
 public:
     RouteRunner(std::vector<RouteCmd> cmds, const std::vector<FieldPoint>& points, SignalBus& bus, RouteRobot self,
-                const RouteControl& ctl, Game* game = nullptr);
+                const RouteControl& ctl, Game* game = nullptr, FloorObjects floor = {});
     RouteRunner(const RouteRunner&) = delete;
     RouteRunner& operator=(const RouteRunner&) = delete;
 

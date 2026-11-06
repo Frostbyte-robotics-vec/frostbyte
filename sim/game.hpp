@@ -98,7 +98,7 @@ public:
 
     // Routenbefehle (SIM-22, ADR-032); t_ms ist die Matchzeit des Aufrufs.
     // Aufnahme einer Einheit vom Loader oder Boden (ObjectModel::pick). Der Roboter hält höchstens eine Einheit.
-    CycleTicket start_intake(int t_ms, int robot, Source src);
+    CycleTicket start_intake(int t_ms, int robot, Source src, const PickMod& mod = {});
     // Rest des Zyklus auf Goal goal: Greifer, Lift, Setzen. Die Einheit kommt von der Aufnahme davor, sonst vom Preload
     // (preload = true, nur einmal je Roboter). level: game_level_auto oder genau die Zahl der Teile auf dem Goal.
     CycleTicket start_cycle(int t_ms, int robot, int goal, int level, bool preload);

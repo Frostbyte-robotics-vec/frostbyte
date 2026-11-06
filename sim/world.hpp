@@ -63,6 +63,7 @@ struct RunResult {
     int wall_contacts = 0;   // Kontakte mit dem Feldrand (je Beginn), beide Roboter zusammen
     int robot_contacts = 0;  // Kontakte der Roboter untereinander (je Beginn)
     int object_topples = 0;  // umgestoßene Feldobjekte (SIM-30), beide Roboter zusammen
+    int object_picks = 0;    // vom Boden aufgenommene Feldobjekte (SIM-34), beide Roboter zusammen
     int rule_violations = 0;
 };
 
