@@ -23,7 +23,7 @@ docs/decisions/ADR-009 (Nachtrag SIM-29), tasks/M-09.md, tasks/M-11.md, lib/subs
 ## Übergabe
 Mechanismus fertig und getestet (Auftrag des Menschen am 6. Nov: vorerst mit Schätzwerten bauen, später nachmessen; M-11 daher übersprungen).
 - `HeightMap` (sim/mechanism.hpp), optionaler Block `lift.hoehe` in sim_params.json, `Game::lift_height_in`, SG3-Prüfung je Schritt in `run_match` (`RULE:SG3` einmal je Überschreitung). Tests: test/test_sim_height.cpp mit eigenen Tabellen.
-- Die Tabellen in sim_params.json sind **Schätzungen** (`quelle: schaetzung`, unter 50″). Nach M-11: nur die Zahlen dort ersetzen, dann das Ticket-Kriterium „Messwerte“ erneut prüfen.
+- Die Tabellen in sim_params.json sind **Schätzungen** (`quelle: schaetzung`, unter 50″). Nach M-11: nur die Zahlen dort ersetzen (Achtung Winkelbezug: `winkel_deg` ist der absolute Gelenkwinkel der Sim (gleicher Bezug wie `min_deg`/`max_deg`), NICHT der Winkel relativ zu Home wie `cal_angle_deg` in config/ und `Lift::height_for_angle`. Ist Home die untere Endlage, gilt absolut = relativ + `min_deg`; ob Home dort liegt, ist offen (TODO(HW), M-01/M-11). Gemessene Kalibrierpunkte also erst umrechnen.), dann das Ticket-Kriterium „Messwerte“ erneut prüfen.
 - Nicht lokal geprüft: Roboter-Builds (kein PROS-Toolchain hier); sim/ ist nicht Teil davon, die CI baut sie.
 
 ## Verlauf
