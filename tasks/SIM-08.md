@@ -5,7 +5,7 @@ titel: Systemidentifikation: src/tools/sysid_run.cpp + tools/sysid.py; Ereignis-
 status: todo
 owner:
 branch:
-depends: [SIM-02, D-07]
+depends: [SIM-02, D-07, D-10]
 hw: ja
 ---
 
