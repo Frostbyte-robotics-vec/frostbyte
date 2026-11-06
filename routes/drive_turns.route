@@ -1,0 +1,10 @@
+# Antriebs-Prüfung D-07/D-10: 10 volle Drehungen am Ort (je 4 Schritte à 90 Grad), Endrichtung 0 Grad.
+# Gilt für beide Roboter. Auswertung: python3 tools/drive_check.py turns <log>
+start  pose x=-39.37 y=0 h=0
+repeat 10 {
+    turn 90 timeout=3
+    turn 180 timeout=3
+    turn 270 timeout=3
+    turn 0 timeout=3
+}
+end    hold

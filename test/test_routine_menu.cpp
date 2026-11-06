@@ -123,7 +123,8 @@ TEST_CASE("Routinenmenü: ungültige Konstruktorwerte -> Menü bleibt benutzbar"
 TEST_CASE("Routinenmenü: der echte Katalog enthält die Pflichtroutinen aus plan.md und nothing als Standard") {
     RoutineMenu m = make_routine_menu();
     CHECK(std::strcmp(m.selected(), "nothing") == 0);
-    for (const char* must : {"safe_red", "safe_blue", "awp_red", "awp_blue", "skills", "nothing"}) {
+    for (const char* must :
+         {"safe_red", "safe_blue", "awp_red", "awp_blue", "skills", "drive_straight", "drive_turns", "nothing"}) {
         bool found = false;
         for (int i = 0; i < routine_catalog_count; ++i)
             found = found || std::strcmp(routine_catalog[i], must) == 0;

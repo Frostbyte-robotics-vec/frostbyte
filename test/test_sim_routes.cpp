@@ -133,3 +133,48 @@ TEST_CASE("Routen: die Skills-Routen aus routes/ lassen sich laden und mit field
     CHECK_FALSE(cfg.stacker.cmds.empty());
     CHECK_FALSE(cfg.runner.cmds.empty());
 }
+
+// Antriebs-Prüfungen (D-07): Funktionstest in der Simulation, kein Nachweis der Reglergüte. Testwerte statt config/ und sim_params.json.
+namespace {
+std::string root_path(const std::string& rel) { return std::string(FB_ROOT_DIR) + "/" + rel; }
+
+struct Truth {
+    double x, y, h;
+};
+Truth final_pose(const std::string& csv) {
+    const std::size_t end = csv.find_last_not_of('\n');
+    std::stringstream ss(csv.substr(csv.rfind('\n', end) + 1));
+    std::vector<std::string> c;
+    for (std::string cell; std::getline(ss, cell, ',');)
+        c.push_back(cell);
+    return {std::stod(c.at(9)), std::stod(c.at(10)), std::stod(c.at(11))};
+}
+
+Run run_drive(const std::string& route) {
+    SimConfig cfg = load_config(fixtures + "/sim_params_min.json", fixtures + "/field_drive.json", root_path(route),
+                                fixtures + "/empty.route");
+    cfg.stacker.control = test_control();
+    cfg.runner.control = test_control();
+    return run(cfg);
+}
+}  // namespace
+
+TEST_CASE("Antriebs-Prüfung: drive_straight läuft in der Simulation durch und endet nahe dem Ziel (Funktionstest)") {
+    const Run r = run_drive("routes/drive_straight.route");
+    const Truth t = final_pose(r.stacker);
+    CHECK(std::hypot(t.x - 39.37, t.y) <= 3.0);  // grob: die Simulation ist hier ungetunt
+    CHECK(has(r.stacker, "goto_pose"));
+}
+
+TEST_CASE("Antriebs-Prüfung: drive_turns läuft 40 Drehungen und endet nahe Richtung 0 (Funktionstest)") {
+    const Run r = run_drive("routes/drive_turns.route");
+    const Truth t = final_pose(r.stacker);
+    double dh = std::fmod(t.h, 360.0);
+    if (dh > 180.0)
+        dh -= 360.0;
+    CHECK(std::fabs(dh) <= 10.0);                // grob
+    CHECK(std::hypot(t.x + 39.37, t.y) <= 3.0);  // dreht am Ort
+    // alle 40 Drehungen sind vor Matchende durch: der Routenschritt ist am Ende leer (end hold erreicht)
+    const std::size_t last = r.stacker.rfind('\n', r.stacker.find_last_not_of('\n'));
+    CHECK(r.stacker.substr(last + 1).find("turn") == std::string::npos);
+}
