@@ -104,17 +104,17 @@ class WebTest(unittest.TestCase):
 
     def test_mosaik_fotos_haben_bildnachweis_und_alte_dateien_sind_weg(self):
         h = HTML["index.html"]
-        for i in range(1, 5):
+        for i in (1, 2, 4):
             self.assertIn(f"assets/liga-{i}.jpg", h)
             self.assertTrue((WEB / "assets" / f"liga-{i}.jpg").is_file())
-        for titel in ("One last adjustment", "VEX Starstruck Standard Fields",
-                      "Fine-tuning Stubmeister the Stubbier", "Judgment day at Sunset Station"):
+        self.assertIn("assets/arena.jpg", h)  # Entscheidung des Menschen: Arena-Foto aus der eigenen Vorlage, siehe ADR-036
+        for titel in ("One last adjustment", "VEX Starstruck Standard Fields", "Judgment day at Sunset Station"):
             self.assertIn(titel, h)
         self.assertIn("Sean Spicer", h)
         self.assertIn("CC BY-SA 4.0", h)
         self.assertIn("Lisa Litchfield", h)
         # Herkunft und Rechte undokumentiert: darf nicht zurückkommen
-        for alt in ("event-field", "vex-stage", "champions.jpg", "arena.jpg"):
+        for alt in ("event-field", "vex-stage", "champions.jpg"):
             self.assertNotIn(alt, h)
             self.assertFalse((WEB / "assets" / alt).exists() if alt.endswith(".jpg") else False)
 
