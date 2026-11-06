@@ -117,6 +117,8 @@ void opcontrol() {
     if constexpr (config::port_check_enabled)
         frostbyte::port_check_run(config::port_expect, config::port_expect_count);
     g_phase.set(frostbyte::Phase::Driver);
+    if constexpr (config::port_check_enabled)
+        return;  // Pruefprogramm (F-03) verhaelt sich wie vorher: Controller-Anzeige gehoert dem Scan
     // Rückmeldung an den Fahrer (C-04) hier, nicht im Steuer-Task: Controllerbefehle blockieren und sind auf 50 ms getaktet.
     static frostbyte::hal::ProsControllerOutput controller;
     frostbyte::ControllerFeedback feedback(controller, driver_run_s);
