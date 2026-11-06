@@ -60,6 +60,16 @@ std::string port_text(int port) {
     return port == unassigned_port ? "TODO(HW)" : std::to_string(port < 0 ? -port : port);
 }
 
+const char* kind_text(DeviceKind k) {
+    switch (k) {
+        case DeviceKind::motor: return "Motor";
+        case DeviceKind::rotation: return "Rotation";
+        case DeviceKind::imu: return "IMU";
+        case DeviceKind::gps: return "GPS";
+        default: return "?";
+    }
+}
+
 void check_robot(const char* robot, const PortExpect* table, int count) {
     CAPTURE(robot);
     REQUIRE(count > 0);
@@ -120,10 +130,24 @@ TEST_CASE("config: Port-Tabelle Runner stimmt mit docs/ports.md ueberein") {
     check_robot("runner", config::runner::port_expect, config::runner::port_expect_count);
 }
 
+// Treffer: PROS-Geraet oder HAL-Wrapper mit Zahl direkt im Konstruktor, oder pros::c::-Aufruf mit Port-Literal.
+const std::regex& port_literal() {
+    static const std::regex r(
+        R"((pros::(Motor|Rotation|Imu|Gps|Distance|Optical|Vision)|Pros(Motor|Rotation|Imu|Gps))\s*\w*\s*[({]\s*-?\d|pros::c::\w+\(\s*-?\d)");
+    return r;
+}
+
+TEST_CASE("Port-Literal-Suche erkennt Beispiele (kein Attrappentest)") {
+    for (const char* s : {"pros::Motor m(3);", "pros::Imu imu{4};", "ProsMotor left(-5, x);", "ProsRotation r{7};",
+                          "pros::c::motor_move(3, 100);"})
+        CHECK(std::regex_search(s, port_literal()));
+    for (const char* s : {"pros::Motor m(port);", "ProsMotor left(cfg::left_port);", "pros::c::motor_move(port, 100);"})
+        CHECK_FALSE(std::regex_search(s, port_literal()));
+}
+
 TEST_CASE("Ports stehen nur in config/: kein Port-Literal bei PROS-Geraeten in src/, lib/, hal/") {
-    // Treffer wie pros::Motor m(3) oder pros::Imu imu{4}: Zahl direkt im Konstruktor.
-    const std::regex literal(R"(pros::(Motor|Rotation|Imu|Gps|Distance|Optical|Vision)\s*\w*\s*[({]\s*-?\d)");
     int hits = 0;
+    int files = 0;
     for (const char* dir : {"src", "lib", "hal"}) {
         const std::filesystem::path root = std::filesystem::path(FB_ROOT_DIR) / dir;
         if (!std::filesystem::exists(root))
@@ -132,11 +156,13 @@ TEST_CASE("Ports stehen nur in config/: kein Port-Literal bei PROS-Geraeten in s
             const auto ext = e.path().extension();
             if (!e.is_regular_file() || (ext != ".cpp" && ext != ".hpp"))
                 continue;
-            if (std::regex_search(read_file(e.path().string()), literal)) {
+            ++files;
+            if (std::regex_search(read_file(e.path().string()), port_literal())) {
                 ++hits;
                 MESSAGE("Port-Literal in " << e.path().string());
             }
         }
     }
+    CHECK(files > 10);  // die Suche hat wirklich Dateien gelesen
     CHECK(hits == 0);
 }

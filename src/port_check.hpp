@@ -44,6 +44,8 @@ inline void port_check_run(const PortExpect* expect, int count) {
         if (kind != DeviceKind::none)
             std::printf("port %d: Geraeteart %d\n", port, static_cast<int>(kind));
     }
+    if (const int open = unassigned_count(expect, count); open > 0)
+        std::printf("%d Port(s) in config/ noch offen (TODO(HW)), werden uebersprungen\n", open);
     port_check_show(pc, "A: Motoren pulsen (aufgebockt)");
 
     pros::Controller master(pros::E_CONTROLLER_MASTER);
@@ -52,6 +54,9 @@ inline void port_check_run(const PortExpect* expect, int count) {
 
     for (int i = 0; i < count; ++i) {
         const PortExpect& e = expect[i];
+        if (!port_valid(
+                e.port))  // Port steht noch nicht fest (TODO(HW) in config/): nie auf Port 0 oder einem geratenen pulsen
+            continue;
         const int port = e.port < 0 ? -e.port : e.port;
         const PortVerdict v = pc.verdict(port);
         if (e.kind != DeviceKind::motor || !e.motion || v == PortVerdict::missing || v == PortVerdict::wrong_type)

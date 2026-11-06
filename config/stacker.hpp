@@ -137,7 +137,6 @@ inline constexpr frostbyte::PortExpect port_expect_table[] = {
     {frostbyte::unassigned_port, frostbyte::DeviceKind::motor, "Claw", "Claw zu"},             // TODO(HW)
     {frostbyte::unassigned_port, frostbyte::DeviceKind::motor, "Lift", "Lift hoch"},           // TODO(HW)
     {frostbyte::unassigned_port, frostbyte::DeviceKind::rotation, "Lift Sensor", nullptr},     // TODO(HW)
-    {frostbyte::unassigned_port, frostbyte::DeviceKind::motor, "Arm", "Arm Winkel steigt"},    // TODO(HW)
 };
 inline constexpr const frostbyte::PortExpect* port_expect = port_expect_table;
 inline constexpr int port_expect_count = sizeof(port_expect_table) / sizeof(port_expect_table[0]);
