@@ -150,6 +150,35 @@ Truth final_pose(const std::string& csv) {
     return {std::stod(c.at(9)), std::stod(c.at(10)), std::stod(c.at(11))};
 }
 
+// Aufsummierte Drehung der wahren Richtung (Spalte 12) über alle Zeilen; max_back = größter Rücklauf gegen die Drehrichtung.
+struct Rotation {
+    double net = 0.0, max_back = 0.0;
+};
+Rotation rotation(const std::string& csv) {
+    std::stringstream ss(csv);
+    std::string line;
+    std::getline(ss, line);  // Kopfzeile
+    std::getline(ss, line);  // Spaltennamen
+    std::vector<double> hs;
+    while (std::getline(ss, line)) {
+        std::stringstream ls(line);
+        std::vector<std::string> c;
+        for (std::string cell; std::getline(ls, cell, ',');)
+            c.push_back(cell);
+        if (c.size() > 11 && !c[11].empty())
+            hs.push_back(std::stod(c[11]));
+    }
+    double total = 0.0, lo = 0.0, hi = 0.0, drop = 0.0, rise = 0.0;
+    for (std::size_t i = 1; i < hs.size(); ++i) {
+        total += std::remainder(hs[i] - hs[i - 1], 360.0);
+        lo = std::min(lo, total);
+        hi = std::max(hi, total);
+        drop = std::max(drop, hi - total);
+        rise = std::max(rise, total - lo);
+    }
+    return {total, total > 0 ? drop : rise};
+}
+
 Run run_drive(const std::string& route) {
     SimConfig cfg = load_config(fixtures + "/sim_params_min.json", fixtures + "/field_drive.json", root_path(route),
                                 fixtures + "/empty.route");
@@ -174,6 +203,10 @@ TEST_CASE("Antriebs-Prüfung: drive_turns läuft 40 Drehungen und endet nahe Ric
         dh -= 360.0;
     CHECK(std::fabs(dh) <= 10.0);                // grob
     CHECK(std::hypot(t.x + 39.37, t.y) <= 3.0);  // dreht am Ort
+    // 10 Umdrehungen am Stück in einer Richtung (nicht hin und her, nicht übersprungen)
+    const Rotation rot = rotation(r.stacker);
+    CHECK(std::fabs(std::fabs(rot.net) - 3600.0) <= 20.0);
+    CHECK(rot.max_back <= 5.0);
     // alle 40 Drehungen sind vor Matchende durch: der Routenschritt ist am Ende leer (end hold erreicht)
     const std::size_t last = r.stacker.rfind('\n', r.stacker.find_last_not_of('\n'));
     CHECK(r.stacker.substr(last + 1).find("turn") == std::string::npos);

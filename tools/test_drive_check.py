@@ -8,13 +8,14 @@ COLS = ("t_s,robot,x_in,y_in,h_deg,gx_in,gy_in,gh_deg,g_err_in,tx_in,ty_in,th_de
         "lift_set_deg,arm_set_deg,cycle,route_step,has_cup,has_pin,pin_yellow_up,score,cpu_ms,batt_v,temp_max_c,event")
 
 
-def row(t, est=None, truth=None):
+def row(t, est=None, truth=None, event=""):
     c = [""] * 27
     c[0], c[1] = f"{t:.3f}", "stacker"
     if est:
         c[2], c[3], c[4] = (str(v) for v in est)
     if truth:
         c[9], c[10], c[11] = (str(v) for v in truth)
+    c[26] = event
     return ",".join(c)
 
 
@@ -29,8 +30,10 @@ TURNS = "start pose x=-39.37 y=0 h=0\nrepeat 10 {\n turn 90 timeout=3\n turn 0 t
 def files(text, route):
     d = tempfile.mkdtemp()
     lp, rp = os.path.join(d, "l.csv"), os.path.join(d, "r.route")
-    open(lp, "w", encoding="utf-8").write(text)
-    open(rp, "w", encoding="utf-8").write(route)
+    with open(lp, "w", encoding="utf-8") as f:
+        f.write(text)
+    with open(rp, "w", encoding="utf-8") as f:
+        f.write(route)
     return lp, rp
 
 
@@ -75,23 +78,80 @@ class StraightTest(unittest.TestCase):
         self.assertAlmostEqual(r.odometry, 0.37 * 2.54, delta=0.01)
 
 
+def spin(revs, step=-9.0, end=0.0, event_at=None, event=""):
+    """Heading-Reihe: revs Umdrehungen in Schritten von `step` Grad (Zeilen alle 20 ms), dann auf `end`."""
+    n = int(abs(revs * 360.0 / step))
+    rows = []
+    for i in range(n):
+        h = (step * i) % 360.0
+        rows.append(row(i * 0.02, truth=(-39.37, 0, h), event=event if i == event_at else ""))
+    rows.append(row(n * 0.02, truth=(-39.37, 0, end)))
+    return rows
+
+
 class TurnsTest(unittest.TestCase):
+    def test_ten_revolutions_pass(self):
+        lp, rp = files(log(spin(10)), TURNS)
+        r = drive_check.check("turns", lp, rp)
+        self.assertTrue(r.passed, r.problems)
+
+    def test_skipped_turns_fail(self):
+        lp, rp = files(log(spin(9)), TURNS)  # eine Umdrehung fehlt, Endrichtung stimmt trotzdem
+        r = drive_check.check("turns", lp, rp)
+        self.assertFalse(r.passed)
+        self.assertTrue(any("aufsummierte Drehung" in p for p in r.problems))
+
+    def test_back_and_forth_fails(self):
+        rows = spin(5) + spin(5, step=9.0)  # 5 vor, 5 zurück: Netto 0
+        lp, rp = files(log(rows), TURNS)
+        self.assertFalse(drive_check.check("turns", lp, rp).passed)
+
+    def test_reversal_in_between_fails(self):
+        rows = spin(6) + spin(2, step=9.0) + spin(6)  # Netto -10 Umdrehungen, aber mit Rücklauf
+        lp, rp = files(log(rows), TURNS)
+        r = drive_check.check("turns", lp, rp)
+        self.assertFalse(r.passed)
+        self.assertTrue(any("Drehrichtung" in p for p in r.problems))
+
+    def test_robot_log_counts_with_odometry(self):
+        rows = [row(i * 0.02, est=(0, 0, (-9.0 * i) % 360.0)) for i in range(400)] + [row(8.0, est=(0, 0, 0))]
+        lp, rp = files(log(rows, source="robot"), TURNS)
+        self.assertTrue(drive_check.check("turns", lp, rp, measured=1.0).passed)
+
+    def test_timeout_event_fails_even_with_good_end(self):
+        lp, rp = files(log(spin(10, event_at=50, event="TIMEOUT:TURN")), TURNS)
+        r = drive_check.check("turns", lp, rp)
+        self.assertFalse(r.passed)
+        self.assertIn("Ereignis im Log: TIMEOUT:TURN", r.problems)
+
     def test_pass_and_wrap(self):
-        lp, rp = files(log([row(5, truth=(-39.37, 0, 359.0))]), TURNS)  # 1 Grad vor 0
+        lp, rp = files(log(spin(10, end=359.0)), TURNS)  # 1 Grad vor 0
         r = drive_check.check("turns", lp, rp)
         self.assertTrue(r.passed)
         self.assertAlmostEqual(r.value, 1.0, delta=0.001)
         self.assertEqual(r.unit, "deg")
 
     def test_fail(self):
-        lp, rp = files(log([row(5, truth=(-39.37, 0, 2.5))]), TURNS)
+        lp, rp = files(log(spin(10, end=2.5)), TURNS)
         self.assertFalse(drive_check.check("turns", lp, rp).passed)
 
     def test_full_rotations_do_not_hide_error(self):
-        lp, rp = files(log([row(5, truth=(-39.37, 0, -3597.0))]), TURNS)  # 10 Umdrehungen, 3 Grad daneben
+        lp, rp = files(log(spin(10, end=3.0)), TURNS)  # 10 Umdrehungen, 3 Grad daneben
         r = drive_check.check("turns", lp, rp)
         self.assertFalse(r.passed)
         self.assertAlmostEqual(r.value, 3.0, delta=0.001)
+
+
+class StraightEventTest(unittest.TestCase):
+    def test_blocked_event_fails(self):
+        lp, rp = files(log([row(2, truth=(0, 0, 0), event="BLOCKED"), row(5, truth=(39.37, 0, 0))]), STRAIGHT)
+        r = drive_check.check("straight", lp, rp)
+        self.assertFalse(r.passed)
+        self.assertIn("Ereignis im Log: BLOCKED", r.problems)
+
+    def test_unrelated_events_are_ignored(self):
+        lp, rp = files(log([row(2, truth=(0, 0, 0), event="TUNE:save"), row(5, truth=(39.37, 0, 0))]), STRAIGHT)
+        self.assertTrue(drive_check.check("straight", lp, rp).passed)
 
 
 class InputTest(unittest.TestCase):

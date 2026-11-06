@@ -8,6 +8,9 @@ Soll-Ende: letzte `goto pose` bzw. `turn` der Route. Istwert: in der Simulation 
 letzten Logzeile. Am Roboter gibt es keine wahre Pose: dort misst ein Mensch (Maßband, Winkelmesser) und übergibt den Wert mit
 --measured-*; die Odometrie wird nur zum Vergleich ausgegeben, denn sie glaubt denselben Sensoren wie der Regler.
 Grenzen (docs/plan.md, D-07): geradeaus <= 2 cm Abstand zum Ziel, nach 10 Drehungen <= 2 Grad Richtungsfehler.
+Zusätzlich gilt die Prüfung als nicht bestanden, wenn im Log ein TIMEOUT:- oder BLOCKED-Ereignis steht (eine übersprungene
+Anweisung würde sonst unbemerkt bleiben) oder bei `turns` die aufsummierte Drehung (Heading entrollt, wahre Pose bzw. sonst
+Odometrie) nicht rund 10 Umdrehungen ergibt oder zwischendurch zurückläuft.
 Ausgang: 0 bestanden, 1 nicht bestanden, 2 Eingabefehler.
 """
 import argparse
@@ -15,12 +18,16 @@ import math
 import os
 import re
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 CM_PER_IN = 2.54
 LIMITS = {"straight": 2.0, "turns": 2.0}
 UNITS = {"straight": "cm", "turns": "deg"}
+REVOLUTIONS = 10  # routes/drive_turns.route: repeat 10 { 90, 180, 270, 0 }
+REVOLUTION_TOL_DEG = 20.0  # erlaubte Abweichung der aufsummierten Drehung von 10 * 360 Grad
+BACKSTEP_TOL_DEG = 5.0  # so weit darf das entrollte Heading gegen die Drehrichtung zurücklaufen
+BAD_EVENTS = ("TIMEOUT:", "BLOCKED")
 DEFAULT_ROUTE = {"straight": "routes/drive_straight.route", "turns": "routes/drive_turns.route"}
 
 
@@ -36,6 +43,7 @@ class Result:
     unit: str
     source: str  # "wahre Pose" oder "gemessen"
     odometry: Optional[float]  # gleiche Abweichung aus der Odometrie, nur zum Vergleich
+    problems: list = field(default_factory=list)  # Gründe für „nicht bestanden“ außer dem Grenzwert
 
 
 def _target(kind, route_path):
@@ -63,16 +71,49 @@ def _target(kind, route_path):
     return last
 
 
-def _last_row(log_path):
+def _rows(log_path):
     try:
-        lines = open(log_path, encoding="utf-8").read().splitlines()
+        with open(log_path, encoding="utf-8") as f:
+            lines = f.read().splitlines()
     except OSError as e:
         raise CheckError(f"Log nicht lesbar: {log_path}: {e}")
-    if len(lines) < 3 or not lines[0].startswith("# frostbyte-log"):
-        raise CheckError("Log ohne Kopfzeile '# frostbyte-log' oder ohne Datenzeilen")
+    if len(lines) < 2 or not lines[0].startswith("# frostbyte-log"):
+        raise CheckError("Log ohne Kopfzeile '# frostbyte-log'")
     cols = lines[1].split(",")
-    cells = lines[-1].split(",")
-    return dict(zip(cols, cells))
+    rows = [dict(zip(cols, ln.split(","))) for ln in lines[2:] if ln.strip()]
+    if not rows:
+        raise CheckError("Log ohne Datenzeilen")
+    return rows
+
+
+def _event_problems(rows):
+    found = []
+    for r in rows:
+        for ev in r.get("event", "").split(";"):
+            if ev.startswith(BAD_EVENTS) and ev not in found:
+                found.append(ev)
+    return [f"Ereignis im Log: {ev}" for ev in found]
+
+
+def _rotation_problems(rows):
+    """Prüft die aufsummierte Drehung: wahre Pose, sonst Odometrie. Entrollt das Heading über die 360-Grad-Sprünge."""
+    col = "th_deg" if any(_num(r, "th_deg") is not None for r in rows) else "h_deg"
+    hs = [h for h in (_num(r, col) for r in rows) if h is not None]
+    if len(hs) < 2:
+        return ["zu wenig Heading-Werte für die Drehungszählung"]
+    total, run_max, run_min, max_drop, max_rise = 0.0, 0.0, 0.0, 0.0, 0.0
+    prev = hs[0]
+    for h in hs[1:]:
+        total += _wrap(h - prev)
+        prev = h
+        run_max, run_min = max(run_max, total), min(run_min, total)
+        max_drop, max_rise = max(max_drop, run_max - total), max(max_rise, total - run_min)
+    problems = []
+    if abs(abs(total) - REVOLUTIONS * 360.0) > REVOLUTION_TOL_DEG:
+        problems.append(f"aufsummierte Drehung {total:.0f} Grad statt ±{REVOLUTIONS * 360} (übersprungene oder falsch herum gefahrene Drehung)")
+    elif (max_drop if total > 0 else max_rise) > BACKSTEP_TOL_DEG:
+        problems.append("Drehrichtung wechselt zwischendurch")
+    return problems
 
 
 def _num(row, name):
@@ -91,7 +132,8 @@ def check(kind, log_path, route_path, measured=None):
     if kind not in LIMITS:
         raise CheckError(f"Unbekannte Prüfung: {kind}")
     target = _target(kind, route_path)
-    row = _last_row(log_path)
+    rows = _rows(log_path)
+    row = rows[-1]
 
     def deviation(x, y, h):
         if kind == "straight":
@@ -107,7 +149,8 @@ def check(kind, log_path, route_path, measured=None):
     else:
         raise CheckError("Keine wahre Pose im Log (Roboter-Log): Abweichung messen und mit "
                          f"--measured-{UNITS[kind]} übergeben")
-    return Result(value <= LIMITS[kind] + 1e-9, value, LIMITS[kind], UNITS[kind], source, odo)
+    problems = _event_problems(rows) + (_rotation_problems(rows) if kind == "turns" else [])
+    return Result(value <= LIMITS[kind] + 1e-9 and not problems, value, LIMITS[kind], UNITS[kind], source, odo, problems)
 
 
 def main(argv=None):
@@ -135,6 +178,8 @@ def main(argv=None):
     odo = f", Odometrie {r.odometry:.2f} {r.unit}" if r.odometry is not None else ""
     print(f"{'bestanden' if r.passed else 'nicht bestanden'}: Abweichung {r.value:.2f} {r.unit} "
           f"(Grenze {r.limit:.1f} {r.unit}, {r.source}{odo})")
+    for pr in r.problems:
+        print(f"  Problem: {pr}")
     return 0 if r.passed else 1
 
 
