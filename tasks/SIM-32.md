@@ -21,9 +21,13 @@ SIM-29 lässt den Lift im Match fahren, aber die Höhe ist nicht modelliert; `ru
 docs/decisions/ADR-009 (Nachtrag SIM-29), tasks/M-09.md, tasks/M-11.md, lib/subsystems/lift.hpp (height_for_angle), sim/rules.hpp.
 
 ## Übergabe
-—
+Mechanismus fertig und getestet (Auftrag des Menschen am 6. Nov: vorerst mit Schätzwerten bauen, später nachmessen; M-11 daher übersprungen).
+- `HeightMap` (sim/mechanism.hpp), optionaler Block `lift.hoehe` in sim_params.json, `Game::lift_height_in`, SG3-Prüfung je Schritt in `run_match` (`RULE:SG3` einmal je Überschreitung). Tests: test/test_sim_height.cpp mit eigenen Tabellen.
+- Die Tabellen in sim_params.json sind **Schätzungen** (`quelle: schaetzung`, unter 50″). Nach M-11: nur die Zahlen dort ersetzen, dann das Ticket-Kriterium „Messwerte“ erneut prüfen.
+- Nicht lokal geprüft: Roboter-Builds (kein PROS-Toolchain hier); sim/ ist nicht Teil davon, die CI baut sie.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-05 · arjanssen (Claude) · Ticket angelegt (Folge von SIM-29, SG3 in der Simulation) · –
 2026-11-05 · arjanssen (KI) · Von SIM-31 auf SIM-32 umnummeriert (Doppelvergabe mit Intake-Ticket auf main) · –
+2026-11-06 · matelechner01 (Claude) · SG3 in der Simulation: HeightMap, Prüfung je Schritt, Tests, ADR-009-Nachtrag; Tabellen vorerst geschätzt · –

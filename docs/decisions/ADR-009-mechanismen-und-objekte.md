@@ -28,5 +28,11 @@ Status: angenommen (1. Nov 2026), Ticket SIM-04. docs/plan.md beschreibt SIM-04 
 - Ebene 0 = untere Endlage: der erste Stein je Goal bewegt den Lift nicht.
 - SG3 (Höhe) wird in der Simulation weiter nicht geprüft: die Höhe ist nicht modelliert (Geometrie aus M-09/M-11, Winkel-Höhen-Tabelle gesperrt bis gemessen). Der Lift bleibt nur durch das Gelenk in seinen Endlagen. Die Prüfung gehört zu einem eigenen Ticket nach der Messung.
 
+## Nachtrag SIM-32 (6. Nov 2026): SG3 im Match
+- `roboter.<name>.mechanismen.lift.hoehe` (optional): 5 Stützpunkte `winkel_deg` → `hoehe_in` (Oberkante des Roboters), streng steigend, monotone Interpolation wie am Roboter (`lib/util/monotone_table.hpp`). Fehlt der Block, ist die Höhe nicht modelliert und SG3 wird für diesen Roboter nicht geprüft (nichts erfunden). Unplausible Werte: `std::runtime_error` beim Laden.
+- `run_match` prüft in jedem Simulationsschritt die Höhe (`Game::lift_height_in`) gegen `check_rules`; `RULE:SG3` steht einmal je Überschreitung im Log (steigende Flanke), `rule_violations` zählt sie. Genau 50″ ist erlaubt.
+- **Platzhalter:** Die Tabellen in `sim_params.json` sind Schätzungen (`quelle: schaetzung`, grob linear, bleiben unter 50″), bis M-11 misst. Die Tests nehmen eigene Tabellen und hängen nicht von ihnen ab. Wenn die Messwerte da sind, nur die Zahlen in `sim_params.json` ersetzen.
+
+
 ## Am Roboter zu prüfen (SIM-29)
 - Lift-Grenzen und -Geschwindigkeiten sind Schätzungen (M-01/M-11), ebenso die Ebenenhöhen als lineare Teilung von min..max.

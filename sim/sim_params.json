@@ -19,7 +19,8 @@
       "masse_lb": 16.0,
       "umriss_in": { "laenge": 17.5, "breite": 17.5 },
       "mechanismen": {
-        "lift":  { "min_deg": -40, "max_deg": 45, "max_deg_s": 70,  "max_deg_s2": 400, "quelle": "schaetzung, Kassette TODO(HW)" },
+        "lift":  { "min_deg": -40, "max_deg": 45, "max_deg_s": 70,  "max_deg_s2": 400, "quelle": "schaetzung, Kassette TODO(HW)" ,
+                   "hoehe": { "winkel_deg": [-40, -18.75, 2.5, 23.75, 45], "hoehe_in": [12, 20, 28, 36, 44], "quelle": "schaetzung (grob linear, Oberkante des Roboters; echt erst mit M-11 messen, TODO(HW))" } },
         "arm":   { "min_deg": 0,   "max_deg": 97, "max_deg_s": 170, "max_deg_s2": 900, "quelle": "schaetzung" },
         "claw":  { "offen_in": 1.29, "pin_in": 0.19, "max_in_s": 4.0, "quelle": "schaetzung" }
       },
@@ -35,7 +36,8 @@
       "masse_lb": 10.0,
       "umriss_in": { "laenge": 14.84, "breite": 14.7 },
       "mechanismen": {
-        "lift":  { "min_deg": -20, "max_deg": 60, "max_deg_s": 220, "max_deg_s2": 1200, "quelle": "schaetzung, Kassette TODO(HW)" },
+        "lift":  { "min_deg": -20, "max_deg": 60, "max_deg_s": 220, "max_deg_s2": 1200, "quelle": "schaetzung, Kassette TODO(HW)" ,
+                   "hoehe": { "winkel_deg": [-20, 0, 20, 40, 60], "hoehe_in": [8, 14, 20, 26, 32], "quelle": "schaetzung (grob linear, Oberkante des Roboters; echt erst mit M-11 messen, TODO(HW))" } },
         "claw":  { "offen_in": 1.29, "pin_in": 0.19, "max_in_s": 4.0, "quelle": "schaetzung" }
       },
       "sensoren": {

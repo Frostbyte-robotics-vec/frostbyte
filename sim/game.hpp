@@ -109,6 +109,12 @@ public:
     // fährt mit jedem Zyklus zur Höhe der Ebene (nach der Aufnahme und dem Schließen) und danach zurück nach unten.
     double lift_deg(int robot) const { return lift_[robot].pos(); }
     double lift_set_deg(int robot) const { return lift_[robot].target(); }
+    // Höhe der Roboteroberkante aus dem Lift-Winkel (SIM-32); leer, wenn für den Roboter keine Höhentabelle in
+    // sim_params.json steht (nicht modelliert, SG3 wird dann nicht geprüft).
+    std::optional<double> lift_height_in(int robot) const {
+        const HeightMap& h = setup_.mech[robot].height;
+        return h.valid() ? std::optional<double>(h.at(lift_[robot].pos())) : std::nullopt;
+    }
 
     // Punktestand, wenn das Match jetzt endete, mit so vielen Robotern im Midfield (0..max_scored_robots, sonst begrenzt).
     int score(int robots_in_midfield = 0) const;
