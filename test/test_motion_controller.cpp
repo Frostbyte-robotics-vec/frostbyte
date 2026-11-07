@@ -136,6 +136,59 @@ TEST_CASE("Motion: move_to fährt zu einem Punkt und meldet DONE") {
     CHECK(r.peak_v <= 12.0 + 1e-9);
 }
 
+TEST_CASE("Motion: tol_in je Befehl ersetzt move_tol_in (D-14)") {
+    // Pose fest 3 in vor dem Ziel (kürzer als das Blockiert-Fenster): nur der Befehl mit weiter Toleranz gilt als angekommen.
+    auto settled = [](double tol_in) {
+        Pid lat(lateral_gains()), ang(angular_gains());
+        MotionController mc(test_config(), lat, ang);
+        REQUIRE(mc.request(MotionCommand::move_to(3.0, 0.0, 5.0, false, tol_in), 0.0));
+        for (int t_ms = 0; t_ms <= 300; t_ms += 10)
+            mc.update(t_ms / 1000.0, Pose{0.0, 0.0, 0.0});
+        return mc.state();
+    };
+    // 0,75 in vor dem Ziel: Standard (1,0) ist angekommen, enge Toleranz 0,5 nicht.
+    auto settled_075 = [](double tol_in) {
+        Pid lat(lateral_gains()), ang(angular_gains());
+        MotionController mc(test_config(), lat, ang);
+        REQUIRE(mc.request(MotionCommand::move_to(0.75, 0.0, 5.0, false, tol_in), 0.0));
+        for (int t_ms = 0; t_ms <= 300; t_ms += 10)
+            mc.update(t_ms / 1000.0, Pose{0.0, 0.0, 0.0});
+        return mc.state();
+    };
+    CHECK(settled_075(-1.0) == MotionState::done);
+    CHECK(settled_075(0.5) == MotionState::running);
+    CHECK(settled(6.0) == MotionState::done);
+    CHECK(settled(-1.0) == MotionState::running);  // Standard: move_tol_in = 1.0
+    CHECK(settled(0.25) == MotionState::running);
+}
+
+TEST_CASE("Motion: enge tol_in endet näher am Ziel als weite") {
+    auto end_dist = [](double tol_in) {
+        Rig r(sim::Pose{0.0, 0.0, 0.0});
+        REQUIRE(r.mc.request(MotionCommand::move_to(36.0, 0.0, 8.0, false, tol_in), 0.0));
+        r.run_until_finished(9.0);
+        CHECK(r.mc.state() == MotionState::done);
+        return std::make_pair(dist(r.model.pose(), 36.0, 0.0), r.now_s());
+    };
+    const auto loose = end_dist(6.0);
+    const auto tight = end_dist(0.5);
+    CHECK(loose.first <= 6.0);
+    CHECK(tight.first <= 0.5);
+    CHECK(loose.second < tight.second);
+    CHECK(loose.first > tight.first);
+}
+
+TEST_CASE("Motion: tol_in 0, NaN oder unendlich wird abgelehnt, negativ heißt Standard") {
+    Pid lat(lateral_gains()), ang(angular_gains());
+    MotionController mc(test_config(), lat, ang);
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    const double inf = std::numeric_limits<double>::infinity();
+    CHECK_FALSE(mc.request(MotionCommand::move_to(24.0, 0.0, 5.0, false, 0.0), 0.0));
+    CHECK_FALSE(mc.request(MotionCommand::move_to(24.0, 0.0, 5.0, false, nan), 0.0));
+    CHECK_FALSE(mc.request(MotionCommand::move_to(24.0, 0.0, 5.0, false, inf), 0.0));
+    CHECK(mc.request(MotionCommand::move_to(24.0, 0.0, 5.0, false, -1.0), 0.0));
+}
+
 TEST_CASE("Motion: move_to rückwärts fährt mit dem Heck voran") {
     Rig r(sim::Pose{0.0, 0.0, 0.0});
     REQUIRE(r.mc.request(MotionCommand::move_to(-30.0, 0.0, 4.0, true), 0.0));

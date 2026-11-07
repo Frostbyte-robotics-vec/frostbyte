@@ -10,7 +10,7 @@ Status: angenommen (3. Nov 2026), Ticket A-04. Der Advisor (Opus) hat vorgegeben
 - `intake`, `cycle`, `toggle`, `start` sind **Platzhalter ohne Modell**: sie enden sofort mit `done`. Es gibt dafür keine Zahl in `sim_params.json`, weil nichts modelliert wird. Der Anschluss an `Game`/`ObjectModel` (Zyklus-Dauer, Besitz, Punkte aus der Route) ist mit SIM-22 erledigt (ADR-032); ohne Spielzustand (keine Route mit `cycle`/`intake`) bleiben sie Platzhalter.
 - Reglerwerte und Standard-Timeouts je Roboter stehen in `RobotSetup::control` (`RouteControl`). `frostbyte_sim` setzt sie aus `config/stacker.hpp` und `config/runner.hpp` (gleiche Werte wie am Roboter); Tests setzen eigene.
 - Die Log-Spalte `route_step` (Format v1, schon vorhanden) zeigt `Zeile:Befehl Name` der Hauptlane, z. B. `2:goto_pose`.
-- Bei `goto pose x= y= h=` wird `h` ignoriert (`move_to` fährt nur x/y), ebenso `tol=`: es gilt die feste Toleranz aus `MotionConfig`; wie am Roboter bis A-10.
+- Bei `goto pose x= y= h=` wird `h` ignoriert (`move_to` fährt nur x/y), `goto pose` kennt kein `tol=`. `goto <NAME> tol=` wirkt seit D-14 (ADR-017, Nachtrag D-14); den Ausführer am Roboter baut A-10.
 
 ## Grenzen
 - Mit `field/field.json` laufen die Skills-Routen noch nicht: `START_STACKER`/`START_RUNNER` sind `null` (A-01), also gibt es kein Fahrmodell und keine Route. Dort, wo Posen gesetzt sind, sind `goto`-Ziele (Loader, Goals) Feldpunkte-Mitten, nicht Anfahrposen vor dem Element (A-05).
