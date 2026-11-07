@@ -26,7 +26,12 @@ Vorlage: Runner in `tools/viewer/robots.js`. Material wie im Competition-Kit (Al
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand: fertig, PR offen. cad/runner/ (Build-Script, Prüfscript, ANLEITUNG.md, Ansicht von unten), ADR-040.
+Prüfung im echten Fusion (07.11.2026, pruefung.txt): Startvolumen 14,77 × 14,88 × 14,70″ (≤ 15″), Kollisionen Startstellung 0,
+Lift +12 … +72° je 0 Kollisionen, Schrauben 129 (frei 72, Vormontage 16, erst vor späterer Baugruppe 41, nicht erreichbar 0).
+Odometrie-Schwingen in beiden Endlagen (±0,04 rad) ohne Kollision. Tiefe Y hat nur 0,12″ Reserve.
+Am echten Roboter offen: Gummiband für die Schwingen (nicht modelliert), Druckteile aus PETG drucken und Passung prüfen,
+alle Maße sind CAD-Startwerte (Einmessen: M-14, M-11).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
