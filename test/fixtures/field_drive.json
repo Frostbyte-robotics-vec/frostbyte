@@ -1,0 +1,12 @@
+{
+  "_hinweis": "Testfeld für die Antriebs-Prüfungen (D-07): Startpose wie in routes/drive_*.route. Unabhängig von field/field.json.",
+  "version": 1,
+  "feld_in": 144,
+  "goals": [],
+  "loader": [],
+  "toggles": [],
+  "posen": [
+    { "id": "START_STACKER", "x_in": -39.37, "y_in": 0.0, "h_deg": 0 },
+    { "id": "START_RUNNER", "x_in": 39.37, "y_in": 40.0, "h_deg": 180 }
+  ]
+}

@@ -85,6 +85,7 @@ class WebTest(unittest.TestCase):
         self.assertIn("160'000", HTML["index.html"])
         for html in HTML.values():
             self.assertNotIn("Ziel: Top 16", html)
+            self.assertNotIn("Top 16", html)
 
     def test_social_links_sind_echt(self):
         h = HTML["index.html"]

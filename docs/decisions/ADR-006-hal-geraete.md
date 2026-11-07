@@ -29,3 +29,10 @@ Der Advisor (Opus) hat den Entwurf vor der Umsetzung geprüft (u. a.: Betrag sta
 ## Am Roboter zu prüfen (F-08)
 - Einheit von `get_current_draw()` (mA erwartet) und ob das Vorzeichen von der Drehrichtung abhängt (Betrag wird gebildet).
 - Stall-Strom eines V5-Motors bei 12 V gegen `max_strom_A`/`widerstand_ohm` (Schätzung).
+
+## Nachtrag F-07 (6. Nov 2026): Port-Tabelle
+Der Advisor (Opus) hat die Umsetzung geprüft (u. a.: `src/port_check.hpp` darf nie auf einem offenen Port pulsen; config/ enthält nur Geräte, die der Code für den Roboter schon vorsieht).
+- `docs/ports.md` ist jetzt eine geparste Datei: Tabellenzeilen `| Roboter | Gerät | Art | Port | Drehrichtung | Getriebe | Quelle |`. Port ist `1`..`21` oder `TODO(HW)`; ein Test vergleicht Zeilen mit `port_expect_table` in config/ (Name, Art, Port). Geräte, deren Vorhandensein offen ist, stehen unter „Vorhandensein offen“ und nicht in der Tabelle.
+- Offener Port = `frostbyte::unassigned_port` (0). `lib/util/port_table.hpp`: `port_table_check` (Bereich 1..21, keine Duplikate, auch nicht mit umgekehrtem Vorzeichen), `static_assert` in config/. `port_check` überspringt offene Ports.
+- `checked_port(port)`: gibt den Port zurück, sonst Compile-Fehler (im Konstantenausdruck) bzw. `abort()`; nur beim Aufbau der Geräte aufrufen, nie im Steuer-Task. Der Fehlerpfad ist nicht getestet (abort).
+- Alle Ports sind offen: das CAD enthält keine. Bestätigung am Roboter: F-09.

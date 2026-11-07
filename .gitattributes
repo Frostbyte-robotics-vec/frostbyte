@@ -5,3 +5,4 @@ Makefile text eol=lf
 *.a binary
 *.bin binary
 *.elf binary
+test/fixtures/*.csv text eol=lf

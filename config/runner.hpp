@@ -1,11 +1,15 @@
 #pragma once
 
+#include <cstdint>
+
 #include "control/motion_controller.hpp"
+#include "estimation/odometry.hpp"
 #include "match/driver_map.hpp"
 #include "match/route_player.hpp"
 #include "subsystems/claw.hpp"
 #include "subsystems/intake.hpp"
 #include "util/port_check.hpp"
+#include "util/port_table.hpp"
 #include "util/rule_guard.hpp"
 
 namespace config::runner {
@@ -13,9 +17,15 @@ inline constexpr const char* robot_name = "runner";
 inline constexpr double footprint_in = 15.0;
 // TODO(HW): GPS-Fusion (estimation/gps_fusion.hpp, ADR-016): Schwellen/Gewinne und GPS-Einbaulage, siehe config/stacker.hpp.
 // TODO(HW): Ports, Drehrichtungen, Uebersetzungen, Radgroessen folgen mit dem Antriebs-Ticket
-// TODO(HW): Odometrie (estimation/drive_odometry.hpp, ADR-015): wirksame Spurbreite track_width_in (am Roboter einmessen,
-//   nicht nur aus dem CAD), IMU-Vorzeichen (Feld: gegen den Uhrzeigersinn positiv) und die Erkennungsschwellen
-//   jump_deg, still_imu_deg, still_encoder_deg, still_cycles. Die Schwellen aus Logs eines echten Laufs ableiten.
+// Odometrie (D-11, ADR-018 Nachtrag): Tracking-Raeder + IMU mit Rueckfall auf die Antriebsencoder (FallbackOdometry).
+// Ursprung = Mitte zwischen den vier Antriebsraedern (Drehmittelpunkt), x vorn, y links (ADR-012).
+// Quelle: CAD-01 (cad/runner/FrostbyteRunner.py, Commit 6e4ea65 auf ticket/cad-01), nicht gemessen.
+// TODO(HW): am echten Roboter einmessen (Ticket M-14): Versatz beider Raeder, Raddurchmesser (Kalibrierfahrt), wirksame Spurbreite,
+//   IMU-Vorzeichen (Feld: gegen den Uhrzeigersinn positiv) und die Erkennungsschwellen jump_in, still_wheel_in, still_drive_in,
+//   still_cycles (aus Logs eines echten Laufs ableiten).
+inline constexpr frostbyte::TrackingGeometry tracking_geometry{.parallel_y_in = 2.1, .perpendicular_x_in = 3.7};
+inline constexpr double tracking_wheel_diameter_in = 2.75;  // nominell 2.752, CAD
+inline constexpr double track_width_in = 11.57;             // Mitte Rad links bis Mitte Rad rechts, CAD
 
 // Fahrer-Belegung (C-03, ADR-014). Grundbelegung identisch auf beiden Robotern; Fahrer bestaetigt sie am Roboter.
 inline constexpr frostbyte::Binding bindings[] = {
@@ -116,8 +126,34 @@ inline constexpr frostbyte::IntakeConfig intake{.run_v = 10.0,
 // port_check (F-03): Erwartung je Port (Port mit Vorzeichen, Art, Name, Bewegungstext fuer +Spannung). Leer, bis die
 // Ports feststehen (F-07). Mit port_check_enabled = true startet der Roboter nur das Pruefprogramm (src/port_check.hpp); im Match false.
 // TODO(HW): Eintraege aus docs/ports.md (F-07) uebernehmen; Ports und Richtungen werden nicht geraten.
-inline constexpr const frostbyte::PortExpect* port_expect = nullptr;
-inline constexpr int port_expect_count = 0;
+// Port-Tabelle (F-07, docs/ports.md). Alle Ports sind offen (unassigned_port), bis CAD oder Bench-Test (F-09) sie belegen.
+// Negativer Port = Motor umgekehrt (PROS-Konvention). Die Eintraege hier und die Zeilen in docs/ports.md muessen uebereinstimmen (Test).
+inline constexpr frostbyte::PortExpect port_expect_table[] = {
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::motor, "Antrieb L", "Rad vorwaerts"},  // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::motor, "Antrieb R", "Rad vorwaerts"},  // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::rotation, "Track par", nullptr},       // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::rotation, "Track quer", nullptr},      // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::imu, "IMU", nullptr},                  // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::gps, "GPS", nullptr},                  // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::motor, "Intake", "Rollen einziehen"},  // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::motor, "Claw", "Claw zu"},             // TODO(HW)
+};
+inline constexpr const frostbyte::PortExpect* port_expect = port_expect_table;
+inline constexpr int port_expect_count = sizeof(port_expect_table) / sizeof(port_expect_table[0]);
+static_assert(frostbyte::port_table_check(port_expect_table, port_expect_count) == frostbyte::PortIssue::ok,
+              "Port-Tabelle: doppelter oder ungueltiger Port");
 inline constexpr bool port_check_enabled = false;
+
+// Funk-Link-Test (L-01, ADR-041): Pinger schickt Pings, Reflektor schickt sie zurueck. Mit link_test_enabled = true startet der
+// Roboter nur dieses Programm (src/link_test.hpp); im Match false. Zeiten sind Startwerte (Software-Entscheidung).
+// TODO(HW): link_port (Funk-Radio, 1..21; 0 = nicht festgelegt), link_id (muss auf beiden Robotern gleich sein) und welche Seite
+// Sender und welche Empfaenger ist, am Roboter festlegen; die Rollen werden nicht geraten.
+inline constexpr bool link_test_enabled = false;
+inline constexpr int link_port = 0;
+inline constexpr const char* link_id = "frostbyte";
+inline constexpr bool link_is_transmitter = false;
+inline constexpr bool link_is_pinger = false;
+inline constexpr std::uint32_t link_period_ms = 50;
+inline constexpr std::uint32_t link_timeout_ms = 500;
 
 }  // namespace config::runner

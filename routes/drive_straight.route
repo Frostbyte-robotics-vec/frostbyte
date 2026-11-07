@@ -1,0 +1,5 @@
+# Antriebs-Prüfung D-07/D-10: 2 m geradeaus (78,74 Zoll), Start und Ziel symmetrisch zur Feldmitte (Feld 144 Zoll).
+# Gilt für beide Roboter. Auswertung: python3 tools/drive_check.py straight <log>
+start  pose x=-39.37 y=0 h=0
+goto   pose x=39.37 y=0 h=0   timeout=8
+end    hold

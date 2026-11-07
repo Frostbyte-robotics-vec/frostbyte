@@ -23,3 +23,6 @@ Status: angenommen (2. Nov 2026), Ticket D-08. Der Advisor (Opus) hat vorgegeben
 - Schiebt ein Gegner den Roboter seitlich oder rutscht er, kann das Querrad mehr als `jump_in` messen: falscher Alarm → Rückfall (sicher, aber ungenauer). Ebenso drehende Antriebsräder gegen eine Wand (Parallelrad steht, Encoder drehen). `jump_in` und `still_cycles` am Roboter so wählen, dass Schlupf darunter bleibt.
 - Rückfall rechnet ohne Querrad (`dy = 0`) und mit Antriebsencodern: ungenauer als Tracking, aber stabil.
 - Ausfall der Antriebsencoder selbst wird nicht geprüft.
+
+## Nachtrag (D-11, 2026-11-07): Klasse für beide Roboter, umbenannt
+Der Runner bekommt zwei Tracking-Räder (CAD-01) und nutzt dieselbe Odometrie wie der Stacker. Die Klasse heißt deshalb nicht mehr `StackerOdometry`, sondern `FallbackOdometry` (`lib/estimation/fallback_odometry.hpp`); der Ausfallgrund `StackerFallback` heißt `TrackedFallbackReason` (`FallbackReason` ist durch ADR-015 belegt). Rat des Advisors (Opus): umbenennen, solange noch keine Verdrahtung in `src/` existiert und kein offener Branch die Klasse nutzt (geprüft); einen Namen wählen, der nicht mit `TrackingOdometry` verwechselbar ist; kein Alias. Verhalten und Schwellen unverändert; die Tests laufen jetzt für zwei Geometrien (Querrad hinter bzw. vor der Drehmitte).

@@ -262,5 +262,6 @@ TEST_CASE("sim_params.json: beide Roboter lassen sich laden (nur Struktur, keine
         for (const char* profile : {"none", "realistic", "harsh"})
             CHECK_NOTHROW(load_sensor_params(j, robot, profile));
     CHECK(load_sensor_params(j, "stacker", "none").odometry_is_tracking);
-    CHECK_FALSE(load_sensor_params(j, "runner", "none").odometry_is_tracking);
+    CHECK(load_sensor_params(j, "runner", "none")
+              .odometry_is_tracking);  // D-11: Runner hat Tracking-Räder wie der Stacker
 }
