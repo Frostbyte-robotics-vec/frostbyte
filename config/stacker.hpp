@@ -49,8 +49,8 @@ inline constexpr int profile_count = sizeof(profiles) / sizeof(profiles[0]);
 inline constexpr frostbyte::MotionConfig motion{
     .max_volts = 12.0,
     .track_width_in = 14.0,
-    .turn_tol_deg = 2.0,
-    .move_tol_in = 1.0,
+    .turn_tol_deg = 1.5,
+    .move_tol_in = 0.5,
     .settle_s = 0.1,
     .near_in = 4.0,
     .lookahead_in = 10.0,

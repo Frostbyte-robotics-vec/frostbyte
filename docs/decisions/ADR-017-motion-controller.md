@@ -55,3 +55,34 @@ prüfen; LemLib-Adapter muss im Roboter-Build wirklich linken (geprüft: mit `mo
   Routen (A-03) den Controller im Steuer-Task nutzen. Bis dahin sind die Objekte in `src/main.cpp` angelegt, aber
   ungenutzt.
 - D-06 (Tuning-Modus) ändert `PidGains` zur Laufzeit; D-07 tunt am Testchassis und vergleicht beide Regler.
+
+## Nachtrag D-12: engere Toleranzen für die Antriebs-Prüfung
+- Entscheidung: Weg 1, global enger. `move_tol_in` 1.0 → 0.5 (1,27 cm), `turn_tol_deg` 2.0 → 1.5 in `config/stacker.hpp` und
+  `config/runner.hpp`. Die Grenzen der Prüfung (2 cm, 2°) lassen so Reserve für den Unterschied zwischen geschätzter und
+  wahrer Pose: der Regler stoppt auf der Schätzung, `drive_check` misst die Wahrheit.
+- Warum nicht Weg 2 (`tol=` bei `goto pose`): `goto <NAME> tol=` wird zwar geparst, aber nirgends an den Controller
+  weitergereicht (`MotionCommand::move_to` kennt keine Toleranz). Weg 2 wäre eine Schnittstellenänderung in Controller,
+  beiden Ausführern und Parser. Das ist ein eigenes Ticket (D-14); die Prüfroute misst so dasselbe Verhalten wie die Skills-Routen.
+- Warum Drehtoleranz nur 1,5° und nicht 1,0°: Mit 1,0° braucht jede Drehung in der Simulation etwa 1,5 s; die 40 Drehungen von
+  `drive_turns` waren dann bei Matchende (60 s) noch nicht durch (Runner endete mitten in einer Drehung bei −149°). Mit 1,5° endet
+  die Route rechtzeitig.
+- Nachweis in der Simulation (ungetunte Regler, Seeds 1–5, Stacker allein, der Runner fährt `empty.route`, Prüfrouten mit
+  `--field test/fixtures/field_drive.json`). Der Runner ist hier nicht vergleichbar: `field_drive.json` startet ihn bei
+  (39,37 / 40 / 180°), er fährt also nicht 2 m geradeaus, und „3420 statt 3600 Grad“ bei `drive_turns` ist die erste Drehung im
+  Uhrzeigersinn von 180° aus. Runner-Zahlen stehen deshalb nicht im Nachtrag; D-10 misst ihn am Roboter.
+  - Matchzeit, zu der der Routenplan leer ist (`route_step` leer), Skills-Routen, Mittel der Seeds 1–5: Stacker 54,6 s
+    (Toleranzen 1,0/2,0) → 55,2 s (0,5/1,5); Runner 56,3 s → 57,6 s, davon 3 von 5 Seeds bis 58,0 s, also bis zum Timeout
+    des letzten `goto MIDFIELD_R` (`at 52s`, `timeout=6.0`). Das Ausrollen kostet in der ungetunten Simulation etwa 1 s je Route.
+  - Bewegungs-Timeouts schreiben kein `TIMEOUT:` ins Log (nur die Ereigniszähler 0 vorher wie nachher); sichtbar sind sie an der Endzeit.
+    `PLACED:` ist in Skills-Routen vorher und nachher 0 (Platzhalter-Koordinaten), die Zahl taugt hier nicht als Vergleich.
+  - `drive_straight` Stacker, wahre Pose: Toleranz 1,0 → 6,05 / 6,01 / 6,03 / 3,89 / 6,04 cm (alle 5 Seeds nicht bestanden);
+    0,5 → 2,20 / 2,00 / 1,67 / 0,10 / 1,75 cm (3 von 5 bestanden); 0,6 → 2,2 bis 2,6 cm in 4 von 5 Seeds; 0,4 → fast alle
+    Läufe laufen bis ins `goto`-Timeout von 8 s, deshalb verworfen.
+  - **Kriterium nicht voll erfüllt:** Der Sim-Lauf von `drive_straight` endet bei 0,5 in 2 von 5 Seeds mit 2,00 bzw. 2,20 cm,
+    also nicht unter 2,0 cm. Ursache ist der Schätzfehler der ungetunten Simulation (Odometrie weicht 0,5 bis 3,3 cm von der
+    wahren Pose ab), nicht die Toleranz; eine engere Toleranz verschiebt das Problem in Timeouts. Die Bestehensfrage klärt D-10 mit
+    getunten Reglern am Roboter. `drive_turns` Stacker: Endrichtung 0,56 bis 2,38° (2 von 5 Seeds über 2°), die Route endet bei
+    ca. 51 s; dort bleibt „Drehrichtung wechselt“ wie vorher im Bericht, das ist Reglergüte.
+- Absicherung: Test in `test/test_motion_controller.cpp` verlangt `move_tol_in·2,54 ≤ 1,5 cm` und `turn_tol_deg ≤ 1,5°` in beiden Configs.
+- Rat des Advisors (Opus): Messung je Roboter einzeln, Reserve für Schätzfehler (0,4–0,5″ / 0,75–1,0°), Timeouts statt nur
+  Laufzeit zählen (wegen `on_timeout=skip`), Config-Test, totes `tol=` als eigenes Ticket.
