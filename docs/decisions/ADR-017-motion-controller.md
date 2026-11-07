@@ -55,3 +55,23 @@ prüfen; LemLib-Adapter muss im Roboter-Build wirklich linken (geprüft: mit `mo
   Routen (A-03) den Controller im Steuer-Task nutzen. Bis dahin sind die Objekte in `src/main.cpp` angelegt, aber
   ungenutzt.
 - D-06 (Tuning-Modus) ändert `PidGains` zur Laufzeit; D-07 tunt am Testchassis und vergleicht beide Regler.
+
+## Nachtrag D-12: engere Toleranzen für die Antriebs-Prüfung
+- Entscheidung: Weg 1, global enger. `move_tol_in` 1.0 → 0.5 (1,27 cm), `turn_tol_deg` 2.0 → 1.5 in `config/stacker.hpp` und
+  `config/runner.hpp`. Die Grenzen der Prüfung (2 cm, 2°) lassen so Reserve für den Unterschied zwischen geschätzter und
+  wahrer Pose: der Regler stoppt auf der Schätzung, `drive_check` misst die Wahrheit.
+- Warum nicht Weg 2 (`tol=` bei `goto pose`): `goto <NAME> tol=` wird zwar geparst, aber nirgends an den Controller
+  weitergereicht (`MotionCommand::move_to` kennt keine Toleranz). Weg 2 wäre eine Schnittstellenänderung in Controller,
+  beiden Ausführern und Parser. Das ist ein eigenes Ticket (D-14); die Prüfroute misst so dasselbe Verhalten wie die Skills-Routen.
+- Warum Drehtoleranz nur 1,5° und nicht 1,0°: Mit 1,0° braucht jede Drehung in der Simulation etwa 1,5 s; die 40 Drehungen von
+  `drive_turns` waren dann bei Matchende (60 s) noch nicht durch (Runner endete mitten in einer Drehung bei −149°). Mit 1,5° endet
+  die Route rechtzeitig.
+- Nachweis in der Simulation (ungetunt; je Roboter einzeln, der andere fährt `empty.route`, `--field test/fixtures/field_drive.json`;
+  Skills-Routen Seeds 1–5): vorher und nachher null `TIMEOUT:`- und `BLOCKED`-Ereignisse in Skills- und Prüfrouten; ein Lauf der
+  Skills-Routen braucht 0,5 s Rechenzeit. Geradeaus vorher → nachher: Stacker 6,05 → 2,20 cm, Runner 1,73 → 1,73 cm. Die
+  Stacker-Prüfung geradeaus besteht in der ungetunten Simulation auch nachher nicht (2,20 > 2,0 cm); das ist Reglergüte (D-07/D-10),
+  nicht Toleranz, und wird hier nicht als bestanden behauptet. Gleiches gilt für die Drehprüfung: „Drehrichtung wechselt“ bzw.
+  „aufsummierte Drehung 3420 statt 3600“ stehen vorher wie nachher im Bericht; die Endrichtung liegt bei 0,56° (Stacker) und 0,25° (Runner).
+- Absicherung: Test in `test/test_motion_controller.cpp` verlangt `move_tol_in·2,54 ≤ 1,5 cm` und `turn_tol_deg ≤ 1,5°` in beiden Configs.
+- Rat des Advisors (Opus): Messung je Roboter einzeln, Reserve für Schätzfehler (0,4–0,5″ / 0,75–1,0°), Timeouts statt nur
+  Laufzeit zählen (wegen `on_timeout=skip`), Config-Test, totes `tol=` als eigenes Ticket.
