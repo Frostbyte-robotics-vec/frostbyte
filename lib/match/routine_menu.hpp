@@ -15,8 +15,9 @@ enum class MenuKey { next, prev, confirm };
 
 // Routinen-Katalog v1 (docs/plan.md, "Routinen-Katalog"). Der Standard `nothing` steht ganz hinten und gilt bei fehlender
 // oder kaputter Datei: stehen bleiben ist die einzige Routine, die nie etwas falsch macht.
-inline constexpr const char* routine_catalog[] = {"safe_red", "safe_blue",   "awp_red", "awp_blue",
-                                                  "skills",   "test_square", "nothing"};
+// drive_straight und drive_turns sind die Antriebs-Prüfungen aus D-07 (routes/drive_*.route).
+inline constexpr const char* routine_catalog[] = {"safe_red",    "safe_blue",      "awp_red",     "awp_blue", "skills",
+                                                  "test_square", "drive_straight", "drive_turns", "nothing"};
 inline constexpr int routine_catalog_count = static_cast<int>(sizeof(routine_catalog) / sizeof(routine_catalog[0]));
 inline constexpr int routine_default_index = routine_catalog_count - 1;
 
