@@ -2,7 +2,7 @@
 id: CAD-01
 phase: "1"
 titel: Fusion-360-Nachbau des Runners als Script ins Repo (echte VEX-Teile, Gelenke, Montageprüfung, Odometrie)
-status: review
+status: done
 owner: DAVIDCOPCOP
 branch: ticket/cad-01
 depends: []
