@@ -14,6 +14,7 @@
 #include "match/controller_feedback.hpp"
 #include "match/routine_screen.hpp"
 #include "port_check.hpp"
+#include "util/build_info.hpp"
 #include "util/rule_guard.hpp"
 
 static_assert(!(config::port_check_enabled && config::link_test_enabled),
@@ -63,6 +64,17 @@ frostbyte::RoutineScreen g_routine_screen(frostbyte::make_routine_menu());
 // Ports, TODO(HW)); der Steuer-Task ruft g_rule_guard.filter() auf, sobald Motoren geschrieben werden, und gibt
 // Restzeit/Besitz/Lift-Zustand hinein. Disabled -> Halt bleibt Sache dieses Aufrufs (siehe TODO im Steuer-Task).
 frostbyte::RuleGuard g_rule_guard(config::rule_guard);
+
+// Release-Stand (L-03): Defines kommen aus dem Makefile; fehlen sie (z. B. IDE-Build), steht "?" bzw. "-" da.
+#ifndef FB_VERSION
+#define FB_VERSION "?"
+#endif
+#ifndef FB_COMMIT
+#define FB_COMMIT ""
+#endif
+#ifndef FB_DIRTY
+#define FB_DIRTY 1
+#endif
 
 std::uint32_t micros_u32() { return static_cast<std::uint32_t>(pros::micros()); }
 
@@ -124,6 +136,13 @@ void menu_task(void*) {
 void initialize() {
     pros::lcd::initialize();
     pros::lcd::set_text(1, config::robot_name);
+    {
+        // Version, Commit, dirty/Datum auf Zeile 0 (Startbildschirm); einmalig, nicht im Steuer-Task.
+        char text[frostbyte::BuildInfoText::cols + 1];
+        frostbyte::format_build_info(frostbyte::BuildInfo{FB_VERSION, FB_COMMIT, FB_DIRTY != 0, __DATE__}, text,
+                                     sizeof text);
+        pros::lcd::set_text(0, text);
+    }
     if constexpr (config::tuning_enabled && !config::motion_uses_lemlib_pid) {
         frostbyte::TuningSet tuned{config::lateral_pid, config::angular_pid};
         if (frostbyte::load_tuning(g_tuning_store, tuned) == frostbyte::LoadResult::loaded)
