@@ -37,10 +37,10 @@
       }
     },
     "runner": {
-      "antrieb": { "kS_V": 0.6, "kV_V_per_in_s": 0.205, "kA_V_per_in_s2": 0.035, "spurbreite_in": 11.5, "mu": 0.9, "motor_max_V": 12.0, "quelle": "schaetzung" },
+      "antrieb": { "kS_V": 0.6, "kV_V_per_in_s": 0.205, "kA_V_per_in_s2": 0.035, "spurbreite_in": 11.57, "spurbreite_quelle": "CAD-01 (Fusion), nicht gemessen", "mu": 0.9, "motor_max_V": 12.0, "quelle": "schaetzung" },
       "akku": { "spannung_V": 12.8, "quelle": "schaetzung (V5-Akku nominal 12,8 V; Motoren begrenzen ohnehin auf 12 V)" },
       "masse_lb": 10.0,
-      "umriss_in": { "laenge": 14.84, "breite": 14.7 },
+      "umriss_in": { "laenge": 14.88, "breite": 14.77, "quelle": "CAD-01 (Fusion), nicht gemessen" },
       "mechanismen": {
         "lift":  { "min_deg": -20, "max_deg": 60, "max_deg_s": 220, "max_deg_s2": 1200, "quelle": "schaetzung, Kassette TODO(HW)" ,
                    "hoehe": { "winkel_deg": [-20, 0, 20, 40, 60], "hoehe_in": [8, 14, 20, 26, 32], "quelle": "schaetzung (grob linear, Oberkante des Roboters; echt erst mit M-11 messen, TODO(HW))" } },

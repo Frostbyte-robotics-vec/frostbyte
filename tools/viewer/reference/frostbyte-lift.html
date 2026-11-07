@@ -602,18 +602,21 @@ function buildStacker(){
 function buildRunner(){
   const cfg = {xo:7, xi:4.5, xw:5.75, xg:4.95, wheels:[[-3, true], [3, false]], motors:[[0, Y], [4.5, Y + 2.598]]};
   const ports = [];
+  const DU = .625;   // Brain-Platte auf Distanzhülsen über den Innenprofilen (Platz für die Tracking-Räder), CAD-01 DECK_UP
+  const up = (pts, from) => pts.map((q, i) => i >= from ? [q[0], q[1] + DU, q[2]] : q);
   [-1, 1].forEach(s => { rail(29, s * cfg.xo, 0, s); rail(29, s * cfg.xi, 0, s); upright(6, s * cfg.xo, 4, 4.5, s); upright(6, s * cfg.xi, 4, 4.5, s);
     [cfg.xo, cfg.xi].forEach(xr => [-.25, .25].forEach(dz => screw(s * (xr - .25), Y + .5 + T * 1.5, 4.5 + dz * 0 + (dz > 0 ? .25 : -.25), [0, -1, 0], .2)));
     ports.push(...driveSide(s, cfg)); });
   cross(29, -6.75); [6.75, 4.25].forEach(xx => [-1, 1].forEach(s => [-.25, .25].forEach(dz => screw(s * xx, Y + .5 + T * 2, -6.75 + dz, [0, 1, 0], .3))));
   [-1, 1].forEach(s => { cross(5, 6.75, s * 5.75); [6.75, 4.75].forEach(xx => screw(s * xx, Y + .5 + T * 2, 6.75, [0, 1, 0], .3)); });   // Rückseite offen für die Aufnahme
-  [[-4.6, 18], [1.2, 12]].forEach(([z, hx]) => { plate(hx, z, Y + .5 + T / 2); [-1, 1].forEach(s => [-.75, .75].forEach(dz => screw(s * 4.25, Y + .5 + T * 1.5, z + dz, [0, 1, 0], .3))); });
-  brain(0, 3.55, -4.6);
-  radio(-3.05, Y + .5 + T + .55, -5.0);
-  battery(0, Y + .5 + T + .6, 1.2);
-  imu(0, Y + .5 + T + 1.2 + .25, 1.2);
-  ports.forEach(p => { const sx = Math.sign(p.x); cable(p.z > 2 ? [[p.x, p.y, p.z], [p.x, p.y + .8, p.z], [sx * 3.0, 5.4, 1.0], [sx * 2.95, 3.6, -1.2], [sx * 2.5, 3.6, -2.9]] : [[p.x, p.y, p.z], [p.x, p.y + .8, p.z], [sx * 2.95, 3.4, -1.2], [sx * 2.5, 3.6, -2.9]]); });   // außen an den Bandstützen vorbei zum Brain
-  cable([[-1.2, 3.8, .0], [-1.0, 3.95, -1.6], [-1.6, 3.7, -2.9]]);
+  [[-4.6, 18], [1.2, 12]].forEach(([z, hx]) => { plate(hx, z, Y + .5 + T / 2 + DU); [-1, 1].forEach(s => [-.75, .75].forEach(dz => screw(s * 4.25, Y + .5 + T * 1.5 + DU, z + dz, [0, 1, 0], .3))); });
+  brain(0, 3.55 + DU, -4.6);
+  radio(-3.05, Y + .5 + T + .55 + DU, -5.0);
+  battery(0, Y + .5 + T + .6 + DU, 1.2);
+  imu(0, Y + .5 + T + 1.2 + .25 + DU, 1.2);
+  trackingWheel(-2.1, 1.375, -4.15, 'x'); trackingWheel(1.1, 1.375, -3.7, 'z');   // CAD-01: Längsrad links vorn, Querrad rechts vorn (CAD X rechts, Y vorn → z = −Y)
+  ports.forEach(p => { const sx = Math.sign(p.x); cable(p.z > 2 ? up([[p.x, p.y, p.z], [p.x, p.y + .8, p.z], [sx * 3.0, 5.4, 1.0], [sx * 2.95, 3.6, -1.2], [sx * 2.5, 3.6, -2.9]], 3) : up([[p.x, p.y, p.z], [p.x, p.y + .8, p.z], [sx * 2.95, 3.4, -1.2], [sx * 2.5, 3.6, -2.9]], 2)); });   // außen an den Bandstützen vorbei zum Brain
+  cable(up([[-1.2, 3.8, .0], [-1.0, 3.95, -1.6], [-1.6, 3.7, -2.9]], 0));
   intakeRunner();
   const set = fourBar({z0:6.3, yP1:11.5, L:10, armHoles:21});
   arrow(-10.4);
