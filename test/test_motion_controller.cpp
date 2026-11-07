@@ -146,6 +146,17 @@ TEST_CASE("Motion: tol_in je Befehl ersetzt move_tol_in (D-14)") {
             mc.update(t_ms / 1000.0, Pose{0.0, 0.0, 0.0});
         return mc.state();
     };
+    // 0,75 in vor dem Ziel: Standard (1,0) ist angekommen, enge Toleranz 0,5 nicht.
+    auto settled_075 = [](double tol_in) {
+        Pid lat(lateral_gains()), ang(angular_gains());
+        MotionController mc(test_config(), lat, ang);
+        REQUIRE(mc.request(MotionCommand::move_to(0.75, 0.0, 5.0, false, tol_in), 0.0));
+        for (int t_ms = 0; t_ms <= 300; t_ms += 10)
+            mc.update(t_ms / 1000.0, Pose{0.0, 0.0, 0.0});
+        return mc.state();
+    };
+    CHECK(settled_075(-1.0) == MotionState::done);
+    CHECK(settled_075(0.5) == MotionState::running);
     CHECK(settled(6.0) == MotionState::done);
     CHECK(settled(-1.0) == MotionState::running);  // Standard: move_tol_in = 1.0
     CHECK(settled(0.25) == MotionState::running);

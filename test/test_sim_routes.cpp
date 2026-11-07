@@ -216,7 +216,7 @@ TEST_CASE("Antriebs-Prüfung: drive_turns läuft 40 Drehungen und endet nahe Ric
 TEST_CASE("Routen: goto <NAME> tol= erreicht den MotionController (D-14)") {
     using namespace frostbyte;
     // Pose fest 3 in vor dem Ziel (kürzer als das Blockiert-Fenster): nur mit weiter Toleranz meldet der Ausführer das goto als erledigt.
-    auto status_after_settle = [](double tol_in) {
+    auto status_after_settle = [](double tol_in, double gap_in = 3.0) {
         MotionConfig mcfg = test_control().motion;
         mcfg.move_tol_in = 1.0;
         mcfg.settle_s = 0.1;
@@ -224,7 +224,7 @@ TEST_CASE("Routen: goto <NAME> tol= erreicht den MotionController (D-14)") {
         MotionController mc(mcfg, lat, ang);
         std::vector<FieldPoint> points(1);
         points[0].id = "P";
-        points[0].xy_in = std::make_pair(3.0, 0.0);
+        points[0].xy_in = std::make_pair(gap_in, 0.0);
         SignalBus bus;
         SimRouteExecutor exec(mc, points, bus, RouteRobot::stacker, RoutePlayerConfig{});
         RouteCmd cmd;
@@ -239,4 +239,6 @@ TEST_CASE("Routen: goto <NAME> tol= erreicht den MotionController (D-14)") {
     CHECK(status_after_settle(6.0) == StepStatus::done);
     CHECK(status_after_settle(-1.0) == StepStatus::running);  // ohne tol=: move_tol_in
     CHECK(status_after_settle(0.25) == StepStatus::running);
+    CHECK(status_after_settle(-1.0, 0.75) == StepStatus::done);    // Standard 1,0 reicht bei 0,75 in ...
+    CHECK(status_after_settle(0.5, 0.75) == StepStatus::running);  // ... tol=0.5 nicht
 }
