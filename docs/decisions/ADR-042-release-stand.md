@@ -1,4 +1,4 @@
-# ADR-040: Release-Stand (Version, Commit, dirty) auf dem Display
+# ADR-042: Release-Stand (Version, Commit, dirty) auf dem Display
 
 Status: angenommen (L-03, 2026-11-07)
 
