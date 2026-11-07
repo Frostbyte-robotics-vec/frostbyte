@@ -1,5 +1,5 @@
 /* Robotermodelle Stacker und Runner für den Viewer.
-   Zeilen 151–490 unverändert aus reference/frostbyte-lift.html übernommen (Texturen, Materialien, Bauteile, buildStacker,
+   Zeilen 151–490 (= Vorlage 294–633) unverändert aus reference/frostbyte-lift.html übernommen (Texturen, Materialien, Bauteile, buildStacker,
    buildRunner, build). Ändert sich die Vorlage, diesen Block neu übernehmen; nichts hier von Hand anpassen.
    Modell-Koordinaten: Zoll, y nach oben, Vorderseite des Roboters zeigt nach −z.
    FBRobots(renderer) → { stacker(), runner(), tileTex }; stacker()/runner() → { root, layers, info:{ set(th_rad, t), thMin, thMax, … } } */
