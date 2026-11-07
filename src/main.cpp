@@ -109,10 +109,22 @@ void control_task(void*) {
 void display_task(void*) {
     std::uint32_t now_ms = pros::millis();
     while (true) {
-        const frostbyte::CycleStatsView v = g_cycle_stats.load();
-        pros::lcd::print(2, "jitter max %lu us", static_cast<unsigned long>(v.jitter_max_us));
-        pros::lcd::print(3, "cpu max %lu us  ueberzuege %lu", static_cast<unsigned long>(v.work_max_us),
-                         static_cast<unsigned long>(v.overruns));
+        if constexpr (config::link_enabled && config::link_selftest) {
+            // Hardware-Pruefung L-02: Link-Stand statt Takt-Statistik (Zeilen 2/3).
+            const frostbyte::LinkSnapshot l = frostbyte::link_shared().snapshot(pros::millis());
+            if (l.valid) {
+                pros::lcd::print(2, "link %s offen %u ack %lu exp %lu", l.connected ? "UP" : "weg",
+                                 static_cast<unsigned>(l.pending), static_cast<unsigned long>(l.acked),
+                                 static_cast<unsigned long>(l.expired));
+                pros::lcd::print(3, "ping_test %s in %lu schlecht %lu", l.selftest_seen ? "gesehen" : "nein",
+                                 static_cast<unsigned long>(l.frames_in), static_cast<unsigned long>(l.frames_bad));
+            }
+        } else {
+            const frostbyte::CycleStatsView v = g_cycle_stats.load();
+            pros::lcd::print(2, "jitter max %lu us", static_cast<unsigned long>(v.jitter_max_us));
+            pros::lcd::print(3, "cpu max %lu us  ueberzuege %lu", static_cast<unsigned long>(v.work_max_us),
+                             static_cast<unsigned long>(v.overruns));
+        }
         pros::c::task_delay_until(&now_ms, display_period_ms);
     }
 }
@@ -152,6 +164,8 @@ void initialize() {
             frostbyte::apply_tuning(tuned, g_lat_pid, g_ang_pid);
     }
     g_routine_screen.init(g_routine_store);
+    if constexpr (config::link_enabled)
+        (void)frostbyte::link_shared();  // Mutex und Endpunkt hier anlegen, nicht erst im Steuer-Task
     if constexpr (config::port_check_enabled || config::link_test_enabled)
         return;  // nur Pruefprogramm (F-03, L-01): kein Steuer-Task, opcontrol() startet es
     static pros::Task task(control_task, nullptr, TASK_PRIORITY_MAX - 1, TASK_STACK_DEPTH_DEFAULT, "control");

@@ -350,6 +350,31 @@ TEST_CASE("Status und Goal-Stand: der Partner sieht den neuesten Wert, ältere F
     CHECK(p.b.peer_status()->route_step == 9);
 }
 
+TEST_CASE("Neustart des Partners mit gleicher Sitzungsnummer: nach Funkstille zählt der Status wieder") {
+    LinkConfig cfg = fast_cfg();
+    LinkEndpoint peer(LinkRobot::runner, 9, cfg);
+    std::uint8_t buf[LinkFrame::max_wire_size];
+    auto status_frame = [&](std::uint16_t seq, std::uint8_t step) {
+        LinkFrame f;
+        f.kind = LinkFrame::Kind::status;
+        f.sender = LinkRobot::stacker;
+        f.session = 4;
+        f.seq = seq;
+        f.status = {step, 0};
+        return f.encode(buf);
+    };
+    peer.on_bytes(buf, status_frame(500, 7), 1000);
+    CHECK(peer.peer_status()->route_step == 7);
+    peer.on_bytes(buf, status_frame(3, 1), 1100);  // ohne Stille: alt, ignoriert
+    CHECK(peer.peer_status()->route_step == 7);
+
+    // Der Partner startet neu: gleiche Sitzung, Nummer fängt bei 0 an, nach mehr als loss_ms (500) Stille.
+    peer.on_bytes(buf, status_frame(0, 2), 1100 + cfg.loss_ms + 10);
+    CHECK(peer.peer_status()->route_step == 2);
+    peer.on_bytes(buf, status_frame(1, 3), 1100 + cfg.loss_ms + 20);
+    CHECK(peer.peer_status()->route_step == 3);
+}
+
 TEST_CASE("Status: überlebt Verlust und Streuung; Verbindung bleibt stehen") {
     Pair p(8);
     p.ab.loss_percent = p.ba.loss_percent = 30;

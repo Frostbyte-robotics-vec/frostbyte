@@ -271,19 +271,27 @@ public:
             return;
         }
         ++stats_.frames_in;
+        // Nach einer Funkstille von loss_ms und mehr kann der Partner neu gestartet sein, mit gleicher Sitzungsnummer und
+        // Nummern ab 0 (die Sitzung kommt nur aus einer Zeit): dann zählt der erste Frame jeder Art wieder als neu.
+        if (!has_rx_ || static_cast<std::uint32_t>(now_ms - last_rx_ms_) >= cfg_.loss_ms) {
+            status_tracked_ = false;
+            goals_tracked_ = false;
+        }
         has_rx_ = true;
         last_rx_ms_ = now_ms;
         switch (f.kind) {
             case LinkFrame::Kind::status:
-                if (newer(f, peer_status_.has_value(), status_session_, status_seq_)) {
+                if (newer(f, status_tracked_, status_session_, status_seq_)) {
                     peer_status_ = f.status;
+                    status_tracked_ = true;
                     status_session_ = f.session;
                     status_seq_ = f.seq;
                 }
                 break;
             case LinkFrame::Kind::goals:
-                if (newer(f, peer_goals_.has_value(), goals_session_, goals_seq_)) {
+                if (newer(f, goals_tracked_, goals_session_, goals_seq_)) {
                     peer_goals_ = f.goals;
+                    goals_tracked_ = true;
                     goals_session_ = f.session;
                     goals_seq_ = f.seq;
                 }
@@ -395,6 +403,8 @@ private:
     bool has_rx_ = false;
     std::uint32_t last_rx_ms_ = 0;
     std::optional<LinkStatus> peer_status_;
+    bool status_tracked_ = false;  // status_session_/status_seq_ gelten (nach Funkstille wieder false)
+    bool goals_tracked_ = false;
     std::uint8_t status_session_ = 0;
     std::uint16_t status_seq_ = 0;
     std::optional<std::array<std::uint8_t, LinkFrame::kGoals>> peer_goals_;

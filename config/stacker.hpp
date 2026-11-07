@@ -166,6 +166,11 @@ inline constexpr std::uint32_t link_timeout_ms = 500;
 inline constexpr bool link_enabled = false;
 inline constexpr bool link_self_is_stacker = true;
 inline constexpr std::size_t link_max_packet_bytes = 64;
+// Selbsttest fuer die Hardware-Pruefung (nur mit link_enabled): der Stacker sendet alle link_selftest_period_ms das Signal
+// link_selftest_name, display_task zeigt den Link-Stand auf den LCD-Zeilen 2/3 (statt der Takt-Statistik). Im Match false.
+inline constexpr bool link_selftest = false;
+inline constexpr std::uint32_t link_selftest_period_ms = 3000;
+inline constexpr const char* link_selftest_name = "ping_test";
 inline constexpr std::uint32_t link_task_period_ms = 10;
 inline constexpr std::uint32_t link_status_period_ms = 200;
 inline constexpr std::uint32_t link_goals_period_ms = 500;
