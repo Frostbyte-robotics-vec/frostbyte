@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 #include "control/motion_controller.hpp"
@@ -155,5 +156,19 @@ inline constexpr bool link_is_transmitter = false;
 inline constexpr bool link_is_pinger = false;
 inline constexpr std::uint32_t link_period_ms = 50;
 inline constexpr std::uint32_t link_timeout_ms = 500;
+
+// Funk im Match (L-02, ADR-043): Status, Goal-Stand und Signale (signal/wait_for) zum anderen Roboter, in einem eigenen Task
+// (src/link_comms.hpp). Port, Id und Rollen teilt sich der Roboter mit dem Link-Test oben; link_enabled und link_test_enabled
+// nie zusammen. Zeiten sind Startwerte (Software-Entscheidung).
+// TODO(HW): link_max_packet_bytes ist die Paketobergrenze von pros::Link im Paketmodus; 64 ist eine Annahme, am Gerät messen (L-04).
+inline constexpr bool link_enabled = false;
+inline constexpr bool link_self_is_stacker = false;
+inline constexpr std::size_t link_max_packet_bytes = 64;
+inline constexpr std::uint32_t link_task_period_ms = 10;
+inline constexpr std::uint32_t link_status_period_ms = 200;
+inline constexpr std::uint32_t link_goals_period_ms = 500;
+inline constexpr std::uint32_t link_retry_ms = 50;
+inline constexpr std::uint32_t link_signal_deadline_ms = 2000;
+inline constexpr std::uint32_t link_loss_ms = 1000;
 
 }  // namespace config::runner

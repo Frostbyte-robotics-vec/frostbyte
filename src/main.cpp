@@ -10,6 +10,7 @@
 #include "hal/pros/pros_storage.hpp"  // SD-Karte fuer die Tuning-Werte (D-06)
 #include "lemlib/api.hpp"             // prueft nur, dass LemLib einbindbar ist; Aufrufe erst hinter hal/ (ADR-001)
 #include "lemlib_regulator.hpp"
+#include "link_comms.hpp"
 #include "link_test.hpp"
 #include "match/controller_feedback.hpp"
 #include "match/routine_screen.hpp"
@@ -19,6 +20,8 @@
 
 static_assert(!(config::port_check_enabled && config::link_test_enabled),
               "Pruefprogramme (F-03, L-01) nie gleichzeitig");
+static_assert(!(config::link_enabled && (config::link_test_enabled || config::port_check_enabled)),
+              "Funk im Match (L-02) nie zusammen mit einem Pruefprogramm: gleicher Funk-Port");
 
 namespace {
 
@@ -154,6 +157,10 @@ void initialize() {
     static pros::Task task(control_task, nullptr, TASK_PRIORITY_MAX - 1, TASK_STACK_DEPTH_DEFAULT, "control");
     static pros::Task display(display_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "display");
     static pros::Task menu(menu_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "menu");
+    if constexpr (config::
+                      link_enabled)  // Funk zum Partner (L-02): eigener Task, der Steuer-Task fasst pros::Link nie an
+        static pros::Task comms(frostbyte::comms_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT,
+                                "comms");
 }
 
 void disabled() { g_phase.set(frostbyte::Phase::Disabled); }
