@@ -310,8 +310,8 @@ TEST_CASE("field.json: keine Elementmitte liegt im Footprint der Startposen, die
     CHECK((dx >= 0.0 || dy >= 0.0));
 }
 
-// MIDFIELD_S/MIDFIELD_R sind Parkposen für Matchende (SC6: zumindest teilweise im Midfield), Vorschlag der KI (A-13), vom Menschen
-// nicht bestätigt. Midfield: Quadrat 48 in, um 45 Grad gedreht, also |x| + |y| <= seite / sqrt(2).
+// MIDFIELD_S/MIDFIELD_R: Parkposen für Matchende (SC6: zumindest teilweise im Midfield) und Bedienposen für das Midfield-Goal.
+// Richtung frei (Mensch, A-09): Stacker von Westen, Runner von Süden, die Wege kreuzen sich nicht. Midfield: Quadrat 48 in, um 45 Grad gedreht, also |x| + |y| <= seite / sqrt(2).
 TEST_CASE(
     "field.json: Midfield-Parkposen - im Feld, teilweise im Midfield, Goal-Mitte frei, Roboter überlappen sich nicht") {
     const Json f = field();
@@ -336,4 +336,27 @@ TEST_CASE(
     const double dx = std::fabs(s[0].x - s[1].x) - (seite[0] + seite[1]) / 2.0;
     const double dy = std::fabs(s[0].y - s[1].y) - (seite[0] + seite[1]) / 2.0;
     CHECK((dx >= 0.0 || dy >= 0.0));
+}
+
+// A-09: Von beiden Posen aus zeigt der Roboter auf das Midfield-Goal. Der Abstand Vorderkante bis Goal-Mitte ist plausibel (Goal-Grundfläche 5,6 in). Die echte Reichweite von Lift/Claw ist TODO(HW) (M-11) und wird hier nicht vorausgesetzt.
+TEST_CASE("field.json: Midfield-Posen zeigen auf das Goal, Vorderkante in plausiblem Abstand") {
+    const Json f = field();
+    const Json& g = find_id(f.at("goals"), "MIDFIELD");
+    const double gx = g.at("x_in").as_number(), gy = g.at("y_in").as_number();
+    const double seite[2] = {24.0, 15.0};
+    const char* ids[2] = {"MIDFIELD_S", "MIDFIELD_R"};
+    for (int r = 0; r < 2; ++r) {
+        INFO(ids[r]);
+        const Json& p = find_id(f.at("posen"), ids[r]);
+        const double x = p.at("x_in").as_number(), y = p.at("y_in").as_number(), h = p.at("h_deg").as_number();
+        const double rad = h * 3.14159265358979323846 / 180.0;
+        const double ax = std::cos(rad), ay = std::sin(rad);
+        const double dx = gx - x, dy = gy - y;
+        const double laengs = dx * ax + dy * ay;
+        const double quer = -dx * ay + dy * ax;
+        CHECK(std::fabs(quer) < 0.5);
+        const double vorn = laengs - seite[r] / 2.0;
+        CHECK(vorn >= 8.0);
+        CHECK(vorn <= 24.0);
+    }
 }
