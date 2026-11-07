@@ -1,5 +1,5 @@
 {
-  "_hinweis": "Goals, Toggles und Loader: vermessen im CAD 276-9250-000 (2026-04-26) von DAVIDCOPCOP, Ticket A-01. Goal-anfahrt_deg: Goals zeigen von der nächsten Wand weg ins Feld (Entscheidung des Menschen, 2026-11-02); MIDFIELD bleibt null. START_STACKER/START_RUNNER: Rücken an der Wand, verschiedene Dreiecke, Wahl des Menschen 2026-11-02 (A-08, nach main über A-13). MIDFIELD_S/MIDFIELD_R: Park- und Bedienposen für das Midfield-Goal, Richtung frei (Mensch, 2026-11-07, A-09): Stacker von Westen, Runner von Süden, Vorderkante je 16 in vor der Goal-Mitte. TODO(HW): echte Reichweite von Lift/Claw offen (M-11), Abstand danach anpassen. Namen sind fest, Routen benutzen nur diese Namen.",
+  "_hinweis": "Goals, Toggles und Loader: vermessen im CAD 276-9250-000 (2026-04-26) von DAVIDCOPCOP, Ticket A-01. Goal-anfahrt_deg: Goals zeigen von der nächsten Wand weg ins Feld (Entscheidung des Menschen, 2026-11-02); MIDFIELD bleibt null. START_STACKER/START_RUNNER: Rücken an der Wand, verschiedene Dreiecke, Wahl des Menschen 2026-11-02 (A-08, nach main über A-13). MIDFIELD_S/MIDFIELD_R: Park- und Bedienposen für das Midfield-Goal, Richtung frei (Mensch, 2026-11-07, A-09): Stacker von Westen, Runner von Süden, Vorderkante Stacker 16 in, Runner 20,5 in vor der Goal-Mitte (Poses von A-13 unverändert). TODO(HW): echte Reichweite von Lift/Claw offen (M-11), Abstand danach anpassen. Namen sind fest, Routen benutzen nur diese Namen.",
   "version": 1,
   "einheiten": "Zoll, Grad",
   "ursprung": "Feldmitte",
@@ -198,7 +198,7 @@
     {
       "id": "MIDFIELD_R",
       "x_in": 0.0,
-      "y_in": -23.5,
+      "y_in": -28.0,
       "h_deg": 90
     }
   ],

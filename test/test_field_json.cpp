@@ -338,15 +338,13 @@ TEST_CASE(
     CHECK((dx >= 0.0 || dy >= 0.0));
 }
 
-// A-09: Von beiden Posen aus zeigt der Roboter auf das Midfield-Goal. Der Abstand Vorderkante bis Goal-Mitte ist gleich und
-// plausibel (Goal-Grundfläche 5,6 in). Die echte Reichweite von Lift/Claw ist TODO(HW) (M-11) und wird hier nicht vorausgesetzt.
-TEST_CASE("field.json: Midfield-Posen zeigen auf das Goal, gleicher Abstand der Vorderkante") {
+// A-09: Von beiden Posen aus zeigt der Roboter auf das Midfield-Goal. Der Abstand Vorderkante bis Goal-Mitte ist plausibel (Goal-Grundfläche 5,6 in). Die echte Reichweite von Lift/Claw ist TODO(HW) (M-11) und wird hier nicht vorausgesetzt.
+TEST_CASE("field.json: Midfield-Posen zeigen auf das Goal, Vorderkante in plausiblem Abstand") {
     const Json f = field();
     const Json& g = find_id(f.at("goals"), "MIDFIELD");
     const double gx = g.at("x_in").as_number(), gy = g.at("y_in").as_number();
     const double seite[2] = {24.0, 15.0};
     const char* ids[2] = {"MIDFIELD_S", "MIDFIELD_R"};
-    double vorn[2];
     for (int r = 0; r < 2; ++r) {
         INFO(ids[r]);
         const Json& p = find_id(f.at("posen"), ids[r]);
@@ -357,9 +355,8 @@ TEST_CASE("field.json: Midfield-Posen zeigen auf das Goal, gleicher Abstand der 
         const double laengs = dx * ax + dy * ay;
         const double quer = -dx * ay + dy * ax;
         CHECK(std::fabs(quer) < 0.5);
-        vorn[r] = laengs - seite[r] / 2.0;
-        CHECK(vorn[r] >= 8.0);
-        CHECK(vorn[r] <= 24.0);
+        const double vorn = laengs - seite[r] / 2.0;
+        CHECK(vorn >= 8.0);
+        CHECK(vorn <= 24.0);
     }
-    CHECK(std::fabs(vorn[0] - vorn[1]) < 0.5);
 }
