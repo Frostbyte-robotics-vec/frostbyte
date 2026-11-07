@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Wertet das Protokoll des Funk-Link-Tests aus (L-01, ADR-040).
+"""Wertet das Protokoll des Funk-Link-Tests aus (L-01, ADR-041).
 
   python3 tools/link_report.py link.csv [--max-loss 0.02] [--max-p95-ms 40] [--json out.json]
 

@@ -7,7 +7,7 @@
 #include "main.h"
 #include "util/link_test.hpp"
 
-// Funk-Link-Test (L-01, ADR-040): Hilfsprogramm fuer beide Roboter, aktiv nur mit config::link_test_enabled (dann startet
+// Funk-Link-Test (L-01, ADR-041): Hilfsprogramm fuer beide Roboter, aktiv nur mit config::link_test_enabled (dann startet
 // initialize() keinen Steuer-Task). Der Pinger (config::link_is_pinger) schickt alle config::link_period_ms einen Ping, der
 // Reflektor schickt jeden Ping sofort zurueck. Der Pinger schreibt je Ping eine Zeile nach /usd/linklog_<roboter>.csv
 // (frostbyte-linklog v1; Auswertung mit tools/link_report.py) und zeigt Zaehler aufs LCD. Eigene Schleife mit delay():

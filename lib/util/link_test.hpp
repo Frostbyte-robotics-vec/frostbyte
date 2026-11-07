@@ -7,7 +7,7 @@
 
 #include "core/ring_buffer.hpp"
 
-// Funk-Link-Test (L-01, ADR-040): Ping/Pong zwischen den beiden Robotern, um Latenz und Verlust des V5-Funklinks zu messen.
+// Funk-Link-Test (L-01, ADR-041): Ping/Pong zwischen den beiden Robotern, um Latenz und Verlust des V5-Funklinks zu messen.
 // Reine Logik ohne PROS und ohne dynamischen Speicher; Senden und Empfangen stehen in src/link_test.hpp. Alle Zeiten sind
 // pros::millis() des jeweiligen Roboters (32 Bit, laufen ueber); gerechnet wird nur mit Differenzen auf dem Pinger. Die Uhren
 // der beiden Roboter sind nicht synchron: t_pong_ms steht im Paket, wird aber nur zur Diagnose mitgeschrieben, nie verrechnet.

@@ -1,4 +1,4 @@
-# ADR-040: Funk-Link-Test (Ping/Pong, Latenz und Verlust)
+# ADR-041: Funk-Link-Test (Ping/Pong, Latenz und Verlust)
 
 Status: Entwurf (L-01, 2026-11-06); wird angenommen, sobald L-04 die Grenzwerte liefert
 
