@@ -88,7 +88,9 @@ void SimRouteExecutor::start(int lane, const RouteCmd& cmd, double now_s) {
                 if (p.id == cmd.name) {
                     last_goto_loader_ = p.loader;
                     if (p.xy_in)  // null: nicht vermessen, kein Ziel erfinden
-                        begin_motion(lane, MotionCommand::move_to(p.xy_in->first, p.xy_in->second, to), now_s);
+                        begin_motion(lane,
+                                     MotionCommand::move_to(p.xy_in->first, p.xy_in->second, to, false, cmd.tol_in),
+                                     now_s);
                     break;
                 }
             break;

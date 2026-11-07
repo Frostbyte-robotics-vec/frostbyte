@@ -76,6 +76,7 @@ struct MotionCommand {
     double x_in = 0.0;         // move_to
     double y_in = 0.0;
     bool reverse = false;    // move_to: mit dem Heck voran
+    double tol_in = -1.0;    // move_to: Toleranz dieses Befehls; < 0: cfg.move_tol_in (D-14)
     Path path;               // follow
     double timeout_s = 0.0;  // Pflicht: endlich und > 0
 
@@ -86,12 +87,14 @@ struct MotionCommand {
         c.timeout_s = timeout_s;
         return c;
     }
-    static MotionCommand move_to(double x_in, double y_in, double timeout_s, bool reverse = false) {
+    static MotionCommand move_to(double x_in, double y_in, double timeout_s, bool reverse = false,
+                                 double tol_in = -1.0) {
         MotionCommand c;
         c.kind = MotionKind::move_to;
         c.x_in = x_in;
         c.y_in = y_in;
         c.reverse = reverse;
+        c.tol_in = tol_in;
         c.timeout_s = timeout_s;
         return c;
     }
@@ -159,7 +162,10 @@ public:
         bool in_tol = false;
         switch (cmd_.kind) {
             case MotionKind::turn_to: in_tol = turn(pose, dt_s, out); break;
-            case MotionKind::move_to: in_tol = move(pose, cmd_.x_in, cmd_.y_in, cmd_.reverse, dt_s, out); break;
+            case MotionKind::move_to:
+                in_tol = move(pose, cmd_.x_in, cmd_.y_in, cmd_.reverse,
+                              cmd_.tol_in < 0.0 ? cfg_.move_tol_in : cmd_.tol_in, dt_s, out);
+                break;
             case MotionKind::follow: in_tol = follow(pose, dt_s, out); break;
         }
 
@@ -189,7 +195,9 @@ private:
             return false;
         switch (c.kind) {
             case MotionKind::turn_to: return std::isfinite(c.heading_deg);
-            case MotionKind::move_to: return std::isfinite(c.x_in) && std::isfinite(c.y_in);
+            case MotionKind::move_to:
+                return std::isfinite(c.x_in) && std::isfinite(c.y_in) && c.tol_in != 0.0 &&
+                       (c.tol_in < 0.0 || std::isfinite(c.tol_in));
             case MotionKind::follow: return c.path.valid();
         }
         return false;
@@ -210,7 +218,7 @@ private:
         return std::fabs(err) <= cfg_.turn_tol_deg;
     }
 
-    bool move(const Pose& p, double x_in, double y_in, bool reverse, double dt_s, MotionOutput& out) {
+    bool move(const Pose& p, double x_in, double y_in, bool reverse, double tol_in, double dt_s, MotionOutput& out) {
         const double dx = x_in - p.x_in;
         const double dy = y_in - p.y_in;
         const double d = std::hypot(dx, dy);
@@ -233,7 +241,7 @@ private:
         else
             ang_.reset();
         mix(lin, a, cfg_.max_volts, out);
-        return d <= cfg_.move_tol_in;
+        return d <= tol_in;
     }
 
     // Pure Pursuit: Zielpunkt = weitester Schnitt des Vorausschau-Kreises mit dem Pfad (nur vorwärts im Pfad).
@@ -244,7 +252,7 @@ private:
         const PathPoint& last = path[n - 1];
         const double L = cfg_.lookahead_in;
         if (n == 1 || (seg_ >= n - 2 && std::hypot(last.x_in - p.x_in, last.y_in - p.y_in) < L))
-            return move(p, last.x_in, last.y_in, false, dt_s, out);
+            return move(p, last.x_in, last.y_in, false, cfg_.move_tol_in, dt_s, out);
 
         PathPoint target = path[seg_ + 1];
         for (int i = seg_; i <= n - 2; ++i) {

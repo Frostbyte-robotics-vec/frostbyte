@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstring>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -210,4 +211,32 @@ TEST_CASE("Antriebs-Prüfung: drive_turns läuft 40 Drehungen und endet nahe Ric
     // alle 40 Drehungen sind vor Matchende durch: der Routenschritt ist am Ende leer (end hold erreicht)
     const std::size_t last = r.stacker.rfind('\n', r.stacker.find_last_not_of('\n'));
     CHECK(r.stacker.substr(last + 1).find("turn") == std::string::npos);
+}
+
+TEST_CASE("Routen: goto <NAME> tol= erreicht den MotionController (D-14)") {
+    using namespace frostbyte;
+    // Pose fest 3 in vor dem Ziel (kürzer als das Blockiert-Fenster): nur mit weiter Toleranz meldet der Ausführer das goto als erledigt.
+    auto status_after_settle = [](double tol_in) {
+        MotionConfig mcfg = test_control().motion;
+        mcfg.move_tol_in = 1.0;
+        mcfg.settle_s = 0.1;
+        Pid lat(test_control().lateral), ang(test_control().angular);
+        MotionController mc(mcfg, lat, ang);
+        std::vector<FieldPoint> points(1);
+        points[0].id = "P";
+        points[0].xy_in = std::make_pair(3.0, 0.0);
+        SignalBus bus;
+        SimRouteExecutor exec(mc, points, bus, RouteRobot::stacker, RoutePlayerConfig{});
+        RouteCmd cmd;
+        cmd.op = RouteOp::goto_name;
+        std::strcpy(cmd.name, "P");
+        cmd.tol_in = tol_in;
+        exec.start(0, cmd, 0.0);
+        for (int t_ms = 0; t_ms <= 300; t_ms += 10)
+            mc.update(t_ms / 1000.0, frostbyte::Pose{0.0, 0.0, 0.0});
+        return exec.poll(0, 0.3);
+    };
+    CHECK(status_after_settle(6.0) == StepStatus::done);
+    CHECK(status_after_settle(-1.0) == StepStatus::running);  // ohne tol=: move_tol_in
+    CHECK(status_after_settle(0.25) == StepStatus::running);
 }

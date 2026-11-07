@@ -86,3 +86,16 @@ prüfen; LemLib-Adapter muss im Roboter-Build wirklich linken (geprüft: mit `mo
 - Absicherung: Test in `test/test_motion_controller.cpp` verlangt `move_tol_in·2,54 ≤ 1,5 cm` und `turn_tol_deg ≤ 1,5°` in beiden Configs.
 - Rat des Advisors (Opus): Messung je Roboter einzeln, Reserve für Schätzfehler (0,4–0,5″ / 0,75–1,0°), Timeouts statt nur
   Laufzeit zählen (wegen `on_timeout=skip`), Config-Test, totes `tol=` als eigenes Ticket.
+
+## Nachtrag D-14: Toleranz je Befehl
+- Entscheidung: durchreichen statt `tol=` aus Format und Parser entfernen. Die Skills-Routen benutzen `goto … tol=1.5` für die
+  Loader-Anfahrt, und seit D-12 (global 0,5″) braucht jeder Zwischenpunkt länger; eine weitere Toleranz je Punkt ist der Hebel dafür.
+- `MotionCommand::tol_in` (Vorgabe −1, also `MotionConfig::move_tol_in`) ist das letzte Argument von `move_to(...)`, bestehende
+  Aufrufe bleiben gültig. `request()` lehnt 0, NaN und unendlich ab; negativ heißt Standard. `follow` nutzt für den Endanflug
+  weiter `move_tol_in`.
+- Reichweite: `goto <NAME> tol=` wirkt in der Simulation (`SimRouteExecutor`). `goto pose` kennt kein `tol=` (Parser und Format
+  unverändert). Der Ausführer am Roboter existiert noch nicht; er reicht `RouteCmd::tol_in` in A-10 genauso durch.
+- Tests: `test/test_motion_controller.cpp` (feste Pose 3″ vor dem Ziel: nur weite Toleranz meldet DONE; weite Toleranz endet früher
+  und ferner als enge; ungültige Werte abgelehnt) und `test/test_sim_routes.cpp` (geparstes `tol_in` erreicht den Controller).
+- Rat des Advisors (Opus): durchreichen, wenn Routen `tol=` benutzen (tun sie); unterscheidendes Testpaar (weit/eng) statt
+  „enger als Standard“, weil der Regler beim Ausrollen weiterfährt; zusätzlich Test auf Ausführer-Ebene.
