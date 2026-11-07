@@ -2,6 +2,8 @@
 #include <cmath>
 #include <limits>
 
+#include "config/runner.hpp"
+#include "config/stacker.hpp"
 #include "control/motion_controller.hpp"
 #include "doctest/doctest.h"
 #include "sim/drive.hpp"
@@ -301,5 +303,19 @@ TEST_CASE("Motion: Pose-Ausfall länger als ein Blocked-Fenster -> danach weiter
         CHECK(mc.state() == MotionState::running);  // nicht sofort DONE
         mc.update(0.61, Pose{});
         CHECK(mc.state() == MotionState::done);  // erst nach settle_s mit gültiger Pose
+    }
+}
+
+TEST_CASE("Toleranzen in config/ liegen mit Reserve unter den Grenzen der Antriebs-Prüfung (D-12, ADR-017)") {
+    // Prüfung D-07/D-10: 2 m geradeaus <= 2 cm, 10 Drehungen <= 2 Grad. Der Regler stoppt auf der geschätzten Pose,
+    // die Prüfung misst die wahre; die Reserve deckt den Schätzfehler ab. Zahlen sind Grenzen aus dem Plan, nicht Messwerte.
+    constexpr double cm_per_in = 2.54;
+    constexpr double limit_cm = 2.0;
+    constexpr double limit_deg = 2.0;
+    for (const MotionConfig& c : {config::stacker::motion, config::runner::motion}) {
+        CHECK(c.move_tol_in * cm_per_in <= 0.75 * limit_cm);
+        CHECK(c.turn_tol_deg <= 0.75 * limit_deg);
+        CHECK(c.move_tol_in > 0.0);
+        CHECK(c.turn_tol_deg > 0.0);
     }
 }

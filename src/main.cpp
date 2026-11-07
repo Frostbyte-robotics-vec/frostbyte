@@ -10,14 +10,18 @@
 #include "hal/pros/pros_storage.hpp"  // SD-Karte fuer die Tuning-Werte (D-06)
 #include "lemlib/api.hpp"             // prueft nur, dass LemLib einbindbar ist; Aufrufe erst hinter hal/ (ADR-001)
 #include "lemlib_regulator.hpp"
+#include "link_comms.hpp"
 #include "link_test.hpp"
 #include "match/controller_feedback.hpp"
 #include "match/routine_screen.hpp"
 #include "port_check.hpp"
+#include "util/build_info.hpp"
 #include "util/rule_guard.hpp"
 
 static_assert(!(config::port_check_enabled && config::link_test_enabled),
               "Pruefprogramme (F-03, L-01) nie gleichzeitig");
+static_assert(!(config::link_enabled && (config::link_test_enabled || config::port_check_enabled)),
+              "Funk im Match (L-02) nie zusammen mit einem Pruefprogramm: gleicher Funk-Port");
 
 namespace {
 
@@ -64,6 +68,17 @@ frostbyte::RoutineScreen g_routine_screen(frostbyte::make_routine_menu());
 // Restzeit/Besitz/Lift-Zustand hinein. Disabled -> Halt bleibt Sache dieses Aufrufs (siehe TODO im Steuer-Task).
 frostbyte::RuleGuard g_rule_guard(config::rule_guard);
 
+// Release-Stand (L-03): Defines kommen aus dem Makefile; fehlen sie (z. B. IDE-Build), steht "?" bzw. "-" da.
+#ifndef FB_VERSION
+#define FB_VERSION "?"
+#endif
+#ifndef FB_COMMIT
+#define FB_COMMIT ""
+#endif
+#ifndef FB_DIRTY
+#define FB_DIRTY 1
+#endif
+
 std::uint32_t micros_u32() { return static_cast<std::uint32_t>(pros::micros()); }
 
 // Ein Steuer-Task fuer alle Phasen. Die Callbacks setzen nur g_phase, damit beim Uebergang
@@ -94,10 +109,22 @@ void control_task(void*) {
 void display_task(void*) {
     std::uint32_t now_ms = pros::millis();
     while (true) {
-        const frostbyte::CycleStatsView v = g_cycle_stats.load();
-        pros::lcd::print(2, "jitter max %lu us", static_cast<unsigned long>(v.jitter_max_us));
-        pros::lcd::print(3, "cpu max %lu us  ueberzuege %lu", static_cast<unsigned long>(v.work_max_us),
-                         static_cast<unsigned long>(v.overruns));
+        if constexpr (config::link_enabled && config::link_selftest) {
+            // Hardware-Pruefung L-02: Link-Stand statt Takt-Statistik (Zeilen 2/3).
+            const frostbyte::LinkSnapshot l = frostbyte::link_shared().snapshot(pros::millis());
+            if (l.valid) {
+                pros::lcd::print(2, "link %s offen %u ack %lu exp %lu", l.connected ? "UP" : "weg",
+                                 static_cast<unsigned>(l.pending), static_cast<unsigned long>(l.acked),
+                                 static_cast<unsigned long>(l.expired));
+                pros::lcd::print(3, "ping_test %s in %lu schlecht %lu", l.selftest_seen ? "gesehen" : "nein",
+                                 static_cast<unsigned long>(l.frames_in), static_cast<unsigned long>(l.frames_bad));
+            }
+        } else {
+            const frostbyte::CycleStatsView v = g_cycle_stats.load();
+            pros::lcd::print(2, "jitter max %lu us", static_cast<unsigned long>(v.jitter_max_us));
+            pros::lcd::print(3, "cpu max %lu us  ueberzuege %lu", static_cast<unsigned long>(v.work_max_us),
+                             static_cast<unsigned long>(v.overruns));
+        }
         pros::c::task_delay_until(&now_ms, display_period_ms);
     }
 }
@@ -124,17 +151,30 @@ void menu_task(void*) {
 void initialize() {
     pros::lcd::initialize();
     pros::lcd::set_text(1, config::robot_name);
+    {
+        // Version, Commit, dirty/Datum auf Zeile 0 (Startbildschirm); einmalig, nicht im Steuer-Task.
+        char text[frostbyte::BuildInfoText::cols + 1];
+        frostbyte::format_build_info(frostbyte::BuildInfo{FB_VERSION, FB_COMMIT, FB_DIRTY != 0, __DATE__}, text,
+                                     sizeof text);
+        pros::lcd::set_text(0, text);
+    }
     if constexpr (config::tuning_enabled && !config::motion_uses_lemlib_pid) {
         frostbyte::TuningSet tuned{config::lateral_pid, config::angular_pid};
         if (frostbyte::load_tuning(g_tuning_store, tuned) == frostbyte::LoadResult::loaded)
             frostbyte::apply_tuning(tuned, g_lat_pid, g_ang_pid);
     }
     g_routine_screen.init(g_routine_store);
+    if constexpr (config::link_enabled)
+        (void)frostbyte::link_shared();  // Mutex und Endpunkt hier anlegen, nicht erst im Steuer-Task
     if constexpr (config::port_check_enabled || config::link_test_enabled)
         return;  // nur Pruefprogramm (F-03, L-01): kein Steuer-Task, opcontrol() startet es
     static pros::Task task(control_task, nullptr, TASK_PRIORITY_MAX - 1, TASK_STACK_DEPTH_DEFAULT, "control");
     static pros::Task display(display_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "display");
     static pros::Task menu(menu_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "menu");
+    if constexpr (config::
+                      link_enabled)  // Funk zum Partner (L-02): eigener Task, der Steuer-Task fasst pros::Link nie an
+        static pros::Task comms(frostbyte::comms_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT,
+                                "comms");
 }
 
 void disabled() { g_phase.set(frostbyte::Phase::Disabled); }

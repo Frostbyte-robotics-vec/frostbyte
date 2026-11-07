@@ -2,7 +2,7 @@
 id: SIM-36
 phase: "5"
 titel: Runner-Maße aus dem Fusion-Modell in sim_params.json und den Browser-Viewer übernehmen
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-36
 depends: [CAD-01]
