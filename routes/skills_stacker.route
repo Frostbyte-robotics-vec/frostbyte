@@ -1,12 +1,14 @@
-# Stacker, Autonomous Skills – Zoll, Grad, Namen aus field/field.json
-# Entwurf v0: Struktur steht, Reihenfolge und Anzahl werden in A-05 per Simulation optimiert.
+# Stacker, Autonomous Skills – v1 (A-05): vor jedem Zyklus das Goal anfahren (die Simulation setzt nicht selbst um).
 # SIM-27: Loader Nord (LOADER_RED_2); der Runner nutzt den südlichen, so kreuzen sich die Wege nicht.
-target_p10 120
+# Ziel = P10 der Simulation mit Schätzwerten (Mensch, 2026-11-07: "bestmögliche Route"), kein Wettkampfziel; steigt mit besseren Messwerten.
+target_p10 40
 start    START_STACKER
+goto     RED_ALLIANCE_1  timeout=4.0
 cycle    source=preload  goal=RED_ALLIANCE_1  level=auto
-repeat 6 {
-  goto   LOADER_RED_2     tol=1.5  timeout=3.0
+repeat 5 {
+  goto   LOADER_RED_2     tol=1.5  timeout=5.0
   intake until=unit       timeout=2.5
+  goto   NEUTRAL_R1       timeout=5.0
   cycle  goal=NEUTRAL_R1  level=auto  timeout=6.0
 }
 at 52s   goto MIDFIELD_S  timeout=6.0

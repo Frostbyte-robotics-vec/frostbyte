@@ -1,17 +1,21 @@
-# Runner, Autonomous Skills – Entwurf v0
+# Runner, Autonomous Skills – v1 (A-05): erst von der Wand weg, jeden Toggle anfahren (Reichweite SIM-25, Dauer SIM-23), dann Zyklen.
 # SIM-27: Loader Süd (LOADER_RED_1) nahe der Startpose; der Stacker nutzt den nördlichen.
-target_p10 80
+# Ziel = P10 der Simulation mit Schätzwerten (Mensch, 2026-11-07: "bestmögliche Route"), kein Wettkampfziel; steigt mit besseren Messwerten.
+target_p10 40
 start    START_RUNNER
-toggle   TOGGLE_RED_1   timeout=2.0
-toggle   TOGGLE_RED_2   timeout=3.0
-toggle   TOGGLE_BLUE_1  timeout=3.5
-toggle   TOGGLE_BLUE_2  timeout=3.5
+goto     pose x=-40 y=-52 h=90 timeout=2.0
+goto     TOGGLE_RED_2    timeout=4.0
+toggle   TOGGLE_RED_2    timeout=4.0
+goto     TOGGLE_RED_1    timeout=5.0
+toggle   TOGGLE_RED_1    timeout=4.0
 signal   toggles_done
+goto     RED_ALLIANCE_2  timeout=5.0
 cycle    source=preload  goal=RED_ALLIANCE_2  level=auto
-repeat 5 {
-  goto   LOADER_RED_1     tol=1.5  timeout=3.0
+repeat 6 {
+  goto   LOADER_RED_1     tol=1.5  timeout=4.0
   intake until=unit       timeout=2.5
-  cycle  goal=NEUTRAL_R2  level=auto  timeout=6.0
+  goto   RED_ALLIANCE_2  timeout=5.0
+  cycle  goal=RED_ALLIANCE_2  level=auto  timeout=6.0
 }
 at 52s   goto MIDFIELD_R  timeout=6.0
 end      hold
