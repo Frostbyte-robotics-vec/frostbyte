@@ -20,7 +20,7 @@ inline constexpr double footprint_in = 15.0;
 // Odometrie (D-11, ADR-018 Nachtrag): Tracking-Raeder + IMU mit Rueckfall auf die Antriebsencoder (FallbackOdometry).
 // Ursprung = Mitte zwischen den vier Antriebsraedern (Drehmittelpunkt), x vorn, y links (ADR-012).
 // Quelle: CAD-01 (cad/runner/FrostbyteRunner.py, Commit 6e4ea65 auf ticket/cad-01), nicht gemessen.
-// TODO(HW, M-14): am echten Roboter einmessen: Versatz beider Raeder, Raddurchmesser (Kalibrierfahrt), wirksame Spurbreite,
+// TODO(HW): am echten Roboter einmessen (Ticket M-14): Versatz beider Raeder, Raddurchmesser (Kalibrierfahrt), wirksame Spurbreite,
 //   IMU-Vorzeichen (Feld: gegen den Uhrzeigersinn positiv) und die Erkennungsschwellen jump_in, still_wheel_in, still_drive_in,
 //   still_cycles (aus Logs eines echten Laufs ableiten).
 inline constexpr frostbyte::TrackingGeometry tracking_geometry{.parallel_y_in = 2.1, .perpendicular_x_in = 3.7};

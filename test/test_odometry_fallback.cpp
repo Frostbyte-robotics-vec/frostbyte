@@ -46,7 +46,7 @@ struct NamedGeometry {
 };
 constexpr NamedGeometry geometries[] = {
     {"Querrad hinter der Drehmitte", {2.5, -3.0}},
-    {"Querrad vor der Drehmitte", {2.1, 3.7}},
+    {"Querrad vor der Drehmitte", {2.1, 3.7}},  // Versatz wie im Ticket D-11 gefordert, bewusst lokal definiert
 };
 
 template <typename F>
