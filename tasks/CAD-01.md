@@ -2,7 +2,7 @@
 id: CAD-01
 phase: "1"
 titel: Fusion-360-Nachbau des Runners als Script ins Repo (echte VEX-Teile, Gelenke, Montageprüfung, Odometrie)
-status: in_progress
+status: review
 owner: DAVIDCOPCOP
 branch: ticket/cad-01
 depends: []
@@ -31,3 +31,4 @@ Vorlage: Runner in `tools/viewer/robots.js`. Material wie im Competition-Kit (Al
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-07 · DAVIDCOPCOP (KI) · Ticket angelegt und übernommen; Script in Fusion gebaut und geprüft · –
+2026-11-07 · DAVIDCOPCOP (KI) · cad/runner/ + ADR-040, PR #88 · 6e4ea65
