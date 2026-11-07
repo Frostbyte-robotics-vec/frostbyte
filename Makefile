@@ -28,11 +28,18 @@ ROBOT_DEFINE:=$(if $(filter stacker,$(ROBOT)),FROSTBYTE_ROBOT_STACKER,FROSTBYTE_
 # -iquote$(ROOT): config/ liegt ausserhalb von include/
 EXTRA_CFLAGS=-D$(ROBOT_DEFINE)
 # Release-Stand (L-03, docs/release.md): Version aus version.txt, kurzer Commit-Hash, dirty bei ungesicherten Aenderungen.
-# Ohne git bleibt der Commit leer (Anzeige "-"). Die Defines aendern sich ohne Quelltext-Aenderung: fuer Releases vorher make clean.
+# Ohne git bleibt der Commit leer (Anzeige "-"). Die Defines aendern keine Quelldatei; damit main.cpp bei neuem Commit oder
+# dirty-Wechsel trotzdem neu uebersetzt wird, haengt sein Objekt an einer Stempeldatei, deren Name Version, Commit und dirty enthaelt.
 FB_VERSION:=$(strip $(shell cat version.txt 2>/dev/null))
 FB_COMMIT:=$(strip $(shell git rev-parse --short HEAD 2>/dev/null))
 FB_DIRTY:=$(if $(strip $(shell git status --porcelain --untracked-files=no 2>/dev/null)),1,0)
 BUILD_DEFINES=-DFB_VERSION='"$(FB_VERSION)"' -DFB_COMMIT='"$(FB_COMMIT)"' -DFB_DIRTY=$(FB_DIRTY)
+FB_STAMP:=$(BINDIR)/build_info.$(FB_VERSION)_$(FB_COMMIT)_$(FB_DIRTY).stamp
+ifneq ($(filter stacker runner,$(ROBOT)),)
+$(BINDIR)/main.cpp.o: $(FB_STAMP)
+$(FB_STAMP):
+	@mkdir -p $(BINDIR) && rm -f $(BINDIR)/build_info.*.stamp && touch $@
+endif
 EXTRA_CXXFLAGS=-D$(ROBOT_DEFINE) $(BUILD_DEFINES) -iquote$(ROOT) -iquote$(ROOT)/lib
 
 # Set to 1 to enable hot/cold linking
