@@ -1,0 +1,7 @@
+# frostbyte-linklog v1 robot=stacker role=ping build=abc123
+seq,t_send_s,rtt_ms
+0,12.000,8
+1,12.050,9
+2,12.100,
+3,12.150,11
+4,12.200,40

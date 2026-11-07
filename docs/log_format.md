@@ -4,6 +4,8 @@ Erste Zeile: `# frostbyte-log v1 robot=<stacker|runner> source=<robot|sim> seed=
 Zweite Zeile: Spaltennamen. Danach eine Zeile alle 20 ms pro Roboter. Trennzeichen Komma, Dezimalpunkt `.`.
 Leere Zelle = Wert nicht vorhanden. Spalten nie umbenennen oder umsortieren ohne neue Versionsnummer. Neue Ereignis-Token in der Spalte `event` (z. B. TUNE:…) sind keine Formatänderung, solange Spalten, Einheiten und bestehende Token unverändert bleiben; Leser müssen unbekannte Token ignorieren (Entscheidung 2. Nov 2026, D-06).
 
+Der Funk-Link-Test (L-01) schreibt ein eigenes, kleines Protokoll `frostbyte-linklog v1`; es ist nicht dieses Format und steht in ADR-041.
+
 | Spalte | Einheit | Bedeutung |
 | --- | --- | --- |
 | t_s | s | Matchzeit (0 … 60) |

@@ -10,10 +10,14 @@
 #include "hal/pros/pros_storage.hpp"  // SD-Karte fuer die Tuning-Werte (D-06)
 #include "lemlib/api.hpp"             // prueft nur, dass LemLib einbindbar ist; Aufrufe erst hinter hal/ (ADR-001)
 #include "lemlib_regulator.hpp"
+#include "link_test.hpp"
 #include "match/controller_feedback.hpp"
 #include "match/routine_screen.hpp"
 #include "port_check.hpp"
 #include "util/rule_guard.hpp"
+
+static_assert(!(config::port_check_enabled && config::link_test_enabled),
+              "Pruefprogramme (F-03, L-01) nie gleichzeitig");
 
 namespace {
 
@@ -126,8 +130,8 @@ void initialize() {
             frostbyte::apply_tuning(tuned, g_lat_pid, g_ang_pid);
     }
     g_routine_screen.init(g_routine_store);
-    if constexpr (config::port_check_enabled)
-        return;  // nur Pruefprogramm (F-03): kein Steuer-Task, opcontrol() startet den Scan
+    if constexpr (config::port_check_enabled || config::link_test_enabled)
+        return;  // nur Pruefprogramm (F-03, L-01): kein Steuer-Task, opcontrol() startet es
     static pros::Task task(control_task, nullptr, TASK_PRIORITY_MAX - 1, TASK_STACK_DEPTH_DEFAULT, "control");
     static pros::Task display(display_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "display");
     static pros::Task menu(menu_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "menu");
@@ -142,6 +146,8 @@ void autonomous() { g_phase.set(frostbyte::Phase::Autonomous); }
 void opcontrol() {
     if constexpr (config::port_check_enabled)
         frostbyte::port_check_run(config::port_expect, config::port_expect_count);
+    if constexpr (config::link_test_enabled)
+        frostbyte::link_test_run();  // kehrt nie zurueck
     g_phase.set(frostbyte::Phase::Driver);
     if constexpr (config::port_check_enabled)
         return;  // Pruefprogramm (F-03) verhaelt sich wie vorher: Controller-Anzeige gehoert dem Scan

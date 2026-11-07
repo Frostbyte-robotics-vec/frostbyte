@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "control/motion_controller.hpp"
 #include "match/driver_map.hpp"
 #include "match/route_player.hpp"
@@ -134,5 +136,17 @@ inline constexpr int port_expect_count = sizeof(port_expect_table) / sizeof(port
 static_assert(frostbyte::port_table_check(port_expect_table, port_expect_count) == frostbyte::PortIssue::ok,
               "Port-Tabelle: doppelter oder ungueltiger Port");
 inline constexpr bool port_check_enabled = false;
+
+// Funk-Link-Test (L-01, ADR-041): Pinger schickt Pings, Reflektor schickt sie zurueck. Mit link_test_enabled = true startet der
+// Roboter nur dieses Programm (src/link_test.hpp); im Match false. Zeiten sind Startwerte (Software-Entscheidung).
+// TODO(HW): link_port (Funk-Radio, 1..21; 0 = nicht festgelegt), link_id (muss auf beiden Robotern gleich sein) und welche Seite
+// Sender und welche Empfaenger ist, am Roboter festlegen; die Rollen werden nicht geraten.
+inline constexpr bool link_test_enabled = false;
+inline constexpr int link_port = 0;
+inline constexpr const char* link_id = "frostbyte";
+inline constexpr bool link_is_transmitter = false;
+inline constexpr bool link_is_pinger = false;
+inline constexpr std::uint32_t link_period_ms = 50;
+inline constexpr std::uint32_t link_timeout_ms = 500;
 
 }  // namespace config::runner
