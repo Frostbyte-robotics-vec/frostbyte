@@ -6,6 +6,7 @@
 #include "subsystems/claw.hpp"
 #include "subsystems/intake.hpp"
 #include "util/port_check.hpp"
+#include "util/port_table.hpp"
 #include "util/rule_guard.hpp"
 
 namespace config::runner {
@@ -116,8 +117,22 @@ inline constexpr frostbyte::IntakeConfig intake{.run_v = 10.0,
 // port_check (F-03): Erwartung je Port (Port mit Vorzeichen, Art, Name, Bewegungstext fuer +Spannung). Leer, bis die
 // Ports feststehen (F-07). Mit port_check_enabled = true startet der Roboter nur das Pruefprogramm (src/port_check.hpp); im Match false.
 // TODO(HW): Eintraege aus docs/ports.md (F-07) uebernehmen; Ports und Richtungen werden nicht geraten.
-inline constexpr const frostbyte::PortExpect* port_expect = nullptr;
-inline constexpr int port_expect_count = 0;
+// Port-Tabelle (F-07, docs/ports.md). Alle Ports sind offen (unassigned_port), bis CAD oder Bench-Test (F-09) sie belegen.
+// Negativer Port = Motor umgekehrt (PROS-Konvention). Die Eintraege hier und die Zeilen in docs/ports.md muessen uebereinstimmen (Test).
+inline constexpr frostbyte::PortExpect port_expect_table[] = {
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::motor, "Antrieb L", "Rad vorwaerts"},  // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::motor, "Antrieb R", "Rad vorwaerts"},  // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::rotation, "Track par", nullptr},       // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::rotation, "Track quer", nullptr},      // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::imu, "IMU", nullptr},                  // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::gps, "GPS", nullptr},                  // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::motor, "Intake", "Rollen einziehen"},  // TODO(HW)
+    {frostbyte::unassigned_port, frostbyte::DeviceKind::motor, "Claw", "Claw zu"},             // TODO(HW)
+};
+inline constexpr const frostbyte::PortExpect* port_expect = port_expect_table;
+inline constexpr int port_expect_count = sizeof(port_expect_table) / sizeof(port_expect_table[0]);
+static_assert(frostbyte::port_table_check(port_expect_table, port_expect_count) == frostbyte::PortIssue::ok,
+              "Port-Tabelle: doppelter oder ungueltiger Port");
 inline constexpr bool port_check_enabled = false;
 
 }  // namespace config::runner
