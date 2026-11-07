@@ -27,7 +27,10 @@ CAD-01 (`cad/runner/`, Protokoll `letzter_lauf.txt` und `pruefung.txt`). Stacker
 
 ## Übergabe
 (aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand: fertig, PR offen. sim_params.json Runner: umriss_in 14.88 × 14.77 (+ quelle), spurbreite_in 11.57 mit eigenem Feld spurbreite_quelle (die quelle der Antriebsgruppe bleibt „schaetzung“, weil kS/kV/kA weiter Schätzungen sind). Viewer: Änderung in tools/viewer/reference/frostbyte-lift.html (buildRunner) und identisch in robots.js (Block 151–490 per diff geprüft, ADR-005): Brain-Platte, Elektronik und Kabel um DU = 0,625″ angehoben, zwei Tracking-Räder (CAD x/y → Viewer x/−z). livesim_reference.csv neu erzeugt: unverändert.
+Am Roboter/Browser zu prüfen: Viewer im Browser öffnen (Runner-Ansicht von unten/oben) und Lage der Tracking-Räder gegen das Fusion-Modell vergleichen; test_livesim.py und test_logparse.py laufen grün (node-Ersatz: VS-Code-Electron), robots.js und Vorlage-Script bestehen node --check. Stacker-Maße folgen mit seinem CAD-Nachbau.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-07 · DAVIDCOPCOP (KI) · Ticket angelegt · –
+2026-11-07 · arjanssen (KI) · Runner-Maße aus CAD in sim_params.json, Tracking-Räder und angehobene Brain-Platte im Viewer · siehe Branch
