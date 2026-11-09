@@ -126,6 +126,12 @@ class WebTest(unittest.TestCase):
         self.assertIn("if(copyBtn)", js)
         self.assertIn('a[href^="#"]', js)
 
+    def test_sponsor_norelem_schreibweise(self):
+        h = HTML["sponsoring.html"]
+        self.assertIn("norelem", h)
+        for falsch in ("NORELEM", "Norelem"):
+            self.assertNotIn(falsch, h)
+
 
 if __name__ == "__main__":
     unittest.main()
