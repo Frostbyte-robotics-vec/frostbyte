@@ -18,6 +18,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Öffentliche Teamseite in die Wurzel kopieren
         run: mkdir -p site && cp -r web/. site/
+      - name: News-Seite bauen (/news/)
+        run: python3 tools/news_build.py news site/news
       - name: Fortschrittsseite erzeugen (/board/)
         run: python3 tools/board.py export site/board
       - name: Simulation bauen und Demo-Logs erzeugen
