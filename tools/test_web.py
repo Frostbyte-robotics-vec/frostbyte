@@ -126,9 +126,12 @@ class WebTest(unittest.TestCase):
         self.assertIn("if(copyBtn)", js)
         self.assertIn('a[href^="#"]', js)
 
-    def test_seiten_verweisen_auf_news(self):
+    def test_seiten_verweisen_auf_news_in_navigation_und_fusszeile(self):
         for name in SEITEN:
-            self.assertIn('href="news/index.html"', HTML[name], name)
+            html = HTML[name]
+            nav, fuss = html.split("</nav>")[0], html.split("<footer")[1]
+            self.assertIn('href="news/index.html"', nav, name)
+            self.assertIn('href="news/index.html"', fuss, name)
 
 
 if __name__ == "__main__":

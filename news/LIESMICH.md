@@ -23,3 +23,5 @@ Erster Absatz. **Fett** und [Link](https://beispiel.ch).
 - `entwurf: ja` = wird nicht veröffentlicht. Zum Veröffentlichen die Zeile löschen.
 - Links nur mit `http(s)://`. Anderes HTML wird nicht übernommen.
 - Lokal ansehen: `mkdir -p site && cp -r web/. site/ && python3 tools/news_build.py news site/news`, dann `site/news/index.html` im Browser öffnen (`site/` ist nicht im Repo).
+- Dateiname: nur Kleinbuchstaben, Ziffern und Bindestriche, sonst bricht der Bau ab.
+- Ein fehlerhafter Beitrag bricht den ganzen Pages-Lauf ab (auch Board, Viewer, Sim). Den Grund nennt der Log unter GitHub → Actions („FEHLER <Dateiname>: …“); Datei korrigieren und neu pushen.

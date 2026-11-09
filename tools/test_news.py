@@ -60,12 +60,12 @@ class NewsTest(unittest.TestCase):
         for text in ("datum: 2026-11-09\n\nx", "titel: A\ndatum: 09.11.2026\nkategorie: Team\n\nx",
                      "titel: A\ndatum: 2026-02-30\nkategorie: Team\n\nx", "titel: A\ndatum: 2026-11-09\n\nx"):
             with self.assertRaises(nb.NewsFehler) as e:
-                nb.parse(text, "kaputt.md")
-            self.assertIn("kaputt.md", str(e.exception))
+                nb.parse(text, "2026-11-09-kaputt.md")
+            self.assertIn("2026-11-09-kaputt.md", str(e.exception))
 
     def test_unbekannte_kategorie_ist_fehler(self):
         with self.assertRaises(nb.NewsFehler):
-            nb.parse("titel: A\ndatum: 2026-11-09\nkategorie: Quatsch\n\nx", "a.md")
+            nb.parse("titel: A\ndatum: 2026-11-09\nkategorie: Quatsch\n\nx", "2026-11-09-a.md")
 
     def test_bau_neueste_zuerst_und_entwurf_fehlt(self):
         schreibe(self.src, "2026-10-01-alt.md", "titel: Alt\ndatum: 2026-10-01\nkategorie: Team\n\nalt")
@@ -104,13 +104,20 @@ class NewsTest(unittest.TestCase):
         self.assertTrue((self.out / "bilder" / "foto.jpg").is_file())
 
     def test_fehlendes_bild_oder_alt_ist_fehler(self):
-        schreibe(self.src, "a.md", "titel: A\ndatum: 2026-11-09\nkategorie: Team\nbild: weg.jpg\nbild_alt: x\n\nx")
+        schreibe(self.src, "2026-11-09-a.md", "titel: A\ndatum: 2026-11-09\nkategorie: Team\nbild: weg.jpg\nbild_alt: x\n\nx")
         with self.assertRaises(nb.NewsFehler):
             nb.build(self.src, self.out)
 
-    def test_doppelter_slug_nicht_moeglich_und_pfad_trick_abgelehnt(self):
+    def test_pfad_trick_im_bild_abgelehnt(self):
         with self.assertRaises(nb.NewsFehler):
-            nb.parse("titel: A\ndatum: 2026-11-09\nkategorie: Team\nbild: ../x.jpg\nbild_alt: a\n\nx", "a.md")
+            nb.parse("titel: A\ndatum: 2026-11-09\nkategorie: Team\nbild: ../x.jpg\nbild_alt: a\n\nx", "2026-11-09-a.md")
+
+    def test_dateiname_muss_dem_muster_folgen(self):
+        text = "titel: A\ndatum: 2026-11-09\nkategorie: Team\n\nx"
+        for name in ("a.md", "2026-12-05 Event Zürich.md", '2026-12-05-a"b.md', "2026-12-05-Gross.md", "2026-12-05-a.txt"):
+            with self.assertRaises(nb.NewsFehler, msg=name) as e:
+                nb.parse(text, name)
+            self.assertIn(name, str(e.exception))
 
 
 if __name__ == "__main__":

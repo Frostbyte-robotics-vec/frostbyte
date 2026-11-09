@@ -15,6 +15,7 @@ KATEGORIEN = ("Sponsoren", "Events", "Team", "Roboter", "Saison")
 MONATE = ("Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober",
           "November", "Dezember")
 BILD = re.compile(r"^[\w-]+(\.[\w-]+)*\.(jpg|jpeg|png|webp)$", re.I)
+DATEINAME = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9-]+\.md$")
 KOPF = re.compile(r"^(\w+):\s*(.*)$")
 
 
@@ -27,6 +28,8 @@ def parse(text, dateiname):
     def fehler(msg):
         return NewsFehler(f"{dateiname}: {msg}")
 
+    if not DATEINAME.match(dateiname):
+        raise fehler("Dateiname muss JJJJ-MM-TT-name.md sein (Kleinbuchstaben, Ziffern, Bindestriche)")
     kopf_text, _, rest = text.replace("\r\n", "\n").strip("\n").partition("\n\n")
     kopf = {}
     for zeile in kopf_text.split("\n"):
