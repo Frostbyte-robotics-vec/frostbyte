@@ -126,6 +126,11 @@ class WebTest(unittest.TestCase):
         self.assertIn("if(copyBtn)", js)
         self.assertIn('a[href^="#"]', js)
 
+    def test_hauptsponsor_novagear_schreibweise(self):
+        h = HTML["sponsoring.html"]
+        self.assertIn("Novagear", h)
+        self.assertNotIn("NOVAGEAR", h)
+
 
 if __name__ == "__main__":
     unittest.main()
