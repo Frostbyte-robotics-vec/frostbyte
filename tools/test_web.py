@@ -126,6 +126,10 @@ class WebTest(unittest.TestCase):
         self.assertIn("if(copyBtn)", js)
         self.assertIn('a[href^="#"]', js)
 
+    def test_seiten_verweisen_auf_news(self):
+        for name in SEITEN:
+            self.assertIn('href="news/index.html"', HTML[name], name)
+
 
 if __name__ == "__main__":
     unittest.main()
