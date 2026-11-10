@@ -393,3 +393,4 @@ footer .wrap{padding-block:56px 34px;display:grid;gap:40px}
 .news-text a{color:var(--blue)}
 .news-bild{margin:0 0 28px}
 .news-bild img{width:100%;height:auto;border-radius:4px;display:block}
+.slot.filled .name-asis{text-transform:none;font-size:22px}
