@@ -133,6 +133,11 @@ class WebTest(unittest.TestCase):
             self.assertIn('href="news/index.html"', nav, name)
             self.assertIn('href="news/index.html"', fuss, name)
 
+    def test_hauptsponsor_novagear_schreibweise(self):
+        h = HTML["sponsoring.html"]
+        self.assertIn("Novagear", h)
+        self.assertNotIn("NOVAGEAR", h)
+
 
 if __name__ == "__main__":
     unittest.main()
