@@ -25,10 +25,10 @@ Quelle: ~/Downloads/fusion_parts_library_1_0_0 (243 F3D, 211 MB). Ein Test des S
 —
 
 ## Übergabe
-Stand: Script, Manifest und ANLEITUNG geschrieben, Syntax geprüft. Nächster Schritt: Lauf in echtem Fusion (erst 2–3 Dateien, dann alle 243), Ergebnis hier eintragen.
-Am echten Rechner offen: Script ist ungetestet (API-Aufrufe documents.open/createSTEPExportOptions), `export_log.txt` prüfen.
+Fertig. Lauf in echtem Fusion (vom Menschen bestätigt): 243 von 243 exportiert, 0 Fehler (export_log.txt). Nichts mehr offen.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-10 · arjanssen (KI) · Ticket angelegt und übernommen · –
 2026-11-10 · arjanssen (KI) · cad/tools/ExportStep + ANLEITUNG geschrieben · –
+2026-11-10 · arjanssen (KI) · Fusion-Lauf bestätigt: 243/243, 0 Fehler; Ticket abgeschlossen · –
