@@ -376,3 +376,5 @@ footer .wrap{padding-block:56px 34px;display:grid;gap:40px}
 .reach-list .chips{display:flex;padding:0;border:0;gap:8px}
 .credits{font-family:var(--f-mono);font-size:11px;line-height:1.6;color:var(--muted-dark);padding-top:22px;margin-top:22px;border-top:1px solid var(--line-dark)}
 .credits a{color:var(--frost)}
+
+.slot.filled .name-asis{text-transform:none;font-size:22px}
