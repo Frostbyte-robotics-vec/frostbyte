@@ -24,7 +24,8 @@ def pick_folder(ui, title):
 def export_one(app, src, dst):
     doc = None
     try:
-        doc = app.documents.open(src, False)
+        opts_in = app.importManager.createFusionArchiveImportOptions(src)
+        doc = app.importManager.importToNewDocument(opts_in)
         design = adsk.fusion.Design.cast(doc.products.itemByProductType('DesignProductType'))
         if design is None:
             return 'kein Design in der Datei'
