@@ -2,7 +2,7 @@
 id: SIM-37
 phase: "5"
 titel: Spielelemente im Viewer aus dem Feld-CAD 276-9250-000 (Pins, Cups, Goals, Loader) statt Platzhalter-Zylindern
-status: review
+status: done
 owner: arjanssen
 branch: ticket/sim-37
 depends: []
