@@ -50,8 +50,8 @@
   var copyBtn=document.getElementById('copy');
   if(copyBtn)copyBtn.addEventListener('click',function(){
     var txt='frostbyte.eth.robotics@gmail.com';
-    function fallback(){var r=document.createRange();r.selectNodeContents(document.getElementById('mail'));var s=getSelection();s.removeAllRanges();s.addRange(r);say(copyBtn.dataset.sel||'');}
-    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){say(copyBtn.dataset.ok||'');},fallback);}else fallback();
+    function fallback(){var r=document.createRange();r.selectNodeContents(document.getElementById('mail'));var s=getSelection();s.removeAllRanges();s.addRange(r);say(copyBtn.dataset.sel||'Adresse markiert – jetzt kopieren');}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){say(copyBtn.dataset.ok||'E-Mail-Adresse kopiert');},fallback);}else fallback();
   });
 
   // Binär-Schnee im Hero

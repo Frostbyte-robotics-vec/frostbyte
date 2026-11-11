@@ -272,6 +272,12 @@ class WebTest(unittest.TestCase):
                 self.fail(f"verschachteltes @media (offene Klammer davor): {zeile[:60]}")
             tief += zeile.count("{") - zeile.count("}")
 
+    def test_partnerwand_hat_spaltenregel(self):
+        # W-11: die Regel für die große Wand war verstümmelt (einspaltig auf dem Desktop)
+        css = (WEB / "assets" / "style.css").read_text(encoding="utf-8")
+        self.assertRegex(css, r"\.wall-big\{[^}]*grid-template-columns:repeat\(3,1fr\)")
+        self.assertNotIn(".wall-big .wall-big", css)
+
     def test_skript_ohne_fremdquellen(self):
         js = (WEB / "assets" / "site.js").read_text(encoding="utf-8")
         for verboten in ("http://", "https://", "fetch(", "XMLHttpRequest", "import("):
