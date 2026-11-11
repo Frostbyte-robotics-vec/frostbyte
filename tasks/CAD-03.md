@@ -2,7 +2,7 @@
 id: CAD-03
 phase: "1"
 titel: VEX-STEP-Bibliothek automatisch auf jeden Laptop holen (Release-ZIP, Download-Script, /start)
-status: in_progress
+status: blocked
 owner: arjanssen
 branch: ticket/cad-03
 depends: [CAD-02]
@@ -26,6 +26,7 @@ Repo ist öffentlich. Weitergabe der VEX-CAD-Bibliothek vorher auf Lizenz prüfe
 —
 
 ## Übergabe
+BLOCKED: VEX-Lizenz prüfen und Release vex-step-1.0.0 anlegen (Mensch). Code fertig auf Branch ticket/cad-03, Details dort in der Übergabe.
 Stand: angelegt.
 
 ## Verlauf
