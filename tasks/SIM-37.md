@@ -29,8 +29,9 @@ Beobachtung für C-06 (hier nicht ändern): die Goal-Baugruppen haben unterschie
 —
 
 ## Übergabe
-Stand: angelegt.
+KI-Review PR #102 (matelechner01/Sonnet, 2026-11-11): Empfehlung ändern. (1) Lizenz: models.js/manifest.json (ca. 7 MB) und cp -r models in dashboard.yml erst nach schriftlicher VEX-Bestätigung (in ADR-045 ablegen, CAD-03 angleichen), sonst aus dem PR nehmen. (2) Dreiecksgrenzen verfehlt: cup 10 648, pin 11 858, goal 26 156 bis 53 938 (Grenzen 5 000 / 20 000); dezimieren oder Kriterium begründet ändern, plus Test auf die eingecheckten Zahlen. Details im PR-Kommentar.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-11 · arjanssen (KI) · Ticket angelegt · –
+2026-11-11 · matelechner01 (KI) · Review PR #102: Empfehlung ändern (Lizenz, Dreiecksgrenzen)
