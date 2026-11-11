@@ -7,8 +7,11 @@ Neue Fassung der Bibliothek: URL und SHA256 unten ändern, cad/lib/ löschen.
 """
 import hashlib
 import shutil
+import ssl
+import subprocess
 import sys
 import tempfile
+import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -40,6 +43,27 @@ def _extract(zip_path, dest):
         z.extractall(dest)
 
 
+def _download(url, target):
+    """Per urllib; fehlen dem Python die Zertifikate (python.org-Python auf macOS), weicht es auf curl aus (System-Speicher).
+    Die Prüfsumme danach gilt in beiden Fällen."""
+    try:
+        with urllib.request.urlopen(url, timeout=60) as r, open(target, "wb") as f:
+            shutil.copyfileobj(r, f)
+        return
+    except urllib.error.URLError as e:
+        if not isinstance(e.reason, ssl.SSLError):
+            raise FetchError("Download fehlgeschlagen: %s" % e)
+        err = e
+    except OSError as e:
+        raise FetchError("Download fehlgeschlagen: %s" % e)
+    curl = shutil.which("curl")
+    if not curl:
+        raise FetchError("Download fehlgeschlagen: %s (kein curl als Ausweg; bei python.org-Python 'Install Certificates.command' ausführen)" % err)
+    r = subprocess.run([curl, "-fL", "--silent", "--show-error", "-o", str(target), url])
+    if r.returncode != 0:
+        raise FetchError("Download fehlgeschlagen (curl Exit %d)" % r.returncode)
+
+
 def fetch(url, sha256, dest):
     """True, wenn geladen wurde; False, wenn die Bibliothek schon da ist."""
     dest = Path(dest)
@@ -47,11 +71,7 @@ def fetch(url, sha256, dest):
         return False
     with tempfile.TemporaryDirectory() as tmp:
         zip_path = Path(tmp) / "lib.zip"
-        try:
-            with urllib.request.urlopen(url, timeout=60) as r, open(zip_path, "wb") as f:
-                shutil.copyfileobj(r, f)
-        except OSError as e:
-            raise FetchError("Download fehlgeschlagen: %s" % e)
+        _download(url, zip_path)
         if _sha256(zip_path) != sha256:
             raise FetchError("Prüfsumme stimmt nicht, nichts entpackt")
         staging = Path(tmp) / "out"
