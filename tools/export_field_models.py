@@ -5,7 +5,7 @@
 
 Schreibt je Variante eine .glb, manifest.json und models.js (alles in einer Skript-Datei, damit der Viewer auch von file://
 funktioniert). Nur Optik: Kollision und Physik der Simulation kommen weiter aus sim/sim_params.json.
-Die Ausgabe ist von VEX abgeleitet und wird nicht committet (.gitignore, Lizenzfrage siehe CAD-03); die STEP-Datei kommt nie ins Repo.
+models.js und manifest.json werden committet (VEX hat die Weitergabe bestätigt, ADR-045), die Einzel-GLB nicht; die STEP-Datei kommt nie ins Repo.
 Braucht cadquery (OCP) nur zum Erzeugen: pip install cadquery. Der Rest dieser Datei läuft mit der Standardbibliothek.
 
 Koordinaten: Der Viewer benutzt dieselbe Achsenzuordnung wie das CAD (x, y nach oben, z = −y_in); es wird nur von mm auf Zoll
@@ -458,7 +458,7 @@ def export_all(step_path, out_dir, field_path):
     manifest = make_manifest(entries)
     (out / "manifest.json").write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     (out / "models.js").write_text(bundle_js(manifest, glbs), encoding="utf-8")
-    print(f"geschrieben nach {out} (nicht committen, siehe .gitignore)")
+    print(f"geschrieben nach {out} (models.js und manifest.json einchecken, ADR-045)")
 
 
 def main(argv=None):

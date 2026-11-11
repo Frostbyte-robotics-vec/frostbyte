@@ -14,7 +14,7 @@ Der Browser-Viewer (Feld und Live-Simulation) zeigt Pins, Cups, Goals und Match 
 
 ## Fertig, wenn …
 - `tools/export_field_models.py <STEP-Datei> [--out …]`: liest das Feld-STEP, schreibt je Variante ein GLB (Pin ×4 Farbkombinationen, Cup, Goal rot/blau/neutral, Loader rot/blau) und `manifest.json`; Zoll, Ursprung mittig, Pivot am Boden, Achsen wie im Viewer (x = x_in, y hoch, z = −y_in); Dreiecke je Goal ≤ 40 000 (Midfield ≤ 70 000), je Pin/Cup ≤ 12 000, je Loader ≤ 5 000 (unter ~11 000 geht es ohne eigenes Dezimieren nicht, ADR-045)
-- Ausgabe nach `tools/viewer/models/` (in `.gitignore`, **nicht committen**, solange die Lizenzfrage offen ist, siehe CAD-03); die STEP-Datei kommt nie ins Repo
+- Ausgabe nach `tools/viewer/models/` (`models.js` und `manifest.json` im Repo, da VEX die Weitergabe am 2026-11-11 mündlich bestätigt hat, ADR-045; `*.glb` gitignored); die STEP-Datei kommt nie ins Repo
 - Viewer lädt die Modelle über das Manifest, wenn vorhanden, sonst die heutigen Primitive (Fallback wie bei `HAS3D`)
 - Cup-Höhe im Viewer 6,5″ (Manual), `OBJ_HEIGHT_IN` aus dem Manifest statt fest im Code
 - Tests ohne STEP-Datei in der CI: mm→Zoll, Zentrierung/Pivot, Manifest-Schema (Box-Solid), Viewer-Fallback ohne Modelldatei, Pfad je Typ/Farbe mit Manifest, Maße gegen Manual (Pin/Cup 6,5″)
@@ -33,8 +33,8 @@ Stand: fertig, PR offen. Exporter, Viewer-Anbindung, Tests, ADR-045. Mit dem ech
 geprüft: Goals, Pins (4 Varianten, Hälften farbig), Cups, Loader stehen an den Feldpunkten, Live-Modus zeigt Pins/Cups als Modell.
 Modelle erzeugen: venv mit `pip install cadquery`, dann `python3 tools/export_field_models.py <STEP>` (ca. 1 min); Ausgabe in
 tools/viewer/models/ (gitignored). Ohne die Dateien zeichnet der Viewer wie vorher.
-Offen für Menschen: (1) Lizenzfrage VEX-CAD im öffentlichen Repo (CAD-03): bis dahin nichts Abgeleitetes committen; wenn erlaubt,
-.gitignore-Zeile entfernen und GLBs/models.js einchecken, damit die Webseite sie zeigt. (2) Optisch prüfen: Cup-Lage (klare Hälfte unten),
+Lizenz: Schweizer VEX-Vertreter hat mündlich zugestimmt (arjanssen, 2026-11-11); models.js/manifest.json sind eingecheckt, der Dashboard-Workflow
+kopiert fieldmodels.js und models/ auf die Webseite. Offen für Menschen: (2) Optisch prüfen: Cup-Lage (klare Hälfte unten),
 Loader-Ausrichtung (aus dem CAD übernommen), liegende Pins (gelb_deg). (3) Leistung: ?stats im Viewer ansehen (ca. 1,4 Mio. Dreiecke bei
 120 Pins/Cups); wenn es ruckelt, neues Ticket „Dezimieren“. (4) Für C-06: Goal-Unterkanten im CAD unterschiedlich (Red/Blue −17,45 mm,
 Neutral 1/4 −80,95 mm, Neutral 0 −157,15 mm relativ zum Modellursprung); Oberkanten passen zu field.json.
@@ -46,3 +46,4 @@ Am Roboter nichts zu prüfen (nur Anzeige).
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-11 · arjanssen (KI) · Ticket angelegt · –
 2026-11-11 · arjanssen (KI) · Exporter, Viewer-Modelle, Tests, ADR-045; mit echtem STEP geprüft · siehe Branch
+2026-11-11 · arjanssen (KI) · VEX-Freigabe (mündlich) eingetragen, models.js/manifest.json eingecheckt, Dashboard-Workflow kopiert Modelle · siehe Branch

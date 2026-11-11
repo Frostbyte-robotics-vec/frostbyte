@@ -12,5 +12,5 @@ compile_commands.json
 temp.log
 temp.errors
 
-# CAD-abgeleitete Modelle der Spielelemente (SIM-37): lokal mit tools/export_field_models.py erzeugen, nicht committen (VEX-Lizenz offen, CAD-03)
-tools/viewer/models/
+# GLB-Einzeldateien des Modell-Exports (SIM-37): models.js und manifest.json liegen im Repo, die GLB sind daraus neu erzeugbar
+tools/viewer/models/*.glb

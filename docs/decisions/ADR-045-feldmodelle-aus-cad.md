@@ -9,8 +9,10 @@ Status: angenommen (SIM-37, 2026-11-11)
 - **Neues Paket `cadquery` (OCP) nur für dieses Skript**, nur zum Erzeugen der Modelle: nicht im Roboter-Build, nicht in der CI.
   Der Rest der Datei und alle Tests laufen mit der Standardbibliothek; der OCP-Test wird ohne cadquery übersprungen.
   `pip install cadquery` in ein eigenes venv genügt (ca. 45 s pro Export, STEP hat 131 MB).
-- **Ausgabe und STEP werden nicht committet** (`.gitignore`): das Repo ist öffentlich, die Weitergabe von VEX-CAD ist noch nicht
-  geklärt (CAD-03). Wird die Lizenz geklärt, ist „GLBs committen“ nur das Entfernen einer `.gitignore`-Zeile.
+- **Lizenz:** Der Schweizer Vertreter von VEX hat auf Nachfrage von arjanssen am 2026-11-11 mündlich bestätigt, dass die Weitergabe
+  des VEX-CAD (Feld-CAD und Teilebibliothek) auf GitHub kein Problem ist. Eine schriftliche Bestätigung liegt nicht vor; wer sie
+  bekommt, legt sie hier ab. Deshalb liegen `models.js` und `manifest.json` im Repo (ca. 7 MB), die Einzel-GLB nicht (`.gitignore`,
+  aus dem STEP neu erzeugbar). Das STEP selbst (131 MB) bleibt außerhalb des Repos.
 - Einheiten und Achsen: das Skript rechnet mm → Zoll; Achsen wie im CAD und im Viewer (x = x_in, y oben, z = −y_in), keine
   Drehung nötig (geprüft: Goal-Positionen im CAD = field.json). Pin/Cup behalten den CAD-Ursprung (Mitte der Höhe),
   Goals stehen mit dem Boden auf y = 0, Loader sind in Spielrichtung gedreht und auf den Feldpunkt aus field.json bezogen.
@@ -35,6 +37,6 @@ Status: angenommen (SIM-37, 2026-11-11)
   den Werten in field.json (3,25 / 5,8 / 8,7 in).
 
 ## Beratung
-Advisor-Rat vor dem Bau: Lizenz zuerst klären, solange offen nichts Abgeleitetes committen; Ausgabe in `.gitignore`, Viewer mit
+Advisor-Rat vor dem Bau: Lizenz zuerst klären, bis dahin nichts Abgeleitetes committen (inzwischen geklärt, siehe oben); Viewer mit
 Fallback; Tests ohne STEP in der CI; je Variante ein Netz. Die ursprünglichen Dreiecksziele (< 5 000 / < 20 000) waren ohne
 Dezimieren nicht erreichbar, siehe oben.
