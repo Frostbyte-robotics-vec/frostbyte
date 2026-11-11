@@ -90,7 +90,9 @@ class NewsTest(unittest.TestCase):
         for name in ("index.html", "2026-11-09-novagear.html"):
             h = (self.out / name).read_text(encoding="utf-8")
             self.assertIn('href="../assets/style.css"', h)
-            self.assertIn('href="../sponsoring.html"', h)
+            self.assertNotIn("sponsoring.html", h)
+            self.assertNotIn("fonts.googleapis", h)
+            self.assertNotIn("progress", h)
             self.assertEqual(h.count("<body>"), 1)
 
     def test_bild_wird_kopiert_und_hat_alt(self):

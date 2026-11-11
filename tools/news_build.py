@@ -115,9 +115,6 @@ def seite(titel, beschreibung, inhalt):
 <meta property="og:image" content="../assets/snowflake.png">
 <meta name="theme-color" content="#071a33">
 <link rel="icon" type="image/png" href="../assets/favicon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&family=Chakra+Petch:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap">
 <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
@@ -130,11 +127,10 @@ def seite(titel, beschreibung, inhalt):
       <li><a href="index.html">News</a></li>
     </ul>
     <div class="nav-cta">
-      <a class="btn sm ghost" href="../sponsoring.html">Unterstützen <span class="arr">→</span></a>
+      <a class="btn sm ghost" href="../index.html#partner">Unterstützen <span class="arr">→</span></a>
       <button class="burger" id="burger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="menu"><span></span><span></span><span></span></button>
     </div>
   </div>
-  <div class="progress" id="progress"></div>
 </nav>
 {inhalt}
 <footer class="dark">
@@ -144,7 +140,7 @@ def seite(titel, beschreibung, inhalt):
         <a class="mark" href="../index.html"><img src="../assets/snowflake.png" alt="">FROST<span class="b">BYTE</span><span class="cur" aria-hidden="true"></span></a>
         <p style="margin-top:14px;max-width:34ch">VEX-U-Studierendenteam der ETH Zürich.</p>
       </div>
-      <div><h4>Seiten</h4><ul><li><a href="../index.html">Hauptseite</a></li><li><a href="index.html">News</a></li><li><a href="../sponsoring.html">Unterstützen</a></li></ul></div>
+      <div><h4>Seiten</h4><ul><li><a href="../index.html">Hauptseite</a></li><li><a href="index.html">News</a></li><li><a href="../index.html#partner">Unterstützen</a></li></ul></div>
     </div>
     <div class="f-bot"><span>© 2026 Frostbyte · ETH Zürich</span><span class="bin" aria-hidden="true">01000110 01010010 01001111 01010011 01010100</span><span>frostbyte.eth.robotics@gmail.com</span></div>
   </div>
