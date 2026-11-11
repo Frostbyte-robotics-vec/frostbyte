@@ -298,8 +298,8 @@ class WebTest(unittest.TestCase):
     def test_impressum_seiten_haben_angaben_und_verweisen_zurueck(self):
         # W-13: Angaben stammen vom Menschen (Chat 2026-11-11), nichts erfunden
         erwartet = {
-            "impressum.html": ("Verein Frostbyte", "David Čop", "Präsident", "Gujerstrasse 7", "8050 Zürich", "Datenschutz", "frostbyte.eth.robotics@gmail.com"),
-            "en/imprint.html": ("Verein Frostbyte", "David Čop", "President", "Gujerstrasse 7", "8050 Zürich", "Privacy", "frostbyte.eth.robotics@gmail.com"),
+            "impressum.html": ("Verein Frostbyte", "David Čop", "Präsident", "Gujerstrasse 7", "8050 Zürich", "Datenschutz", "Cloudflare", "/viewer/", "frostbyte.eth.robotics@gmail.com"),
+            "en/imprint.html": ("Verein Frostbyte", "David Čop", "President", "Gujerstrasse 7", "8050 Zürich", "Privacy", "Cloudflare", "/viewer/", "frostbyte.eth.robotics@gmail.com"),
         }
         for name, begriffe in erwartet.items():
             html = lade(name)
