@@ -11,3 +11,6 @@ bin/
 compile_commands.json
 temp.log
 temp.errors
+
+# CAD-abgeleitete Modelle der Spielelemente (SIM-37): lokal mit tools/export_field_models.py erzeugen, nicht committen (VEX-Lizenz offen, CAD-03)
+tools/viewer/models/

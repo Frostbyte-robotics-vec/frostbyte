@@ -378,9 +378,11 @@ function runLivesimReferenceTest(FBLive, fx, tolPos_in, tolHead_deg) {
       posen: [{ id: 'START_STACKER', x_in: -40, y_in: 0, h_deg: 0 }, { id: 'START_RUNNER', x_in: 40, y_in: 60, h_deg: 180 }],
       objekte_start: { cups: [{ id: 'CUP_X', x_in: -25, y_in: 0, lage: 'steht', ebene: 0 }, { id: 'CUP_FAR', x_in: 0, y_in: -50, lage: 'steht', ebene: 0 },
                               { id: 'CUP_NULL', x_in: null, y_in: null, lage: 'steht', ebene: 0 }],
-                       pins: [{ id: 'PIN_LIEGT', x_in: 20, y_in: 20, lage: 'liegt', ebene: 0 }, { id: 'PIN_OBEN', x_in: -25, y_in: 0, lage: 'steht', ebene: 1 }] } };
+                       pins: [{ id: 'PIN_LIEGT', x_in: 20, y_in: 20, lage: 'liegt', ebene: 0, variante: 'red_yellow', gelb_deg: 90 }, { id: 'PIN_OBEN', x_in: -25, y_in: 0, lage: 'steht', ebene: 1 }] } };
     const volts = (n, t_ms) => (n === 'stacker' && t_ms < 1500 ? { left_V: 6, right_V: 6 } : { left_V: 0, right_V: 0 });
     const live = FBLive.create(objParams, objField, { voltsAt: volts });
+    const lying = live.objects().filter((o) => o.id === 'PIN_LIEGT')[0];
+    check('Objekte: Pin-Variante und Gelb-Richtung für die Anzeige durchgereicht (SIM-37)', lying.variant === 'red_yellow' && lying.yellow_deg === 90, JSON.stringify(lying));
     check('Objekte: nur Bodenobjekte mit Koordinaten (CUP_X, CUP_FAR, PIN_LIEGT)', live.objects().map((o) => o.id).join() === 'CUP_X,CUP_FAR,PIN_LIEGT',
       live.objects().map((o) => o.id).join());
     check('Objekte: kind je Objekt (cup, cup, pin) für die Anzeige', live.objects().map((o) => o.kind).join() === 'cup,cup,pin', live.objects().map((o) => o.kind).join());
