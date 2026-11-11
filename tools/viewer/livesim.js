@@ -203,7 +203,8 @@ var FBLive = (function () {
       (start[kind[0]] || []).forEach(function (e) {
         if (typeof e.x_in !== 'number' || typeof e.y_in !== 'number') return;
         if (typeof e.ebene === 'number' && e.ebene !== 0) return;
-        list.push({ id: e.id, x_in: e.x_in, y_in: e.y_in, r_in: kind[1], kind: kind[2], standing: e.lage !== 'liegt' });
+        list.push({ id: e.id, x_in: e.x_in, y_in: e.y_in, r_in: kind[1], kind: kind[2], standing: e.lage !== 'liegt',
+          variant: e.variante, yellow_deg: e.gelb_deg, top_color: e.oben_farbe });  // nur für die Anzeige (SIM-37)
       });
     });
     return { list: list, share: share };

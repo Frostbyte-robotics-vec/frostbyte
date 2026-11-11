@@ -187,9 +187,12 @@ body[data-ansicht="sim"] #livectl{display:flex}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="logparse.js"></script>
 <script src="robots.js"></script>
 <script src="livesim.js"></script>
+<script src="fieldmodels.js"></script>
+<script src="models/models.js" onerror="void 0"></script><!-- CAD-Modelle der Spielelemente, mit tools/export_field_models.py erzeugt (SIM-37, ADR-045); fehlt die Datei, einfache Körper -->
 <script>
 (function(){
 'use strict';
@@ -256,6 +259,26 @@ function setView(top){
   controls.target.set(0, 0, 0); controls.update(); S.dirty = true;
 }
 
+/* ---------- CAD-Modelle der Spielelemente (SIM-37) ----------
+   window.FB_MODELS kommt aus models/models.js (tools/export_field_models.py). Je Variante ein Modell, jede Instanz ist ein
+   Klon mit gemeinsamer Geometrie. Fehlt eine Variante oder die Datei, bleibt der einfache Körper. */
+const CADM = { tpl: {}, ready: false };
+const cadPayload = () => window.FB_MODELS;
+function cadInstance(key){
+  const t = CADM.ready && key && CADM.tpl[key];
+  if (!t) return null;
+  const c = t.clone(true);
+  c.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  return c;
+}
+function loadCadModels(){
+  const P = cadPayload();
+  if (!HAS3D || !THREE.GLTFLoader || !FBModels.usable(P)) return;
+  const loader = new THREE.GLTFLoader();
+  Promise.all(Object.keys(P.glb).map(k => new Promise(res => loader.parse(FBModels.decodeBase64(P.glb[k]), '', g => { CADM.tpl[k] = g.scene; res(); }, () => res()))))
+    .then(() => { CADM.ready = true; buildField(); S.dirty = true; });
+}
+
 /* ---------- Feld ---------- */
 function buildField(){
   if (!HAS3D) return;
@@ -286,6 +309,8 @@ function buildField(){
     const put = (o, x, y) => { o.position.x = x; o.position.z = -y; o.castShadow = true; fieldGroup.add(o); shown++; };
     (F.goals || []).forEach(g => {
       if (g.x_in == null || g.y_in == null) { missing++; return; }
+      const cad = cadInstance(FBModels.goalKey(g.typ));
+      if (cad) { put(cad, g.x_in, g.y_in); return; }
       const h = g.hoehe_in || 4, o = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, h, 24), std(goalColor[g.typ] || 0x888888));
       o.position.y = h / 2; put(o, g.x_in, g.y_in);
     });
@@ -295,6 +320,8 @@ function buildField(){
     });
     (F.loader || []).forEach(g => {
       if (g.x_in == null || g.y_in == null) { missing++; return; }
+      const cad = cadInstance(FBModels.loaderKey(g.farbe));
+      if (cad) { put(cad, g.x_in, g.y_in); return; }
       const o = new THREE.Mesh(new THREE.BoxGeometry(6, 10, 6), std(g.farbe === 'red' ? 0xc0392b : 0x1e6bae, {transparent:true, opacity:.6})); o.position.y = 5; put(o, g.x_in, g.y_in);
     });
     (F.posen || []).forEach(g => { if (g.x_in == null || g.y_in == null) missing++; });
@@ -655,20 +682,36 @@ window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; docume
 const LIVE_KEYS = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd' };
 const liveHeld = { w: false, a: false, s: false, d: false, shift: false };
 function liveSend(){ if (S.live) S.live.sim.setKeys(liveHeld); }
-/* Feldobjekte der Live-Simulation (SIM-35): Cup = Zylinder, Pin = schlanker Zylinder; liegend auf der Seite. Die Netze
+/* Feldobjekte der Live-Simulation (SIM-35): mit CAD-Modell (SIM-37) sonst Cup = Zylinder, Pin = schlanker Zylinder; liegend auf der Seite. Die Netze
    entstehen einmal je Objekt; Lage und Zustand kommen bei jedem Bild aus live.objects(). Maße nur zur Anzeige (Radius aus
    sim_params, Höhe Schätzung). */
-const OBJ_HEIGHT_IN = { cup: 4.5, pin: 6.5 }, OBJ_COLOR = { cup: 0xd9d2c3, pin: 0xe0b341 };
+const OBJ_HEIGHT_IN = { cup: 6.5, pin: 6.5 }, OBJ_COLOR = { cup: 0xd9d2c3, pin: 0xe0b341 };   // Manual v2.1: beide 6,5 in hoch
+function makeObjectMesh(o){
+  const key = FBModels.objectKey(o), cad = cadInstance(key);
+  if (cad) {
+    const P = cadPayload(), e = P.manifest.modelle[key], wrap = new THREE.Group();
+    if (o.kind === 'pin' && FBModels.needsFlip(e, o.top_color)) cad.rotation.z = Math.PI;   // gewünschte Farbe nach oben
+    wrap.add(cad);
+    // liegend: halbe Breite des Modells über dem Boden
+    wrap.userData = { cad: true, key, entry: e, h: e.height_in, r: Math.max(e.max_in[0] - e.min_in[0], e.max_in[2] - e.min_in[2]) / 2 };
+    return wrap;
+  }
+  const h = OBJ_HEIGHT_IN[o.kind] || 6.5;
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(o.r_in, o.r_in, h, 20), new THREE.MeshStandardMaterial({ color: OBJ_COLOR[o.kind] || 0xcccccc, roughness: .8 }));
+  m.userData = { cad: false, h, r: o.r_in }; m.castShadow = true;
+  return m;
+}
+const OBJ_UP = new THREE.Vector3(0, 1, 0);
 function updateObjects(L){
   L.sim.objects().forEach((o, i) => {
     let m = L.objects[i];
-    if (!m) {
-      const h = OBJ_HEIGHT_IN[o.kind] || 4.5;
-      m = new THREE.Mesh(new THREE.CylinderGeometry(o.r_in, o.r_in, h, 20), new THREE.MeshStandardMaterial({ color: OBJ_COLOR[o.kind] || 0xcccccc, roughness: .8 }));
-      m.userData.h = h; m.castShadow = true; scene.add(m); L.objects[i] = m;
-    }
-    m.position.set(o.x_in, o.standing ? m.userData.h / 2 : o.r_in, -o.y_in);
-    m.rotation.set(o.standing ? 0 : Math.PI / 2, 0, 0);
+    if (m && !m.userData.cad && CADM.ready && CADM.tpl[FBModels.objectKey(o)]) { scene.remove(m); m = null; }   // Modelle kamen nach dem Start
+    if (!m) { m = makeObjectMesh(o); scene.add(m); L.objects[i] = m; }
+    const u = m.userData;
+    if (o.standing) { m.position.set(o.x_in, u.h / 2, -o.y_in); m.quaternion.identity(); return; }
+    m.position.set(o.x_in, u.r, -o.y_in);
+    if (u.cad) { const a = FBModels.lyingAxis(u.entry, o.yellow_deg); m.quaternion.setFromUnitVectors(OBJ_UP, new THREE.Vector3(a[0], a[1], a[2])); }
+    else m.rotation.set(Math.PI / 2, 0, 0);
   });
 }
 function updateLive(){
@@ -750,6 +793,7 @@ document.addEventListener('visibilitychange', () => { if (S.live) S.live.sim.pau
 
 /* ---------- Start ---------- */
 buildField();
+loadCadModels();
 renderLogList();
 // Über http (nicht file://) gehen auch URL-Parameter: ?log=a.csv&log=b.csv&field=../../field/field.json&t=12
 const q = new URLSearchParams(location.search);
@@ -773,7 +817,7 @@ if (q.has('selftest')) {
     el.textContent = (el.hidden ? '' : el.textContent + '\n') + `Selbsttest ${name}: ${r.ok} ok, ${r.fail} Fehler` + (r.msgs.length ? '\n' + r.msgs.join('\n') : '');
     el.className = bad ? 'bad' : 'ok'; el.hidden = false;
   };
-  [['logparse_test.js', () => runLogparseTests(FBLog), 'logparse'], ['livesim_test.js', () => runLivesimTests(FBLive, FBLog), 'livesim']].forEach(([src, run, name]) => {
+  [['logparse_test.js', () => runLogparseTests(FBLog), 'logparse'], ['livesim_test.js', () => runLivesimTests(FBLive, FBLog), 'livesim'], ['fieldmodels_test.js', () => runFieldmodelsTests(FBModels), 'fieldmodels']].forEach(([src, run, name]) => {
     const s = document.createElement('script'); s.src = src;
     s.onload = () => showTest(name, run());
     document.head.appendChild(s);

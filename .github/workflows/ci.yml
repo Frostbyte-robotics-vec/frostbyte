@@ -102,3 +102,5 @@ jobs:
         run: python3 -m unittest discover -s tools -p "test_*.py"
       - name: Live-Handsteuerung testen (Node)
         run: python3 -m unittest discover -s tools/viewer -p "test_livesim.py" -v
+      - name: Modellauswahl des Viewers testen (Node)
+        run: python3 -m unittest discover -s tools/viewer -p "test_fieldmodels.py" -v
