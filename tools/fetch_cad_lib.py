@@ -59,7 +59,7 @@ def _download(url, target):
     curl = shutil.which("curl")
     if not curl:
         raise FetchError("Download fehlgeschlagen: %s (kein curl als Ausweg; bei python.org-Python 'Install Certificates.command' ausführen)" % err)
-    r = subprocess.run([curl, "-fL", "--silent", "--show-error", "-o", str(target), url])
+    r = subprocess.run([curl, "-fL", "--silent", "--show-error", "--connect-timeout", "30", "--max-time", "600", "-o", str(target), url])
     if r.returncode != 0:
         raise FetchError("Download fehlgeschlagen (curl Exit %d)" % r.returncode)
 
