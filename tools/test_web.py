@@ -15,7 +15,7 @@ def lade(name):
 HTML = {n: lade(n) for n in SEITEN}
 
 
-
+class WebTest(unittest.TestCase):
     def test_lokale_dateien_existieren(self):
         for name, html in HTML.items():
             refs = set(re.findall(r'(?:src|href)="' + ASSET + '"', html))
