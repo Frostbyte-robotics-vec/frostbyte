@@ -28,21 +28,22 @@ namespace {
 
 constexpr std::uint32_t control_period_ms = 10;
 constexpr std::uint32_t display_period_ms = 200;
-constexpr std::uint32_t feedback_period_ms = 100;
-constexpr double driver_run_s = 60.0;  // Skills: ein Fahrerlauf dauert 60 s
+constexpr std::uint32_t feedback_period_ms = 50;  // F-06: Warnung am Controller in <= 200 ms (test_health_monitor.cpp)
+constexpr double driver_run_s = 60.0;             // Skills: ein Fahrerlauf dauert 60 s
 constexpr std::uint32_t menu_period_ms = 100;
-constexpr std::uint32_t health_period_ms = 100;  // docs/plan.md: Health-Task 100 ms, mittlere Prioritaet
+constexpr std::uint32_t health_period_ms =
+    50;  // plan.md nennt 100 ms; 50 ms, damit Warnung am Controller <= 200 ms (ADR-048)
 
 // Alles statisch: der Steuer-Task legt nach dem Start nichts an.
 frostbyte::PhaseFlag g_phase;
 frostbyte::SharedCycleStats g_cycle_stats;
 
-// Health (F-06, ADR-048): der Health-Task prueft alle 100 ms Motoren, Akku und die Takt-Warnung und veroeffentlicht die
+// Health (F-06, ADR-048): der Health-Task prueft alle 50 ms Motoren, Akku und die Takt-Warnung und veroeffentlicht die
 // wichtigste Warnung; der Controller-Task zeigt sie.
 // TODO(F-05 gemergt): Steuer-Task schreibt bei Aenderung g_health.event_token() ins Log (Feld event). Motoren werden mit
 // add_motor() eingetragen, sobald es sie gibt (HAL-Instanzen mit Ports: F-09, M-12, M-13); bis dahin pruefen nur Akku und Takt.
-// TODO(HW): Schwellen (HealthConfig: 55 C Motor, 11,0 V Akku) am Roboter pruefen; V5-Akku und Motor-Drosselung messen.
-frostbyte::HealthMonitor<8> g_health(frostbyte::HealthConfig{});
+// Schwellen: config::health (TODO(HW) dort).
+frostbyte::HealthMonitor<8> g_health(config::health);
 frostbyte::SharedHealth g_health_status;
 
 // Bewegung (D-05, ADR-017): eigener Pid wie in der Simulation; lemlib::PID nur, wenn config es verlangt (Vergleich D-07).
@@ -114,7 +115,7 @@ void control_task(void*) {
     }
 }
 
-// Prueft alle 100 ms die Gesundheit (F-06). Mittlere Prioritaet: nur lesen und rechnen, nie Motoren bewegen.
+// Prueft alle 50 ms die Gesundheit (F-06). Mittlere Prioritaet: nur lesen und rechnen, nie Motoren bewegen.
 void health_task(void*) {
     std::uint32_t now_ms = pros::millis();
     while (true) {
