@@ -12,3 +12,6 @@ compile_commands.json
 temp.log
 temp.errors
 cad/lib/
+
+# GLB-Einzeldateien des Modell-Exports (SIM-37): models.js und manifest.json liegen im Repo, die GLB sind daraus neu erzeugbar
+tools/viewer/models/*.glb

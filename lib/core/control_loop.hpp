@@ -125,6 +125,7 @@ struct CycleStatsView {
     std::uint32_t jitter_max_us = 0;
     std::uint32_t work_max_us = 0;
     std::uint32_t overruns = 0;
+    bool warning = false;  // 3 Ueberzuege in Folge (CycleStats::warning), Health-Monitor F-06
 };
 
 // Uebergabe an den Anzeige-Task: nur der Steuer-Task schreibt, andere Tasks lesen nur.
@@ -136,6 +137,7 @@ public:
         jitter_max_us_.store(s.jitter_max_us(), std::memory_order_relaxed);
         work_max_us_.store(s.work_max_us(), std::memory_order_relaxed);
         overruns_.store(static_cast<std::uint32_t>(s.overruns()), std::memory_order_relaxed);
+        warning_.store(s.warning(), std::memory_order_relaxed);
     }
 
     CycleStatsView load() const {
@@ -143,6 +145,7 @@ public:
         v.jitter_max_us = jitter_max_us_.load(std::memory_order_relaxed);
         v.work_max_us = work_max_us_.load(std::memory_order_relaxed);
         v.overruns = overruns_.load(std::memory_order_relaxed);
+        v.warning = warning_.load(std::memory_order_relaxed);
         return v;
     }
 
@@ -150,6 +153,7 @@ private:
     std::atomic<std::uint32_t> jitter_max_us_{0};
     std::atomic<std::uint32_t> work_max_us_{0};
     std::atomic<std::uint32_t> overruns_{0};
+    std::atomic<bool> warning_{false};
 };
 
 }  // namespace frostbyte
