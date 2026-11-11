@@ -184,3 +184,18 @@ TEST_CASE("SharedCycleStats: Anzeige-Task liest, was der Steuer-Task veroeffentl
     CHECK(v.work_max_us == 11000u);
     CHECK(v.overruns == 1u);
 }
+
+TEST_CASE("SharedCycleStats: Takt-Warnung (3 Überzüge in Folge) wird mit veröffentlicht") {
+    CycleStats s(10000);
+    SharedCycleStats shared;
+    s.record_work_us(11000);
+    s.record_work_us(11000);
+    shared.publish(s);
+    CHECK_FALSE(shared.load().warning);
+    s.record_work_us(11000);
+    shared.publish(s);
+    CHECK(shared.load().warning);
+    s.record_work_us(1000);
+    shared.publish(s);
+    CHECK_FALSE(shared.load().warning);
+}

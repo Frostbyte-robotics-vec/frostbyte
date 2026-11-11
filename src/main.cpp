@@ -17,6 +17,7 @@
 #include "match/routine_screen.hpp"
 #include "port_check.hpp"
 #include "util/build_info.hpp"
+#include "util/health_monitor.hpp"
 #include "util/rule_guard.hpp"
 
 static_assert(!(config::port_check_enabled && config::link_test_enabled),
@@ -28,14 +29,24 @@ namespace {
 
 constexpr std::uint32_t control_period_ms = 10;
 constexpr std::uint32_t display_period_ms = 200;
-constexpr std::uint32_t feedback_period_ms = 100;
-constexpr double driver_run_s = 60.0;  // Skills: ein Fahrerlauf dauert 60 s
+constexpr std::uint32_t feedback_period_ms = 50;  // F-06: Warnung am Controller in <= 200 ms (test_health_monitor.cpp)
+constexpr double driver_run_s = 60.0;             // Skills: ein Fahrerlauf dauert 60 s
 constexpr std::uint32_t menu_period_ms = 100;
 constexpr std::uint32_t logger_period_ms = 50;  // docs/plan.md: Logger-Task 50 ms, niedrige Prioritaet
+constexpr std::uint32_t health_period_ms =
+    50;  // plan.md nennt 100 ms; 50 ms, damit Warnung am Controller <= 200 ms (ADR-048)
 
 // Alles statisch: der Steuer-Task legt nach dem Start nichts an.
 frostbyte::PhaseFlag g_phase;
 frostbyte::SharedCycleStats g_cycle_stats;
+
+// Health (F-06, ADR-048): der Health-Task prueft alle 50 ms Motoren, Akku und die Takt-Warnung und veroeffentlicht die
+// wichtigste Warnung; der Controller-Task zeigt sie.
+// TODO(F-05 gemergt): Steuer-Task schreibt bei Aenderung g_health.event_token() ins Log (Feld event). Motoren werden mit
+// add_motor() eingetragen, sobald es sie gibt (HAL-Instanzen mit Ports: F-09, M-12, M-13); bis dahin pruefen nur Akku und Takt.
+// Schwellen: config::health (TODO(HW) dort).
+frostbyte::HealthMonitor<8> g_health(config::health);
+frostbyte::SharedHealth g_health_status;
 
 // Bewegung (D-05, ADR-017): eigener Pid wie in der Simulation; lemlib::PID nur, wenn config es verlangt (Vergleich D-07).
 // Der Steuer-Task ruft g_motion.update() auf, sobald Pose (F-05) und Routen (A-03) da sind.
@@ -145,6 +156,18 @@ void logger_task(void*) {
     }
 }
 
+// Prueft alle 50 ms die Gesundheit (F-06). Mittlere Prioritaet: nur lesen und rechnen, nie Motoren bewegen.
+void health_task(void*) {
+    std::uint32_t now_ms = pros::millis();
+    while (true) {
+        frostbyte::HealthInput in;
+        in.battery_v = pros::battery::get_voltage() / 1000.0;  // mV
+        in.cycle_warning = g_cycle_stats.load().warning;
+        g_health_status.publish(g_health.update(in));
+        pros::c::task_delay_until(&now_ms, health_period_ms);
+    }
+}
+
 // Zeigt die Takt-Statistik der aktuellen Phase auf dem LCD (Ablesen am Roboter; der Logger aus F-05 schreibt sie noch nicht ins Log).
 // Eigener Task mit niedriger Prioritaet: die Ausgabe bleibt aus dem Steuer-Task heraus. Liest nur, setzt nie zurueck.
 void display_task(void*) {
@@ -214,6 +237,7 @@ void initialize() {
     static pros::Task task(control_task, nullptr, TASK_PRIORITY_MAX - 1, TASK_STACK_DEPTH_DEFAULT, "control");
     if (logging)
         static pros::Task logger(logger_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "logger");
+    static pros::Task health(health_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "health");
     static pros::Task display(display_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "display");
     static pros::Task menu(menu_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "menu");
     if constexpr (config::
@@ -242,7 +266,10 @@ void opcontrol() {
     const std::uint32_t start_ms = pros::millis();
     std::uint32_t now_ms = start_ms;
     while (true) {  // PROS beendet opcontrol(), sobald der Roboter deaktiviert wird
-        feedback.update((now_ms - start_ms) / 1000.0, config::robot_name);
+        // Warnung vor dem Robotername (F-06); ein Aufruf je 100 ms genuegt, ControllerFeedback begrenzt die Rate selbst.
+        char warn[16];
+        g_health.text(g_health_status.load(), warn, sizeof warn);
+        feedback.update((now_ms - start_ms) / 1000.0, warn[0] ? warn : config::robot_name);
         pros::c::task_delay_until(&now_ms, feedback_period_ms);
     }
 }
