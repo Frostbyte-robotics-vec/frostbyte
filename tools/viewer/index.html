@@ -696,7 +696,7 @@ function makeObjectMesh(o){
     wrap.userData = { cad: true, key, entry: e, h: e.height_in, r: Math.max(e.max_in[0] - e.min_in[0], e.max_in[2] - e.min_in[2]) / 2 };
     return wrap;
   }
-  const h = OBJ_HEIGHT_IN[o.kind] || 4.5;
+  const h = OBJ_HEIGHT_IN[o.kind] || 6.5;
   const m = new THREE.Mesh(new THREE.CylinderGeometry(o.r_in, o.r_in, h, 20), new THREE.MeshStandardMaterial({ color: OBJ_COLOR[o.kind] || 0xcccccc, roughness: .8 }));
   m.userData = { cad: false, h, r: o.r_in }; m.castShadow = true;
   return m;

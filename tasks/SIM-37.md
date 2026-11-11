@@ -38,6 +38,7 @@ Offen für Menschen: (1) Lizenzfrage VEX-CAD im öffentlichen Repo (CAD-03): bis
 Loader-Ausrichtung (aus dem CAD übernommen), liegende Pins (gelb_deg). (3) Leistung: ?stats im Viewer ansehen (ca. 1,4 Mio. Dreiecke bei
 120 Pins/Cups); wenn es ruckelt, neues Ticket „Dezimieren“. (4) Für C-06: Goal-Unterkanten im CAD unterschiedlich (Red/Blue −17,45 mm,
 Neutral 1/4 −80,95 mm, Neutral 0 −157,15 mm relativ zum Modellursprung); Oberkanten passen zu field.json.
+Bekannte Grenze: stehende Pins zeigen die CAD-Lage (gelb unten); pin_yellow_up aus Log/sim_params fließt nicht in die Anzeige, weil live.objects() es je Objekt nicht führt.
 Nicht geändert: Kollision/Physik, field.json, sim_params.json. Cup-Höhe im Viewer 4,5 → 6,5 in (Manual).
 Am Roboter nichts zu prüfen (nur Anzeige).
 
