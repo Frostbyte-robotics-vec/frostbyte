@@ -2,7 +2,7 @@
 id: SIM-37
 phase: "5"
 titel: Spielelemente im Viewer aus dem Feld-CAD 276-9250-000 (Pins, Cups, Goals, Loader) statt Platzhalter-Zylindern
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-37
 depends: []
@@ -41,9 +41,11 @@ Neutral 1/4 −80,95 mm, Neutral 0 −157,15 mm relativ zum Modellursprung); Obe
 Bekannte Grenze: stehende Pins zeigen die CAD-Lage (gelb unten); pin_yellow_up aus Log/sim_params fließt nicht in die Anzeige, weil live.objects() es je Objekt nicht führt.
 Nicht geändert: Kollision/Physik, field.json, sim_params.json. Cup-Höhe im Viewer 4,5 → 6,5 in (Manual).
 Am Roboter nichts zu prüfen (nur Anzeige).
+KI-Review PR #102 (matelechner01/Sonnet, 2026-11-11): Empfehlung ändern. (1) Lizenz: models.js/manifest.json (ca. 7 MB) und cp -r models in dashboard.yml erst nach schriftlicher VEX-Bestätigung (in ADR-045 ablegen, CAD-03 angleichen), sonst aus dem PR nehmen. (2) Dreiecksgrenzen verfehlt: cup 10 648, pin 11 858, goal 26 156 bis 53 938 (Grenzen 5 000 / 20 000); dezimieren oder Kriterium begründet ändern, plus Test auf die eingecheckten Zahlen. Details im PR-Kommentar.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-11 · arjanssen (KI) · Ticket angelegt · –
 2026-11-11 · arjanssen (KI) · Exporter, Viewer-Modelle, Tests, ADR-045; mit echtem STEP geprüft · siehe Branch
 2026-11-11 · arjanssen (KI) · VEX-Freigabe (mündlich) eingetragen, models.js/manifest.json eingecheckt, Dashboard-Workflow kopiert Modelle · siehe Branch
+2026-11-11 · matelechner01 (KI) · Review PR #102: Empfehlung ändern (Lizenz, Dreiecksgrenzen)
