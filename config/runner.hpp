@@ -9,6 +9,7 @@
 #include "match/route_player.hpp"
 #include "subsystems/claw.hpp"
 #include "subsystems/intake.hpp"
+#include "util/health_monitor.hpp"
 #include "util/port_check.hpp"
 #include "util/port_table.hpp"
 #include "util/rule_guard.hpp"
@@ -85,6 +86,11 @@ inline constexpr bool tuning_enabled = false;
 //   arm_min_deg/arm_max_deg (Armbereich mit Footprint <= 24" und Hoehe <= 50", Worst Case ueber die Lifthoehe). NaN (Standard) sperrt
 //   Lift nach oben und Arm in beide Richtungen. Messung in M-11.
 inline constexpr frostbyte::RuleGuardConfig rule_guard{};
+
+// Health-Monitor (F-06, ADR-048): Schwellen sind Startwerte (Software-Entscheidung), am Roboter pruefen.
+// TODO(HW): Drosselschwelle der V5-Motoren (hier 55 C an / 50 C aus) und Akku unter Last (11,0 V an / 11,5 V aus) messen.
+inline constexpr frostbyte::HealthConfig health{
+    .temp_warn_c = 55.0, .temp_clear_c = 50.0, .battery_warn_v = 11.0, .battery_clear_v = 11.5, .lost_polls = 2};
 
 // Routen (A-03, ADR-029): Standard-Timeout je Befehlsart, wenn die Route keins nennt. Startwerte (Software-Entscheidung), am
 // Roboter und in der Simulation (A-05) pruefen.
