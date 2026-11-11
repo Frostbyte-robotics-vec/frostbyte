@@ -243,8 +243,10 @@ class WebTest(unittest.TestCase):
         for name, h in HTML.items():
             self.assertIn('id="weltrekord"', h, name)
             self.assertIn("Guinness", h, name)
-            for z in ("20000", "1700", "2400"):
+            for z in ("20000", "1700", "50", "2400"):
                 self.assertIn(f'data-count="{z}"', h, name)
+            self.assertNotIn("60 L", h, name)
+            self.assertNotIn("60 countries", h, name)
             self.assertIn("RECF", h, name)  # Quellenzeile
             self.assertIn("data-sep=", h, name)
 
