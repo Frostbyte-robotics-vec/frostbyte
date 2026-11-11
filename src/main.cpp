@@ -4,11 +4,12 @@
 #include "control/motion_controller.hpp"
 #include "control/tuning_store.hpp"
 #include "core/control_loop.hpp"
-#include "core/log_format.hpp"  // prueft nur, dass der Log-v1-Schreiber fuer ARM kompiliert; genutzt ab F-05 (ADR-007)
+#include "core/logger.hpp"                      // Log v1: Schlange Steuer-Task -> Logger-Task -> SD (F-05, ADR-047)
 #include "hal/pros/pros_controller_output.hpp"  // Vibration und Anzeige am Controller (C-04)
 #include "hal/pros/pros_devices.hpp"  // prueft nur, dass die PROS-Wrapper kompilieren; instanziert wird erst mit den Ports (TODO(HW))
-#include "hal/pros/pros_storage.hpp"  // SD-Karte fuer die Tuning-Werte (D-06)
-#include "lemlib/api.hpp"             // prueft nur, dass LemLib einbindbar ist; Aufrufe erst hinter hal/ (ADR-001)
+#include "hal/pros/pros_log_sink.hpp"  // Log-Datei auf der SD-Karte (F-05)
+#include "hal/pros/pros_storage.hpp"   // SD-Karte fuer die Tuning-Werte (D-06)
+#include "lemlib/api.hpp"              // prueft nur, dass LemLib einbindbar ist; Aufrufe erst hinter hal/ (ADR-001)
 #include "lemlib_regulator.hpp"
 #include "link_comms.hpp"
 #include "link_test.hpp"
@@ -30,6 +31,7 @@ constexpr std::uint32_t display_period_ms = 200;
 constexpr std::uint32_t feedback_period_ms = 100;
 constexpr double driver_run_s = 60.0;  // Skills: ein Fahrerlauf dauert 60 s
 constexpr std::uint32_t menu_period_ms = 100;
+constexpr std::uint32_t logger_period_ms = 50;  // docs/plan.md: Logger-Task 50 ms, niedrige Prioritaet
 
 // Alles statisch: der Steuer-Task legt nach dem Start nichts an.
 frostbyte::PhaseFlag g_phase;
@@ -79,6 +81,14 @@ frostbyte::RuleGuard g_rule_guard(config::rule_guard);
 #define FB_DIRTY 1
 #endif
 
+// Log (F-05, ADR-047): Der Steuer-Task kopiert alle 20 ms eine Zeile in die Schlange (nie schreiben, nie blockieren),
+// der Logger-Task (niedrige Prioritaet) schreibt sie auf die SD-Karte. 256 Zeilen = ca. 5 s Puffer, wenn die Karte
+// stockt; danach faellt die neueste Zeile weg und die naechste meldet LOGDROP:<n>. Eine Datei je Start (/usd/log_NNN.csv).
+// TODO(HW): Schreibpausen der SD-Karte messen (Puffer gross genug?). Gefuellt sind erst t_s, robot, cpu_ms und Phase;
+// Pose, Mechanismen usw. kommen mit den Tickets, die sie im Steuer-Task berechnen (A-10, M-10, F-06).
+frostbyte::hal::ProsLogSink g_log_sink;
+frostbyte::Logger<256> g_log(config::robot_name, FB_COMMIT);
+
 std::uint32_t micros_u32() { return static_cast<std::uint32_t>(pros::micros()); }
 
 // Ein Steuer-Task fuer alle Phasen. Die Callbacks setzen nur g_phase, damit beim Uebergang
@@ -87,20 +97,50 @@ std::uint32_t micros_u32() { return static_cast<std::uint32_t>(pros::micros()); 
 void control_task(void*) {
     static frostbyte::ControlLoop loop(control_period_ms, pros::millis());
     frostbyte::Phase last_phase = g_phase.get();
+    std::uint32_t phase_start_ms = pros::millis();
+    std::uint32_t cycle_index = 0;  // Takte seit Start, bestimmt die Logzeile alle 20 ms
+    std::uint32_t last_work_us = 0;
+    bool phase_changed = false;
     while (true) {
-        loop.begin(micros_u32());
+        const std::uint32_t begin_us = micros_u32();
+        loop.begin(begin_us);
         const frostbyte::Phase phase = g_phase.get();
         if (phase != last_phase) {
+            phase_start_ms = pros::millis();
+            phase_changed = true;
             // Maxima je Phase: Ausreisser beim Start (initialize, LCD) sollen den Fahrbetrieb nicht ueberdecken.
             loop.reset_stats();
             last_phase = phase;
         }
         // TODO: Sensoren lesen, Odometrie, Logik, Regler, Motoren schreiben (je nach phase).
         // TODO(RuleGuard): alle Motorausgaben durch g_rule_guard.filter() (M-07), mit GuardInput.disabled = (Phase == Disabled).
+        if (phase != frostbyte::Phase::Disabled && frostbyte::LogCadence::due(cycle_index)) {
+            // Nur kopieren (ADR-047): kein Schreiben, kein Blockieren. cpu_ms ist die Rechenzeit des Vortakts.
+            frostbyte::LogRecord rec;
+            rec.t_s = (pros::millis() - phase_start_ms) / 1000.0;
+            rec.cpu_ms = last_work_us / 1000.0;
+            if (phase_changed)
+                frostbyte::LogRecord::set_text(
+                    rec.event, phase == frostbyte::Phase::Autonomous ? "PHASE:AUTONOMOUS" : "PHASE:DRIVER");
+            if (g_log.record(rec))
+                phase_changed = false;
+        }
+        ++cycle_index;
         loop.end(pros::millis(), micros_u32());
+        last_work_us = micros_u32() - begin_us;
         g_cycle_stats.publish(loop.stats());
         std::uint32_t base_ms = frostbyte::delay_until_base_ms(loop.wake_ms(), control_period_ms);
         pros::c::task_delay_until(&base_ms, control_period_ms);
+    }
+}
+
+// Schreibt die Logzeilen auf die SD-Karte (F-05). Eigener Task mit niedriger Prioritaet: Karte und Dateisystem duerfen
+// stocken, ohne den Steuer-Task zu beruehren.
+void logger_task(void*) {
+    std::uint32_t now_ms = pros::millis();
+    while (true) {
+        g_log.drain(g_log_sink);
+        pros::c::task_delay_until(&now_ms, logger_period_ms);
     }
 }
 
@@ -169,6 +209,8 @@ void initialize() {
     if constexpr (config::port_check_enabled || config::link_test_enabled)
         return;  // nur Pruefprogramm (F-03, L-01): kein Steuer-Task, opcontrol() startet es
     static pros::Task task(control_task, nullptr, TASK_PRIORITY_MAX - 1, TASK_STACK_DEPTH_DEFAULT, "control");
+    if (g_log_sink.open_new() && g_log.open(g_log_sink))
+        static pros::Task logger(logger_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "logger");
     static pros::Task display(display_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "display");
     static pros::Task menu(menu_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "menu");
     if constexpr (config::
