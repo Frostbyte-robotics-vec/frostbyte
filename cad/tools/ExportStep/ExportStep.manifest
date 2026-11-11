@@ -1,0 +1,8 @@
+{
+  "autodeskProduct": "Fusion360",
+  "type": "script",
+  "author": "Frostbyte",
+  "description": {"": "Alle F3D-Dateien eines Ordners nach STEP exportieren"},
+  "supportedOS": "windows|mac",
+  "editEnabled": true
+}
