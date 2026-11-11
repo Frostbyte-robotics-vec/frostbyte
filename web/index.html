@@ -8,11 +8,18 @@
 <meta property="og:title" content="Frostbyte – VEX U Team der ETH Zürich">
 <meta property="og:description" content="Auf dem Weg zum VEX-Weltfinale 2027. Ein Studierendenteam der ETH Zürich baut zwei Roboter.">
 <meta property="og:image" content="assets/snowflake.png">
+<meta property="og:locale" content="de_CH">
+<meta property="og:locale:alternate" content="en_GB">
+<link rel="canonical" href="https://frostbyterobotics.ch/">
+<link rel="alternate" hreflang="de" href="https://frostbyterobotics.ch/">
+<link rel="alternate" hreflang="en" href="https://frostbyterobotics.ch/en/">
+<link rel="alternate" hreflang="x-default" href="https://frostbyterobotics.ch/">
 <meta name="theme-color" content="#071a33">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
+<a class="skip" href="#main">Zum Inhalt springen</a>
 
 <!-- ================= NAV ================= -->
 <nav class="nav dark" aria-label="Hauptnavigation">
@@ -30,6 +37,7 @@
       <li><a href="#kontakt">Kontakt</a></li>
     </ul>
     <div class="nav-cta">
+      <a class="lang" hreflang="en" href="en/index.html" lang="en" aria-label="Switch to English" title="English">EN</a>
       <a class="btn sm ghost" href="#partner">Unterstützen <span class="arr">→</span></a>
       <button class="burger" id="burger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="menu"><span></span><span></span><span></span></button>
     </div>
@@ -67,6 +75,7 @@
   </div>
 </header>
 
+<main id="main">
 <!-- ================= PARTNER ================= -->
 <!-- Sponsor eintragen: einen freien <a class="slot">-Platz durch <div class="slot filled"><img src="assets/sponsoren/NAME.svg" alt="NAME"></div> ersetzen. Keine Stufen, Preise oder Pakete öffentlich (W-09). -->
 <section class="sec partner-big" id="partner">
@@ -165,6 +174,23 @@
   </div>
 </section>
 
+<!-- ================= WELTREKORD ================= -->
+<section class="sec team-bg" id="weltrekord">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="eyebrow">Guinness-Weltrekord</div>
+      <h2>Der grösste <span class="hl">Roboter&shy;wettbewerb</span> der Welt.</h2>
+      <p class="lead">Die VEX Robotics Competition steht im Guinness-Buch der Rekorde als grösster Roboterwettbewerb. Frostbyte ist Teil davon, in der Hochschulliga VEX U.</p>
+    </div>
+    <div class="rec-grid">
+      <div class="rec rv"><div class="v num" data-count="20000" data-sep="'" data-suffix="+">20'000+</div><div class="k">Teams weltweit</div></div>
+      <div class="rec rv"><div class="v num" data-count="1700" data-sep="'" data-suffix="+">1'700+</div><div class="k">Wettbewerbe pro Saison</div></div>
+      <div class="rec rv"><div class="v num" data-count="2400" data-sep="'" data-suffix="+">2'400+</div><div class="k">Teams am Weltfinale</div></div>
+    </div>
+    <p class="source">Quelle: Guinness World Records (VEX Worlds, Rekord „Largest robot competition“), VEX Robotics, RECF.</p>
+  </div>
+</section>
+
 <!-- ================= OVERRIDE ================= -->
 <section class="sec override dark" id="override">
   <div class="wrap">
@@ -183,6 +209,23 @@
       <div class="field rv">
         <img src="assets/override-field.jpg" alt="Spielfeld von VEX Override in der Schrägansicht" loading="lazy">
         <span class="dim x">← 12 ft →</span>
+      </div>
+    </div>
+    <div class="scale-grid" id="massstab">
+      <svg class="scale" viewBox="0 0 144 144" role="img" aria-labelledby="scale-t scale-d">
+        <title id="scale-t">Massstabsbild: Spielfeld mit beiden Robotern</title>
+        <desc id="scale-d">Quadratisches Spielfeld, 144 Zoll Kantenlänge, mit vier Quadranten. Der grosse Roboter (24 Zoll) und der kleine Roboter (15 Zoll) sind massstabsgetreu eingezeichnet.</desc>
+        <rect class="f" x="0" y="0" width="144" height="144" rx="2"/>
+        <path class="q" d="M72 0V144M0 72H144"/>
+        <rect class="r24" x="26" y="94" width="24" height="24" rx="1.5"><title>Grosser Roboter: bis 24″</title></rect>
+        <rect class="r15" x="94" y="34" width="15" height="15" rx="1.2"><title>Kleiner Roboter: bis 15″</title></rect>
+        <text x="38" y="109" text-anchor="middle">24″</text>
+        <text class="t15" x="101.5" y="44" text-anchor="middle">15″</text>
+      </svg>
+      <div class="rv">
+        <div class="eyebrow" style="color:var(--frost);margin-bottom:18px">Im Massstab</div>
+        <h3>Zwei Roboter, <span class="hl">ein Feld.</span></h3>
+        <p class="lead" style="margin-top:16px">Das Feld misst 12 × 12 ft, also 144″. Unser grosser Roboter darf höchstens 24″ messen, ein Sechstel der Feldkante. Der kleine bleibt bei 15″. Jeder Zoll zählt.</p>
       </div>
     </div>
     <div class="sig"><span>Studierendenteam der ETH Zürich</span><span class="mark"><img src="assets/snowflake.png" alt="">FROST<span class="b">BYTE</span></span></div>
@@ -274,7 +317,7 @@
         <h2>Bringen wir Zürich ins <span class="hl">Weltfinale.</span></h2>
         <p class="lead">Fragen, Ideen oder Lust, das Team kennenzulernen? Schreiben Sie uns. Wer Frostbyte mit Geld, Material oder Know-how unterstützen möchte, schreibt uns direkt.</p>
         <div class="contact">
-          <div class="mailbox"><a href="mailto:frostbyte.eth.robotics@gmail.com?subject=Frostbyte" id="mail">frostbyte.eth.robotics@gmail.com</a><button type="button" id="copy">Kopieren</button></div>
+          <div class="mailbox"><a href="mailto:frostbyte.eth.robotics@gmail.com?subject=Frostbyte" id="mail">frostbyte.eth.robotics@gmail.com</a><button type="button" id="copy" data-ok="E-Mail-Adresse kopiert" data-sel="Adresse markiert – jetzt kopieren">Kopieren</button></div>
         </div>
       </div>
       <div class="flake" aria-hidden="true">
@@ -285,6 +328,8 @@
   </div>
 </section>
 
+</main>
+
 <!-- ================= FOOTER ================= -->
 <footer class="dark">
   <div class="wrap">
@@ -294,7 +339,7 @@
         <p style="margin-top:14px;max-width:34ch">VEX-U-Studierendenteam der ETH Zürich.</p>
       </div>
       <div><h4>Team</h4><ul><li><a href="#partner">Partner</a></li><li><a href="#ziel">Ziel</a></li><li><a href="#team">Team</a></li><li><a href="#saison">Saison</a></li></ul></div>
-      <div><h4>Mehr</h4><ul><li><a href="#reichweite">Reichweite</a></li><li><a href="news/index.html">News</a></li><li><a href="#kontakt">Kontakt</a></li></ul></div>
+      <div><h4>Mehr</h4><ul><li><a href="#reichweite">Reichweite</a></li><li><a href="news/index.html">News</a></li><li><a href="#kontakt">Kontakt</a></li><li><a class="lang" hreflang="en" href="en/index.html" lang="en">English</a></li></ul></div>
       <div><h4>Folgen</h4><ul><li><a href="https://www.instagram.com/frostbyte.robotics/" target="_blank" rel="noopener">Instagram</a></li><li><a href="https://www.linkedin.com/company/frostbyterobotics" target="_blank" rel="noopener">LinkedIn</a></li></ul></div>
     </div>
     <p class="credits">Bildnachweis: „VEX Robots at VRC World Championships 2009“ von <a href="https://commons.wikimedia.org/wiki/File:VEX_Robots_at_VRC_World_Championships_2009.JPG" target="_blank" rel="noopener">Rick Tyler</a>, <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a> · „Singapore VEX Robotics 01“ von <a href="https://commons.wikimedia.org/wiki/File:Singapore_VEX_Robotics_01.jpeg" target="_blank" rel="noopener">Wrc Ynapmoc</a>, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>, beide über Wikimedia Commons, zugeschnitten und verkleinert. · „One last adjustment“ (<a href="https://commons.wikimedia.org/wiki/File:One_last_adjustment_140103-A-VY746-020.jpg" target="_blank" rel="noopener">Quelle</a>, US Army, Sgt. 1st Class Lisa Litchfield, gemeinfrei), „VEX Starstruck Standard Fields“ von <a href="https://commons.wikimedia.org/wiki/File:VEX_Starstruck_Standard_Fields.jpg" target="_blank" rel="noopener">Sean Spicer</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>), „Judgment day at Sunset Station“ (<a href="https://commons.wikimedia.org/wiki/File:Judgment_day_at_Sunset_Station_140103-A-VY746-014.jpg" target="_blank" rel="noopener">Quelle</a>, US Army, Sgt. 1st Class Lisa Litchfield, gemeinfrei), alle über Wikimedia Commons.</p>

@@ -27,13 +27,16 @@
     });
   }
 
-  // Zähler im Hero
-  if(!reduce){
-    [].forEach.call(document.querySelectorAll('[data-count]'),function(el){
-      var to=+el.dataset.count, pre=el.dataset.prefix||'', suf=el.dataset.suffix||'', t0=null, dur=1400;
-      function step(t){if(!t0)t0=t;var p=Math.min(1,(t-t0)/dur);var e=1-Math.pow(1-p,3);el.textContent=pre+Math.round(to*e)+suf;if(p<1)requestAnimationFrame(step);}
-      requestAnimationFrame(step);
-    });
+  // Zähler (Hero und Weltrekord): Endwert steht schon im HTML; zählt erst, wenn sichtbar; data-sep = Tausendertrenner
+  if(!reduce && 'IntersectionObserver' in window){
+    var co=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){co.unobserve(e.target);count(e.target);}});},{threshold:.4});
+    [].forEach.call(document.querySelectorAll('[data-count]'),function(el){co.observe(el);});
+  }
+  function count(el){
+    var to=+el.dataset.count, pre=el.dataset.prefix||'', suf=el.dataset.suffix||'', sep=el.dataset.sep||'', t0=null, dur=1400;
+    function fmt(n){return sep?String(n).replace(/\B(?=(\d{3})+(?!\d))/g,sep):String(n);}
+    function step(t){if(!t0)t0=t;var p=Math.min(1,(t-t0)/dur);var e=1-Math.pow(1-p,3);el.textContent=pre+fmt(Math.round(to*e))+suf;if(p<1)requestAnimationFrame(step);}
+    requestAnimationFrame(step);
   }
 
   // Maus-Licht auf Paketen
@@ -47,8 +50,8 @@
   var copyBtn=document.getElementById('copy');
   if(copyBtn)copyBtn.addEventListener('click',function(){
     var txt='frostbyte.eth.robotics@gmail.com';
-    function fallback(){var r=document.createRange();r.selectNodeContents(document.getElementById('mail'));var s=getSelection();s.removeAllRanges();s.addRange(r);say('Adresse markiert – jetzt kopieren');}
-    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){say('E-Mail-Adresse kopiert');},fallback);}else fallback();
+    function fallback(){var r=document.createRange();r.selectNodeContents(document.getElementById('mail'));var s=getSelection();s.removeAllRanges();s.addRange(r);say(copyBtn.dataset.sel||'');}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){say(copyBtn.dataset.ok||'');},fallback);}else fallback();
   });
 
   // Binär-Schnee im Hero
