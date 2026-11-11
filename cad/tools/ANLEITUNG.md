@@ -19,3 +19,7 @@ Wandelt alle F3D-Dateien eines Ordners samt Unterordnern in STEP um (die Ordners
 - Läuft eine Datei in einen Fehler, geht es mit der nächsten weiter.
 - Erst mit wenigen Dateien testen: einen Quellordner mit 2–3 F3D-Dateien wählen.
 - Das Ergebnis (nicht die F3D) kann in einen Ordner des Repos oder zu Claude hochgeladen werden; bei großen Mengen vorher Größe prüfen (Git-Limit pro Datei 100 MB).
+
+## Ergebnis ans Team verteilen (CAD-03)
+Das STEP-Ergebnis liegt als Release-ZIP auf GitHub; `/start` holt es mit `python3 tools/fetch_cad_lib.py` nach `cad/lib/` (nicht im Git).
+Ablauf für eine neue Fassung steht in `cad/BIBLIOTHEK.md`.
