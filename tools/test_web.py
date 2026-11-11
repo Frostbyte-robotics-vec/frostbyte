@@ -4,7 +4,8 @@ import unittest
 from pathlib import Path
 
 WEB = Path(__file__).resolve().parent.parent / "web"
-SEITEN = ("index.html",)  # W-09: es gibt keine Sponsoring-Seite mehr
+SEITEN = ("index.html", "en/index.html")  # W-09: keine Sponsoring-Seite mehr; W-11: EN als getrennte Seite (ADR-046)
+ASSET = r"((?:\.\./)*assets/[^\"#]+)"
 
 
 def lade(name):
@@ -17,10 +18,11 @@ HTML = {n: lade(n) for n in SEITEN}
 class WebTest(unittest.TestCase):
     def test_lokale_dateien_existieren(self):
         for name, html in HTML.items():
-            refs = set(re.findall(r'(?:src|href)="(assets/[^"#]+)"', html))
-            refs |= set(re.findall(r'url\("(assets/[^"]+)"\)', html))
+            refs = set(re.findall(r'(?:src|href)="' + ASSET + '"', html))
+            refs |= set(re.findall(r'url\("((?:\.\./)*assets/[^"]+)"\)', html))
             self.assertTrue(refs, name)
-            fehlt = sorted(r for r in refs if not (WEB / r).is_file())
+            ordner = (WEB / name).parent
+            fehlt = sorted(r for r in refs if not (ordner / r).resolve().is_file())
             self.assertEqual(fehlt, [], name)
 
     def test_css_verweise_existieren(self):
@@ -32,14 +34,14 @@ class WebTest(unittest.TestCase):
         ids = {n: set(re.findall(r'\bid="([^"]+)"', h)) for n, h in HTML.items()}
         for name, html in HTML.items():
             for seite, anker in re.findall(r'href="([a-z]+\.html)?#([^"]+)"', html):
-                ziel = seite or name
+                ziel = (str(Path(name).parent / seite) if seite else name).replace("./", "")
                 self.assertIn(ziel, ids, f"{name}: {seite}")
                 self.assertIn(anker, ids[ziel], f"{name}: {seite}#{anker}")
 
     def test_seitenlinks_zeigen_auf_vorhandene_seiten(self):
         for name, html in HTML.items():
             for seite in re.findall(r'href="([a-z]+\.html)', html):
-                self.assertTrue((WEB / seite).is_file(), f"{name}: {seite}")
+                self.assertTrue((WEB / Path(name).parent / seite).is_file(), f"{name}: {seite}")
 
     def test_bilder_haben_alt_attribut(self):
         for name, html in HTML.items():
@@ -55,19 +57,19 @@ class WebTest(unittest.TestCase):
         for html in HTML.values():
             self.assertNotIn("claude:viewport", html)
 
-    def test_hauptseite_hat_keine_werkzeugnamen(self):
-        h = HTML["index.html"]
-        for wort in ("Fusion 360", "Siemens NX", "CNC", "C++"):
-            self.assertNotIn(wort, h)
+    def test_seiten_haben_keine_werkzeugnamen(self):
+        for name, h in HTML.items():
+            for wort in ("Fusion 360", "Siemens NX", "CNC", "C++"):
+                self.assertNotIn(wort, h, name)
 
     def test_keine_sponsoring_seite_und_keine_oeffentlichen_stufen(self):
         # W-09 (Mensch, 2026-11-11): keine sponsoring.html, Pakete/Stufen/Preise/Budget nicht öffentlich
         self.assertFalse((WEB / "sponsoring.html").exists())
-        h = HTML["index.html"]
-        self.assertNotIn("sponsoring.html", h)
-        for wort in ("Hauptpartner", "Supporter", "Sponsoring-Pakete", "Budget", "10'000", "ab 500", "ab 1'500",
-                     "tierlbl", "slot-main", "grid3", "grid6"):
-            self.assertNotIn(wort, h, wort)
+        for name, h in HTML.items():
+            self.assertNotIn("sponsoring.html", h)
+            for wort in ("Hauptpartner", "Supporter", "Sponsoring-Pakete", "Budget", "10'000", "ab 500", "ab 1'500",
+                         "tierlbl", "slot-main", "grid3", "grid6", "Kilobyte", "Megabyte", "Gigabyte", "35'000", "€"):
+                self.assertNotIn(wort, h, f"{name}: {wort}")
 
     def test_ids_sind_eindeutig(self):
         for name, html in HTML.items():
@@ -101,13 +103,13 @@ class WebTest(unittest.TestCase):
         for html in HTML.values():
             self.assertNotIn("Ziel: Top 16", html)
             self.assertNotIn("Top 16", html)
+            self.assertNotIn("top 16", html.lower())
 
     def test_social_links_sind_echt(self):
-        h = HTML["index.html"]
-        self.assertIn('href="https://www.instagram.com/frostbyte.robotics/"', h)
-        self.assertIn('href="https://www.linkedin.com/company/frostbyterobotics"', h)
-        for name, html in HTML.items():
-            self.assertNotIn('href="#"', html, name)
+        for name, h in HTML.items():
+            self.assertIn('href="https://www.instagram.com/frostbyte.robotics/"', h, name)
+            self.assertIn('href="https://www.linkedin.com/company/frostbyterobotics"', h, name)
+            self.assertNotIn('href="#"', h, name)
 
     def test_freie_fotos_haben_bildnachweis(self):
         h = HTML["index.html"]
@@ -145,24 +147,32 @@ class WebTest(unittest.TestCase):
         for name in SEITEN:
             html = HTML[name]
             nav, fuss = html.split("</nav>")[0], html.split("<footer")[1]
-            self.assertIn('href="news/index.html"', nav, name)
-            self.assertIn('href="news/index.html"', fuss, name)
+            ziel = "../news/index.html" if name.startswith("en/") else "news/index.html"
+            self.assertIn(f'href="{ziel}"', nav, name)
+            self.assertIn(f'href="{ziel}"', fuss, name)
 
     def test_sponsor_norelem_schreibweise(self):
-        h = HTML["index.html"]
-        self.assertIn("norelem", h)
-        for falsch in ("NORELEM", "Norelem"):
-            self.assertNotIn(falsch, h)
+        for name, h in HTML.items():
+            self.assertIn("norelem", h, name)
+            for falsch in ("NORELEM", "Norelem"):
+                self.assertNotIn(falsch, h, name)
 
     def test_hauptsponsor_novagear_schreibweise(self):
-        h = HTML["index.html"]
-        self.assertIn("Novagear", h)
-        self.assertNotIn("NOVAGEAR", h)
+        for name, h in HTML.items():
+            self.assertIn("Novagear", h, name)
+            self.assertNotIn("NOVAGEAR", h, name)
+
+    def test_nur_bestaetigte_partner(self):
+        # W-11: Folie 12 des Decks nennt weitere Namen, die noch nicht bestätigt sind
+        for name, h in HTML.items():
+            for fremd in ("TechLabs", "Bachofen", "rosttec", "Student Project House"):
+                self.assertNotIn(fremd, h, f"{name}: {fremd}")
 
     def test_kein_scroll_fortschrittsbalken(self):
         # W-09: blauer Balken im Nav, der beim Scrollen von links nach rechts wächst
         for name in SEITEN:
             self.assertNotIn("progress", HTML[name], name)
+            self.assertNotIn("youtube", HTML[name].lower(), name)
         self.assertNotIn(".progress", (WEB / "assets" / "style.css").read_text(encoding="utf-8"))
         self.assertNotIn("marquee", HTML["index.html"])  # blaues Laufband unter dem Kopf
         self.assertNotIn("progress", (WEB / "assets" / "site.js").read_text(encoding="utf-8"))
@@ -177,10 +187,112 @@ class WebTest(unittest.TestCase):
             self.assertIn(name, h)
 
     def test_partnerwand_gross_auf_hauptseite_vor_dem_ziel(self):
-        h = HTML["index.html"]
-        self.assertIn('id="partner"', h)
-        self.assertLess(h.index('id="partner"'), h.index('id="ziel"'))
-        self.assertIn('href="#partner"', h.split("</nav>")[0])
+        for name, h in HTML.items():
+            self.assertIn('id="partner"', h, name)
+            self.assertLess(h.index('id="partner"'), h.index('id="ziel"'), name)
+            self.assertIn('href="#partner"', h.split("</nav>")[0], name)
+
+    # ---- W-11: Zweisprachigkeit (ADR-046) ----
+    def test_sprache_und_umschalter(self):
+        de, en = HTML["index.html"], HTML["en/index.html"]
+        self.assertIn('<html lang="de">', de)
+        self.assertIn('<html lang="en">', en)
+        for name, h in HTML.items():
+            for lang in ("de", "en", "x-default"):
+                self.assertIn(f'hreflang="{lang}"', h, name)
+            self.assertIn('rel="canonical"', h, name)
+            nav, fuss = h.split("</nav>")[0], h.split("<footer")[1]
+            self.assertIn('class="lang"', nav, name)
+            self.assertIn('class="lang"', fuss, name)
+        self.assertIn('hreflang="en" href="en/index.html"', de.split("</nav>")[0])
+        self.assertIn('hreflang="de" href="../index.html"', en.split("</nav>")[0])
+
+    def test_keine_automatische_weiterleitung_nach_sprache(self):
+        js = (WEB / "assets" / "site.js").read_text(encoding="utf-8")
+        for verboten in ("navigator.language", "location.replace", "location.href", "location.assign"):
+            self.assertNotIn(verboten, js)
+        for h in HTML.values():
+            self.assertNotIn('http-equiv="refresh"', h)
+
+    def test_en_und_de_haben_gleiche_struktur(self):
+        # Schutz gegen Auseinanderlaufen: gleiche ids, gleiche Abschnittsreihenfolge, gleiche Bilder
+        de, en = HTML["index.html"], HTML["en/index.html"]
+        self.assertEqual(sorted(re.findall(r'\bid="([^"]+)"', de)), sorted(re.findall(r'\bid="([^"]+)"', en)))
+        sek = lambda h: re.findall(r'<(?:section|header)\b[^>]*\bid="([^"]+)"', h)
+        self.assertEqual(sek(de), sek(en))
+        bild = lambda h: sorted(re.findall(r'(?:src|href)="(?:\.\./)*(assets/[^"#]+)"', h))
+        self.assertEqual(bild(de), bild(en))
+        self.assertEqual(len(re.findall(r"<img\b", de)), len(re.findall(r"<img\b", en)))
+        zahl = lambda h: sorted(re.findall(r'data-count="(\d+)"', h))
+        self.assertEqual(zahl(de), zahl(en))
+
+    def test_en_ist_wirklich_englisch(self):
+        en = HTML["en/index.html"]
+        text = re.sub(r"<[^>]+>", " ", en)
+        for deutsch in ("Unsere", "Wir ", "Zürich ins", "Kontakt", "Saison", "Partner gewinnen", "Spielfeld"):
+            self.assertNotIn(deutsch, text, deutsch)
+        self.assertIn("Zurich", text)
+        self.assertNotIn("Zürich", text)
+
+    def test_en_news_bleibt_deutsch_und_ist_markiert(self):
+        en = HTML["en/index.html"]
+        self.assertIn('href="../news/index.html" hreflang="de"', en.split("</nav>")[0])
+
+    # ---- W-11: Fakten aus dem Pitch-Deck ----
+    def test_guinness_block_mit_quelle(self):
+        for name, h in HTML.items():
+            self.assertIn('id="weltrekord"', h, name)
+            self.assertIn("Guinness", h, name)
+            for z in ("20000", "1700", "50", "2400"):
+                self.assertIn(f'data-count="{z}"', h, name)
+            self.assertNotIn("60 L", h, name)
+            self.assertNotIn("60 countries", h, name)
+            self.assertIn("RECF", h, name)  # Quellenzeile
+            self.assertIn("data-sep=", h, name)
+
+    def test_zaehler_hat_tausendertrenner_und_endwert_im_html(self):
+        # ohne JavaScript und bei reduzierter Bewegung muss der Endwert schon im HTML stehen
+        for name, h in HTML.items():
+            for z, text in (("20000", "20'000+"), ("1700", "1'700+"), ("2400", "2'400+")):
+                self.assertRegex(h, rf'data-count="{z}"[^>]*>{re.escape(text)}<', name)
+
+    # ---- W-11: Maßstabsbild der Roboter ----
+    def test_massstab_zeigt_beide_roboter_auf_dem_feld(self):
+        for name, h in HTML.items():
+            self.assertIn('id="massstab"', h, name)
+            self.assertIn('viewBox="0 0 144 144"', h, name)  # 12 ft = 144 Zoll, 1 Einheit = 1 Zoll
+            self.assertRegex(h, r'width="24" height="24"', name)
+            self.assertRegex(h, r'width="15" height="15"', name)
+
+    def test_css_klammern_ausgeglichen(self):
+        # W-11: ein offenes @media hatte alle folgenden Regeln verschluckt (Guinness-Block, Sprunglink unformatiert)
+        css = re.sub(r"/\*.*?\*/", "", (WEB / "assets" / "style.css").read_text(encoding="utf-8"), flags=re.S)
+        self.assertEqual(css.count("{"), css.count("}"))
+        tief = 0
+        for zeile in css.split("\n"):
+            if zeile.lstrip().startswith("@media") and tief > 0:
+                self.fail(f"verschachteltes @media (offene Klammer davor): {zeile[:60]}")
+            tief += zeile.count("{") - zeile.count("}")
+
+    def test_partnerwand_hat_spaltenregel(self):
+        # W-11: die Regel für die große Wand war verstümmelt (einspaltig auf dem Desktop)
+        css = (WEB / "assets" / "style.css").read_text(encoding="utf-8")
+        self.assertRegex(css, r"\.wall-big\{[^}]*grid-template-columns:repeat\(3,1fr\)")
+        self.assertNotIn(".wall-big .wall-big", css)
+
+    def test_skript_ohne_fremdquellen(self):
+        js = (WEB / "assets" / "site.js").read_text(encoding="utf-8")
+        for verboten in ("http://", "https://", "fetch(", "XMLHttpRequest", "import("):
+            self.assertNotIn(verboten, js)
+        for name, h in HTML.items():
+            for src in re.findall(r'<script[^>]*\bsrc="([^"]+)"', h):
+                self.assertTrue(src.startswith(("assets/", "../assets/")), f"{name}: {src}")
+
+    def test_sprunglink_und_reduzierte_bewegung(self):
+        for name, h in HTML.items():
+            self.assertIn('class="skip"', h, name)
+        css = (WEB / "assets" / "style.css").read_text(encoding="utf-8")
+        self.assertIn("prefers-reduced-motion", css)
 
 
 if __name__ == "__main__":
