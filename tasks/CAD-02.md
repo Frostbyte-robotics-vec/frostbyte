@@ -2,7 +2,7 @@
 id: CAD-02
 phase: "1"
 titel: Fusion-Script: VEX-Teilebibliothek (F3D) per Batch nach STEP exportieren
-status: review
+status: done
 owner: arjanssen
 branch: ticket/cad-02
 depends: []
