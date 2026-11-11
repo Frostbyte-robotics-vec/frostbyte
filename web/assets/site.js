@@ -8,13 +8,11 @@
   if(burger&&menu){burger.addEventListener('click',function(){var o=menu.classList.toggle('open');burger.setAttribute('aria-expanded',o);});
   menu.addEventListener('click',function(e){if(e.target.tagName==='A'){menu.classList.remove('open');burger.setAttribute('aria-expanded','false');}});}
 
-  // Scroll-Fortschritt + aktiver Menüpunkt
-  var prog=document.getElementById('progress');
+  // Aktiver Menüpunkt
   var links=menu?[].slice.call(menu.querySelectorAll('a[href^="#"]')):[];
   var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
   function onScroll(){
-    var h=document.documentElement; var max=h.scrollHeight-h.clientHeight;
-    if(prog)prog.style.transform='scaleX('+(max>0?h.scrollTop/max:0)+')';
+    var h=document.documentElement;
     var y=h.scrollTop+120, cur=-1;
     secs.forEach(function(s,i){if(s&&s.offsetTop<=y)cur=i;});
     links.forEach(function(a,i){a.classList.toggle('on',i===cur);});

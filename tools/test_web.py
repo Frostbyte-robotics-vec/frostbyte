@@ -57,7 +57,7 @@ class WebTest(unittest.TestCase):
 
     def test_hauptseite_hat_kein_sponsoring_und_keine_werkzeugnamen(self):
         h = HTML["index.html"]
-        for id_ in ("pakete", "budget", "partner"):
+        for id_ in ("pakete", "budget"):
             self.assertNotIn(f'id="{id_}"', h)
         for wort in ("Fusion 360", "Siemens NX", "CNC", "C++", "Sponsoring-Pakete"):
             self.assertNotIn(wort, h)
@@ -65,9 +65,12 @@ class WebTest(unittest.TestCase):
 
     def test_sponsoringseite_hat_die_abschnitte(self):
         h = HTML["sponsoring.html"]
-        for id_ in ("budget", "pakete", "partner", "kontakt"):
+        for id_ in ("budget", "pakete", "kontakt"):
             self.assertIn(f'id="{id_}"', h)
         self.assertIn('href="index.html"', h)
+        # W-09: die Partnerwand liegt auf der Hauptseite, nicht doppelt
+        self.assertNotIn('id="partner"', h)
+        self.assertIn('href="index.html#partner"', h)
 
     def test_kein_youtube(self):
         for name, html in HTML.items():
@@ -134,15 +137,37 @@ class WebTest(unittest.TestCase):
             self.assertIn('href="news/index.html"', fuss, name)
 
     def test_sponsor_norelem_schreibweise(self):
-        h = HTML["sponsoring.html"]
+        h = HTML["index.html"]
         self.assertIn("norelem", h)
         for falsch in ("NORELEM", "Norelem"):
             self.assertNotIn(falsch, h)
 
     def test_hauptsponsor_novagear_schreibweise(self):
-        h = HTML["sponsoring.html"]
+        h = HTML["index.html"]
         self.assertIn("Novagear", h)
         self.assertNotIn("NOVAGEAR", h)
+
+    def test_kein_scroll_fortschrittsbalken(self):
+        # W-09: blauer Balken im Nav, der beim Scrollen von links nach rechts wächst
+        for name in SEITEN:
+            self.assertNotIn("progress", HTML[name], name)
+        self.assertNotIn(".progress", (WEB / "assets" / "style.css").read_text(encoding="utf-8"))
+        self.assertNotIn("progress", (WEB / "assets" / "site.js").read_text(encoding="utf-8"))
+
+    def test_keine_einzelportraits_dafuer_teamfoto_platz(self):
+        h = HTML["index.html"]
+        for datei in ("mate", "david", "arved", "prof"):
+            self.assertNotIn(f"assets/{datei}.jpg", h)
+            self.assertFalse((WEB / "assets" / f"{datei}.jpg").exists(), datei)
+        self.assertIn('id="teamfoto"', h)  # freier Platz, kein erfundenes Bild
+        for name in ("Máté Lechner", "David Čop", "Arved Janssen", "Stefan Leutenegger"):
+            self.assertIn(name, h)
+
+    def test_partnerwand_gross_auf_hauptseite_vor_dem_ziel(self):
+        h = HTML["index.html"]
+        self.assertIn('id="partner"', h)
+        self.assertLess(h.index('id="partner"'), h.index('id="ziel"'))
+        self.assertIn('href="#partner"', h.split("</nav>")[0])
 
 
 if __name__ == "__main__":
