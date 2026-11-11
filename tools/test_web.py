@@ -16,6 +16,17 @@ HTML = {n: lade(n) for n in SEITEN}
 
 
 class WebTest(unittest.TestCase):
+    def test_css_klammern_ausgeglichen(self):
+        css = (WEB / "assets" / "style.css").read_text(encoding="utf-8")
+        css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+        tiefe = 0
+        for nr, zeile in enumerate(css.splitlines(), 1):
+            tiefe += zeile.count("{") - zeile.count("}")
+            self.assertGreaterEqual(tiefe, 0, f"style.css: zu viele }} in Zeile {nr}")
+            if zeile.startswith("@media") or zeile.startswith(":root"):
+                self.assertLessEqual(tiefe, 2, f"style.css: verschachtelte @media in Zeile {nr}")
+        self.assertEqual(tiefe, 0, "style.css: { und } nicht ausgeglichen")
+
     def test_lokale_dateien_existieren(self):
         for name, html in HTML.items():
             refs = set(re.findall(r'(?:src|href)="' + ASSET + '"', html))

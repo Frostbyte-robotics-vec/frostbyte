@@ -111,8 +111,6 @@ section{position:relative}
   .stat:nth-child(n+3){border-top:1px solid var(--line-dark)}
 }
 
-/* ---------- Marquee ---------- */
-
 /* ---------- Mission ---------- */
 .mission{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,6vw,90px);align-items:end}
 .mission .big{font-family:var(--f-display);font-weight:700;text-transform:uppercase;font-size:clamp(30px,3.4vw,46px);line-height:1.04;color:var(--ink)}
