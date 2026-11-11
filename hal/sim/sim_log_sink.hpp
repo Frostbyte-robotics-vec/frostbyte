@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string>
+#include <vector>
 
 #include "hal/interface/log_sink.hpp"
 
@@ -10,10 +11,19 @@ namespace frostbyte::hal {
 
 class MemoryLogSink : public LogSink {
 public:
+    bool begin_file() override {
+        if (fail_writes_)
+            return false;
+        files_.emplace_back();
+        return true;
+    }
+
     bool append(const char* data, std::size_t n) override {
         if (fail_writes_)
             return false;
-        data_.append(data, n);
+        if (files_.empty())
+            files_.emplace_back();  // ohne begin_file(): alles in einer Datei
+        files_.back().append(data, n);
         return true;
     }
 
@@ -23,11 +33,18 @@ public:
     }
 
     void set_fail_writes(bool f) { fail_writes_ = f; }
-    const std::string& contents() const { return data_; }
+    // Alle Dateien hintereinander (wie ein einzelner Lauf, wenn nur eine Datei entstand).
+    std::string contents() const {
+        std::string all;
+        for (const std::string& f : files_)
+            all += f;
+        return all;
+    }
+    const std::vector<std::string>& files() const { return files_; }
     int flushes() const { return flushes_; }
 
 private:
-    std::string data_;
+    std::vector<std::string> files_;
     bool fail_writes_ = false;
     int flushes_ = 0;
 };

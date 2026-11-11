@@ -196,3 +196,70 @@ TEST_CASE("LogCadence: jeder zweite 10-ms-Takt (20 ms, docs/log_format.md)") {
     CHECK(LogCadence::due(2));
     CHECK(LogCadence::period_ms == 20);
 }
+
+TEST_CASE("Logger: jeder Lauf bekommt eine eigene Datei mit Kopfzeile, t_s beginnt wieder bei 0") {
+    hal::MemoryLogSink sink;
+    Logger<16> log("stacker", "abc");
+    REQUIRE(log.open(sink));
+    LogRecord a = record_at(0.0);
+    a.new_run = true;  // erste Zeile des ersten Laufs: keine zweite Datei
+    REQUIRE(log.record(a));
+    REQUIRE(log.record(record_at(0.02)));
+    REQUIRE(log.record(record_at(59.98)));
+    log.drain(sink);
+    LogRecord b = record_at(0.0);
+    b.new_run = true;  // zweite Phase
+    b.set_text(b.event, "PHASE:DRIVER");
+    REQUIRE(log.record(b));
+    REQUIRE(log.record(record_at(0.02)));
+    log.drain(sink);
+
+    REQUIRE(sink.files().size() == 2);
+    const auto f0 = lines_of(sink.files()[0]);
+    const auto f1 = lines_of(sink.files()[1]);
+    REQUIRE(f0.size() == 2 + 3);
+    REQUIRE(f1.size() == 2 + 2);
+    for (const auto* f : {&f0, &f1}) {
+        CHECK((*f)[0].rfind("# frostbyte-log v1 robot=stacker source=robot seed=- build=abc", 0) == 0);
+        CHECK((*f)[1] == logfmt::columns);
+    }
+    CHECK(f0.back().rfind("59.980,", 0) == 0);
+    CHECK(f1[2].rfind("0.000,", 0) == 0);
+    CHECK(f1[2].find("PHASE:DRIVER") != std::string::npos);
+}
+
+TEST_CASE("Logger: Lauf-Beginn im selben drain-Aufruf wie die Zeilen davor teilt sauber") {
+    hal::MemoryLogSink sink;
+    Logger<16> log("runner", "abc");
+    REQUIRE(log.open(sink));
+    REQUIRE(log.record(record_at(1.0)));
+    LogRecord b = record_at(0.0);
+    b.new_run = true;
+    REQUIRE(log.record(b));
+    log.drain(sink);  // beide Zeilen auf einmal
+    REQUIRE(sink.files().size() == 2);
+    CHECK(sink.files()[0].find("1.000,") != std::string::npos);
+    CHECK(sink.files()[0].find("0.000,") == std::string::npos);
+    CHECK(sink.files()[1].find("0.000,") != std::string::npos);
+}
+
+TEST_CASE("Logger: neue Datei geht nicht (Karte voll) -> Zeile wird als verloren gemeldet, Logger macht weiter") {
+    hal::MemoryLogSink sink;
+    Logger<16> log("runner", "abc");
+    REQUIRE(log.open(sink));
+    REQUIRE(log.record(record_at(1.0)));
+    log.drain(sink);
+    sink.set_fail_writes(true);
+    LogRecord b = record_at(0.0);
+    b.new_run = true;
+    REQUIRE(log.record(b));
+    log.drain(sink);
+    CHECK(log.write_errors() == 1);
+    sink.set_fail_writes(false);
+    LogRecord c = record_at(0.0);
+    c.new_run = true;
+    REQUIRE(log.record(c));
+    log.drain(sink);
+    REQUIRE(sink.files().size() == 2);
+    CHECK(sink.files()[1].find("LOGDROP:1") != std::string::npos);
+}

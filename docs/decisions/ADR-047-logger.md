@@ -1,14 +1,16 @@
 # ADR-047: Logger – Schlange, Logger-Task, Log-Ziel
 
-Status: angenommen (11. Nov 2026), Ticket F-05. Der Advisor (Opus) hat den Entwurf vor der Umsetzung geprüft.
+Status: angenommen (11. Nov 2026), Ticket F-05. Der Advisor (Opus) hat Entwurf und fertigen Code geprüft; sein zweiter Blick hat die Lücke „mehrere Läufe in einer Datei“ gefunden.
 
 ## Entscheidung
 - **Übergabe zwischen den Tasks:** `lib/core/spsc_queue.hpp`, eine sperrenfreie Schlange für einen Erzeuger und einen Verbraucher (`std::atomic`, wie `PhaseFlag`). Der Steuer-Task blockiert nie: ist sie voll, fällt die **neueste** Zeile weg (`dropped()` zählt). `RingBuffer` bleibt unverändert (nicht thread-sicher, überschreibt die älteste Zeile).
 - **Zeilen werden kopiert, nicht verwiesen:** `LogRecord` hat feste Textpuffer (`cycle` 12, `route_step` 32, `event` 64 Zeichen, bei Überlänge abgeschnitten). `logfmt::Row` hält nur Zeiger; die Quelle darf nach `record()` ungültig werden.
 - **Eine Formatierung für Roboter und Simulation:** der Logger-Task ruft `logfmt::format_header/format_row` (ADR-007). Test: Ausgabe byte-gleich zu direktem `format_row`. Kopfzeile am Roboter: `source=robot seed=- build=<FB_COMMIT>`.
-- **Ziel:** neue Schnittstelle `hal::LogSink` (`append`, `flush`) in `hal/interface/`. Nicht `hal::Storage`: dessen `write` ersetzt die ganze Datei. Umsetzungen: `MemoryLogSink` (`hal/sim/`, Tests) und `ProsLogSink` (`hal/pros/`, `fopen`/`fwrite`/`fflush` je Schreibvorgang).
+- **Ziel:** neue Schnittstelle `hal::LogSink` (`begin_file`, `append`, `flush`) in `hal/interface/`. Nicht `hal::Storage`: dessen `write` ersetzt die ganze Datei. Umsetzungen: `MemoryLogSink` (`hal/sim/`, Tests) und `ProsLogSink` (`hal/pros/`, `fopen`/`fwrite`/`fflush` je Schreibvorgang).
 - **Takt:** Steuer-Task 10 ms, eine Zeile alle 20 ms (jeder zweite Takt, `LogCadence`, gleich `welt.log_ms` in der Simulation). Logger-Task alle 50 ms mit `TASK_PRIORITY_MIN + 1`; er läuft nicht unter Prüfprogrammen (F-03, L-01) und nur, wenn die Karte die Datei öffnen ließ. Kein Log im Zustand Disabled (die Karte würde sonst zwischen den Läufen volllaufen). `t_s` = Zeit seit Beginn der aktuellen Phase (Autonomie bzw. Fahrer, je 60 s).
-- **Dateiname:** `/usd/log_NNN.csv`, kleinste freie Nummer 001–999. Das Brain hat keine Uhr; so überschreibt ein neuer Start nie eine frühere Datei.
+- **Eine Datei je Lauf (ADR-007):** `t_s` beginnt mit jeder Phase (Autonomie, Fahrer) bei 0; mehrere Läufe in einer Datei würden Viewer und `sim_report` verwirren. Die erste Zeile einer Phase trägt `LogRecord::new_run`; der Logger-Task schließt dann die Datei, fragt das Ziel nach der nächsten (`LogSink::begin_file()`) und schreibt Kopf- und Spaltenzeile neu. Die erste Datei entsteht beim Start in `open()` (so fällt eine fehlende Karte sofort auf); trägt deren erste Zeile `new_run`, gibt es keine zweite, leere Datei.
+- **Dateiname:** `/usd/log_NNN.csv`, aufsteigend ab 001 bis 999, belegte Nummern werden übersprungen. Das Brain hat keine Uhr; so überschreibt nichts eine frühere Datei.
+- **Kopfzeile ohne Commit:** `build=-` (wie ADR-007), wenn `FB_COMMIT` leer ist (IDE-Build).
 - **Verlust sichtbar:** geht eine Zeile verloren (Schlange voll oder Schreibfehler), trägt die nächste gespeicherte Zeile `LOGDROP:<anzahl>` im Feld `event`. Neues Ereignis-Token, keine Formatänderung (docs/log_format.md). Zusätzlich neues Token `PHASE:AUTONOMOUS` / `PHASE:DRIVER` in der ersten Zeile einer Phase.
 - **Puffer:** 256 Zeilen (ca. 5 s bei 50 Zeilen/s) für Pausen der Karte.
 - **Gefüllte Spalten heute:** `t_s`, `robot`, `cpu_ms` (Rechenzeit des Vortakts) und `event`. Alle anderen bleiben leer, bis der Steuer-Task sie berechnet (A-10, M-10, F-06). Nichts wird erfunden.

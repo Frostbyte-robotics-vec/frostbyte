@@ -44,6 +44,7 @@ struct LogRecord {
     int score = logfmt::no_flag;
     double cpu_ms = logfmt::none, batt_v = logfmt::none, temp_max_c = logfmt::none;
     char event[event_len] = "";
+    bool new_run = false;           // erste Zeile eines Laufs: der Logger beginnt dafür eine neue Datei
     std::uint32_t lost_before = 0;  // vom Logger gesetzt: Zeilen, die vor dieser verloren gingen
 
     // Kopiert s in einen der Puffer oben, bei Überlänge abgeschnitten; nullptr = leer.
@@ -60,21 +61,14 @@ struct LogRecord {
 template <std::size_t N>
 class Logger {
 public:
-    // robot und build müssen so lange gültig sein wie der Logger (Stringliterale, FB_COMMIT).
+    // robot und build müssen so lange gültig sein wie der Logger (Stringliterale, FB_COMMIT; build leer -> "-" setzen, ADR-007).
     Logger(const char* robot, const char* build) : robot_(robot), build_(build) {}
 
-    // Schreibt Kopf- und Spaltenzeile. Danach nimmt record() Zeilen an. false, wenn das Ziel nicht schreibt.
-    // Vor dem Start der Tasks aufrufen.
+    // Beginnt die erste Datei und schreibt Kopf- und Spaltenzeile. Danach nimmt record() Zeilen an. false, wenn das
+    // Ziel nicht schreibt. Vor dem Start der Tasks aufrufen. Jeder weitere Lauf (LogRecord::new_run) bekommt im
+    // Logger-Task eine eigene Datei mit eigener Kopfzeile, t_s beginnt dort wieder bei 0 (ein Lauf = eine Datei, ADR-007).
     bool open(hal::LogSink& sink) {
-        char line[256];
-        int n = logfmt::format_header(line, sizeof line, robot_, "robot", logfmt::no_seed, build_);
-        if (n < 0 || static_cast<std::size_t>(n) + 1 >= sizeof line)
-            return false;
-        line[n++] = '\n';
-        if (!sink.append(line, static_cast<std::size_t>(n)))
-            return false;
-        n = std::snprintf(line, sizeof line, "%s\n", logfmt::columns);
-        if (!sink.append(line, static_cast<std::size_t>(n)) || !sink.flush())
+        if (!sink.begin_file() || !write_header(sink))
             return false;
         open_.store(true, std::memory_order_release);
         return true;
@@ -104,6 +98,18 @@ public:
         std::uint32_t reported = 0;  // LOGDROP-Zahlen, die im Puffer stehen
         LogRecord r;
         while (queue_.try_pop(r)) {
+            if (r.new_run && file_has_rows_) {
+                flush_chunk(sink, used, rows, reported);
+                used = 0;
+                rows = 0;
+                reported = 0;
+                if (!sink.begin_file() || !write_header(sink)) {
+                    write_errors_.store(write_errors_.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
+                    carry_lost_ += 1 + r.lost_before;
+                    continue;  // der nächste Lauf-Beginn versucht es wieder
+                }
+                file_has_rows_ = false;
+            }
             char event[LogRecord::event_len + 24];
             int len = format(r, make_event(r, event), buf_ + used, sizeof buf_ - used);
             if (len < 0 && used > 0) {  // Rest des Puffers zu klein: erst schreiben, dann neu formatieren
@@ -121,6 +127,7 @@ public:
             carry_lost_ = 0;
             used += static_cast<std::size_t>(len);
             buf_[used++] = '\n';
+            file_has_rows_ = true;
             ++rows;
         }
         flush_chunk(sink, used, rows, reported);
@@ -130,6 +137,18 @@ public:
     std::size_t write_errors() const { return write_errors_.load(std::memory_order_relaxed); }
 
 private:
+    bool write_header(hal::LogSink& sink) {
+        char line[256];
+        int n = logfmt::format_header(line, sizeof line, robot_, "robot", logfmt::no_seed, build_);
+        if (n < 0 || static_cast<std::size_t>(n) + 1 >= sizeof line)
+            return false;
+        line[n++] = '\n';
+        if (!sink.append(line, static_cast<std::size_t>(n)))
+            return false;
+        n = std::snprintf(line, sizeof line, "%s\n", logfmt::columns);
+        return sink.append(line, static_cast<std::size_t>(n)) && sink.flush();
+    }
+
     // Ereignisfeld der Zeile: eigene Ereignisse plus LOGDROP für Zeilen, die davor verloren gingen.
     const char* make_event(const LogRecord& r, char (&out)[LogRecord::event_len + 24]) const {
         const std::uint32_t lost = r.lost_before + carry_lost_;
@@ -191,6 +210,7 @@ private:
     std::atomic<bool> open_{false};
     std::uint32_t pending_lost_ = 0;  // nur Steuer-Task
     std::uint32_t carry_lost_ = 0;    // nur Logger-Task
+    bool file_has_rows_ = false;      // nur Logger-Task: in der aktuellen Datei steht schon eine Datenzeile
     std::atomic<std::size_t> write_errors_{0};
     char buf_[2048];
 };

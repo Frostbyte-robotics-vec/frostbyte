@@ -83,11 +83,11 @@ frostbyte::RuleGuard g_rule_guard(config::rule_guard);
 
 // Log (F-05, ADR-047): Der Steuer-Task kopiert alle 20 ms eine Zeile in die Schlange (nie schreiben, nie blockieren),
 // der Logger-Task (niedrige Prioritaet) schreibt sie auf die SD-Karte. 256 Zeilen = ca. 5 s Puffer, wenn die Karte
-// stockt; danach faellt die neueste Zeile weg und die naechste meldet LOGDROP:<n>. Eine Datei je Start (/usd/log_NNN.csv).
+// stockt; danach faellt die neueste Zeile weg und die naechste meldet LOGDROP:<n>. Eine Datei je Lauf (/usd/log_NNN.csv).
 // TODO(HW): Schreibpausen der SD-Karte messen (Puffer gross genug?). Gefuellt sind erst t_s, robot, cpu_ms und Phase;
 // Pose, Mechanismen usw. kommen mit den Tickets, die sie im Steuer-Task berechnen (A-10, M-10, F-06).
 frostbyte::hal::ProsLogSink g_log_sink;
-frostbyte::Logger<256> g_log(config::robot_name, FB_COMMIT);
+frostbyte::Logger<256> g_log(config::robot_name, FB_COMMIT[0] ? FB_COMMIT : "-");
 
 std::uint32_t micros_u32() { return static_cast<std::uint32_t>(pros::micros()); }
 
@@ -119,6 +119,7 @@ void control_task(void*) {
             frostbyte::LogRecord rec;
             rec.t_s = (pros::millis() - phase_start_ms) / 1000.0;
             rec.cpu_ms = last_work_us / 1000.0;
+            rec.new_run = phase_changed;  // jeder Lauf eine eigene Datei, t_s beginnt bei 0 (ADR-047)
             if (phase_changed)
                 frostbyte::LogRecord::set_text(
                     rec.event, phase == frostbyte::Phase::Autonomous ? "PHASE:AUTONOMOUS" : "PHASE:DRIVER");
@@ -144,7 +145,7 @@ void logger_task(void*) {
     }
 }
 
-// Zeigt die Takt-Statistik der aktuellen Phase auf dem LCD (Ablesen am Roboter, bis der Logger aus F-05 da ist).
+// Zeigt die Takt-Statistik der aktuellen Phase auf dem LCD (Ablesen am Roboter; der Logger aus F-05 schreibt sie noch nicht ins Log).
 // Eigener Task mit niedriger Prioritaet: die Ausgabe bleibt aus dem Steuer-Task heraus. Liest nur, setzt nie zurueck.
 void display_task(void*) {
     std::uint32_t now_ms = pros::millis();
@@ -208,8 +209,10 @@ void initialize() {
         (void)frostbyte::link_shared();  // Mutex und Endpunkt hier anlegen, nicht erst im Steuer-Task
     if constexpr (config::port_check_enabled || config::link_test_enabled)
         return;  // nur Pruefprogramm (F-03, L-01): kein Steuer-Task, opcontrol() startet es
+    // Log vor dem Steuer-Task oeffnen (ADR-047); ohne Karte laeuft der Roboter trotzdem, nur ohne Log (Warnung: F-06).
+    const bool logging = g_log.open(g_log_sink);
     static pros::Task task(control_task, nullptr, TASK_PRIORITY_MAX - 1, TASK_STACK_DEPTH_DEFAULT, "control");
-    if (g_log_sink.open_new() && g_log.open(g_log_sink))
+    if (logging)
         static pros::Task logger(logger_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "logger");
     static pros::Task display(display_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "display");
     static pros::Task menu(menu_task, nullptr, TASK_PRIORITY_MIN + 1, TASK_STACK_DEPTH_DEFAULT, "menu");

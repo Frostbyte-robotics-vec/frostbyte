@@ -5,9 +5,9 @@
 
 #include "hal/interface/log_sink.hpp"
 
-// Log-Datei auf der SD-Karte (PROS: Pfade unter /usd/). Header-only wie pros_storage.hpp (ADR-006). Jeder Start legt
-// eine neue Datei /usd/log_<NNN>.csv an (kleinste freie Nummer; das Brain hat keine Uhr, ADR-047), nie wird eine alte
-// überschrieben. open_new() in initialize(), append()/flush() nur im Logger-Task. TODO(HW): am Roboter prüfen:
+// Log-Datei auf der SD-Karte (PROS: Pfade unter /usd/). Header-only wie pros_storage.hpp (ADR-006). Jeder Lauf
+// (Autonomie bzw. Fahrer) legt eine neue Datei /usd/log_<NNN>.csv an (aufsteigende freie Nummer; das Brain hat keine Uhr,
+// ADR-047), nie wird eine alte überschrieben. begin_file()/append()/flush() nur im Logger-Task (und einmal in initialize()). TODO(HW): am Roboter prüfen:
 // Karte fehlt (open_new false), Schreibpausen der Karte, Stromverlust während des Schreibens (fflush je Takt, kein fsync).
 namespace frostbyte::hal {
 
@@ -20,10 +20,15 @@ public:
             std::fclose(file_);
     }
 
-    // Legt die nächste freie Datei an. Rückgabe false, wenn keine Karte steckt oder alle Nummern belegt sind.
-    bool open_new() {
-        for (int n = 1; n <= max_files; ++n) {
-            std::snprintf(path_, sizeof path_, "/usd/log_%03d.csv", n);
+    // Schließt die bisherige Datei und legt die nächste freie an (Nummer nach der zuletzt vergebenen, dann weiter auf
+    // Lücken prüfen). Rückgabe false, wenn keine Karte steckt oder alle Nummern belegt sind.
+    bool begin_file() override {
+        if (file_) {
+            std::fclose(file_);
+            file_ = nullptr;
+        }
+        while (last_ < max_files) {
+            std::snprintf(path_, sizeof path_, "/usd/log_%03d.csv", ++last_);
             if (std::FILE* probe = std::fopen(path_, "rb")) {
                 std::fclose(probe);
                 continue;
@@ -42,6 +47,7 @@ public:
 
 private:
     std::FILE* file_ = nullptr;
+    int last_ = 0;
     char path_[24] = "";
 };
 
