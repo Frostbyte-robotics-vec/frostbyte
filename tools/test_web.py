@@ -295,5 +295,30 @@ class WebTest(unittest.TestCase):
         self.assertIn("prefers-reduced-motion", css)
 
 
+    def test_impressum_seiten_haben_angaben_und_verweisen_zurueck(self):
+        # W-13: Angaben stammen vom Menschen (Chat 2026-11-11), nichts erfunden
+        erwartet = {
+            "impressum.html": ("Verein Frostbyte", "David Čop", "Präsident", "Gujerstrasse 7", "8050 Zürich", "Datenschutz", "frostbyte.eth.robotics@gmail.com"),
+            "en/imprint.html": ("Verein Frostbyte", "David Čop", "President", "Gujerstrasse 7", "8050 Zürich", "Privacy", "frostbyte.eth.robotics@gmail.com"),
+        }
+        for name, begriffe in erwartet.items():
+            html = lade(name)
+            for b in begriffe:
+                self.assertIn(b, html, f"{name}: {b}")
+            self.assertIn(f'<html lang="{"en" if name.startswith("en/") else "de"}"', html, name)
+            refs = set(re.findall(r'(?:src|href)="((?:\.\./)*assets/[^"#]+)"', html))
+            self.assertTrue(refs, name)
+            self.assertEqual(sorted(r for r in refs if not ((WEB / name).parent / r).resolve().is_file()), [], name)
+            self.assertNotRegex(html, r"(?i)\b(lorem|platzhalter|todo)\b", name)
+
+    def test_fusszeilen_verlinken_impressum(self):
+        ziele = {"index.html": "impressum.html", "en/index.html": "imprint.html", "impressum.html": "impressum.html", "en/imprint.html": "imprint.html"}
+        for name, ziel in ziele.items():
+            fuss = lade(name).split("<footer", 1)[1]
+            self.assertIn(f'href="{ziel}"', fuss, name)
+        import news_build
+        seite = news_build.seite("T", "B", "")
+        self.assertIn('href="../impressum.html"', seite.split("<footer", 1)[1])
+
 if __name__ == "__main__":
     unittest.main()

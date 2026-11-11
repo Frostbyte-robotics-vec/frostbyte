@@ -140,7 +140,7 @@ def seite(titel, beschreibung, inhalt):
         <a class="mark" href="../index.html"><img src="../assets/snowflake.png" alt="">FROST<span class="b">BYTE</span><span class="cur" aria-hidden="true"></span></a>
         <p style="margin-top:14px;max-width:34ch">VEX-U-Studierendenteam der ETH Zürich.</p>
       </div>
-      <div><h4>Seiten</h4><ul><li><a href="../index.html">Hauptseite</a></li><li><a href="index.html">News</a></li><li><a href="../index.html#partner">Unterstützen</a></li></ul></div>
+      <div><h4>Seiten</h4><ul><li><a href="../index.html">Hauptseite</a></li><li><a href="index.html">News</a></li><li><a href="../index.html#partner">Unterstützen</a></li><li><a href="../impressum.html">Impressum &amp; Datenschutz</a></li></ul></div>
     </div>
     <div class="f-bot"><span>© 2026 Frostbyte · ETH Zürich</span><span class="bin" aria-hidden="true">01000110 01010010 01001111 01010011 01010100</span><span>frostbyte.eth.robotics@gmail.com</span></div>
   </div>
