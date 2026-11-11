@@ -2,7 +2,7 @@
 id: CAD-03
 phase: "1"
 titel: VEX-STEP-Bibliothek automatisch auf jeden Laptop holen (Release-ZIP, Download-Script, /start)
-status: review
+status: done
 owner: arjanssen
 branch: ticket/cad-03
 depends: [CAD-02]
