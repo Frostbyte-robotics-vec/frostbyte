@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 WEB = Path(__file__).resolve().parent.parent / "web"
-SEITEN = ("index.html", "sponsoring.html")
+SEITEN = ("index.html",)  # W-09: es gibt keine Sponsoring-Seite mehr
 
 
 def lade(name):
@@ -55,22 +55,34 @@ class WebTest(unittest.TestCase):
         for html in HTML.values():
             self.assertNotIn("claude:viewport", html)
 
-    def test_hauptseite_hat_kein_sponsoring_und_keine_werkzeugnamen(self):
+    def test_hauptseite_hat_keine_werkzeugnamen(self):
         h = HTML["index.html"]
-        for id_ in ("pakete", "budget"):
-            self.assertNotIn(f'id="{id_}"', h)
-        for wort in ("Fusion 360", "Siemens NX", "CNC", "C++", "Sponsoring-Pakete"):
+        for wort in ("Fusion 360", "Siemens NX", "CNC", "C++"):
             self.assertNotIn(wort, h)
-        self.assertIn('href="sponsoring.html"', h)  # unauffälliger Weg zur Sponsoringseite
 
-    def test_sponsoringseite_hat_die_abschnitte(self):
-        h = HTML["sponsoring.html"]
-        for id_ in ("budget", "pakete", "kontakt"):
-            self.assertIn(f'id="{id_}"', h)
-        self.assertIn('href="index.html"', h)
-        # W-09: die Partnerwand liegt auf der Hauptseite, nicht doppelt
-        self.assertNotIn('id="partner"', h)
-        self.assertIn('href="index.html#partner"', h)
+    def test_keine_sponsoring_seite_und_keine_oeffentlichen_stufen(self):
+        # W-09 (Mensch, 2026-11-11): keine sponsoring.html, Pakete/Stufen/Preise/Budget nicht öffentlich
+        self.assertFalse((WEB / "sponsoring.html").exists())
+        h = HTML["index.html"]
+        self.assertNotIn("sponsoring.html", h)
+        for wort in ("Hauptpartner", "Supporter", "Sponsoring-Pakete", "Budget", "10'000", "ab 500", "ab 1'500",
+                     "tierlbl", "slot-main", "grid3", "grid6"):
+            self.assertNotIn(wort, h, wort)
+
+    def test_ids_sind_eindeutig(self):
+        for name, html in HTML.items():
+            ids = re.findall(r'id="([^"]+)"', html)
+            self.assertEqual(sorted(i for i in set(ids) if ids.count(i) > 1), [], name)
+
+    def test_keine_webfonts_nur_systemschrift(self):
+        css = (WEB / "assets" / "style.css").read_text(encoding="utf-8")
+        for name, html in HTML.items():
+            self.assertNotIn("fonts.googleapis", html, name)
+            self.assertNotIn("fonts.gstatic", html, name)
+        for schrift in ("Barlow", "Chakra", "JetBrains"):
+            self.assertNotIn(schrift, css)
+            self.assertNotIn(schrift, HTML["index.html"])
+        self.assertIn("system-ui", css)
 
     def test_kein_youtube(self):
         for name, html in HTML.items():
