@@ -1,6 +1,6 @@
 /* Auswahl der CAD-Modelle für Spielelemente (SIM-37). Kein DOM, kein three.js; läuft im Browser und unter Node.
    Die Modelle selbst (models/models.js, window.FB_MODELS) entstehen mit tools/export_field_models.py aus dem Feld-CAD und
-   liegen nicht im Repo. Fehlen sie, zeichnet der Viewer wie bisher einfache Körper. */
+   liegen im Repo (VEX hat die Weitergabe bestätigt, ADR-045). Fehlen sie, zeichnet der Viewer wie bisher einfache Körper. */
 var FBModels = (function () {
   'use strict';
   var VERSION = 1;
