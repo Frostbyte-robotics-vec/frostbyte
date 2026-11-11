@@ -35,3 +35,4 @@ Offen, nur ein Mensch kann das klären: (1) VEX-Lizenz für Weitergabe prüfen, 
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-10 · arjanssen (KI) · Ticket angelegt und übernommen · –
 2026-11-10 · arjanssen (KI) · fetch_cad_lib.py + Test, /start, cad/BIBLIOTHEK.md · –
+2026-11-11 · arjanssen (KI) · ANLEITUNG.md ergänzt, Tests/Format/validate grün, PR geöffnet; Release + Lizenzprüfung offen (Mensch) · –
