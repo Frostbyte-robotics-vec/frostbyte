@@ -152,6 +152,7 @@ class WebTest(unittest.TestCase):
         for name in SEITEN:
             self.assertNotIn("progress", HTML[name], name)
         self.assertNotIn(".progress", (WEB / "assets" / "style.css").read_text(encoding="utf-8"))
+        self.assertNotIn("marquee", HTML["index.html"])  # blaues Laufband unter dem Kopf
         self.assertNotIn("progress", (WEB / "assets" / "site.js").read_text(encoding="utf-8"))
 
     def test_keine_einzelportraits_dafuer_teamfoto_platz(self):
