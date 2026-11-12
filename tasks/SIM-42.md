@@ -2,7 +2,7 @@
 id: SIM-42
 phase: "5"
 titel: Livesim nach Handtest überarbeiten: Lift im Boden, Zusammenführen/Stapeln, Physik wirkt unnatürlich
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-42
 depends: [SIM-40]
