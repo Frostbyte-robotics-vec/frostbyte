@@ -14,4 +14,5 @@ Status: angenommen (12. Nov 2026), Ticket SIM-38. Rat des Advisors (Opus) eingea
 ## Folgen / offen
 - Rollen liegender Cups, Kollision fallender Objekte untereinander und die Roboterhöhe (Roboter fährt nicht über liegende Teile) sind nicht modelliert.
 - Greifen, Ablegen, Stapeln: SIM-39.
-- Im Browser nicht angesehen (siehe Übergabe SIM-38).
+- Im Browser angesehen (headless Chrome über DevTools-Protokoll): Cup kippt sichtbar um die Kante und liegt danach ruhig. Nicht gesehen: liegende Pins mit gelber Seite.
+- Fehlt `physics.js` auf einer Seite, steht ein `NOTE:` im Log und Ereignisfeed; die Simulation läuft dann ohne Physik weiter.

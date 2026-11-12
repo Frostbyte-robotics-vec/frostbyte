@@ -248,6 +248,7 @@ var FBLive = (function () {
     var objects = objectCfg.list.map(function (o) { return Object.assign({}, o); });
     // Physik der Objekte (SIM-38, ADR-051): nur mit Block physik in den Parametern; ohne ihn bleibt alles wie in SIM-30.
     var physCfg = typeof FBPhysics !== 'undefined' ? FBPhysics.load(params) : null;
+    if (params.physik && typeof FBPhysics === 'undefined') notes.push('Physik: physics.js fehlt, Objekte kippen ohne Physik (Skript nicht eingebunden?)');
     var phys = null, lastTouch = {};
     function makeWorld() {
       lastTouch = {};
