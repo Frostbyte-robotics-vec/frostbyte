@@ -21,7 +21,12 @@ Vermutungen (nicht geprüft, zuerst mit Test oder Blick im Browser bestätigen):
 - zu 3: Rückprall, Reibung, Kippen: Werte sind Schätzungen (`physik`); konkret beschreiben lassen, was falsch aussieht.
 
 ## Fertig, wenn …
-Der Mensch ergänzt/bestätigt die Punkte; dann je Punkt: Test oder Sichtprüfung im Browser (Stacker greift Pin und Cup, hebt auf jede Stufe, setzt auf Goal und Stapel; Lift-Modell folgt `lift.z` sichtbar von unten bis oben und taucht nie unter den Boden); Laptop-Tests grün, `board.py validate` grün.
+- Lift-Modell folgt dem Lift im Livesim sichtbar von unten bis oben, steht nie im Boden (Browser gemessen: minY ≈ 0 auf jeder Stufe; Klaue = Handhöhe)
+- Eine Stufe = eine Stapelebene (`lift_stufe_in`), oberste Stufe endet bei `max_deg`
+- Greifen nur auf Teilhöhe, SG6 vor der Auswahl, Pin und Cup in der Hand ineinander, Q–F–Q stapelt (Browser)
+- Tests mit Fixture-Werten (95 + 80), Laptop-Tests und `board.py validate` grün, ADR-051-Nachtrag
+- **Punkt 3 (Physik sieht unnatürlich aus) ist abgespalten nach SIM-43**: braucht konkrete Beschreibung des Menschen, was falsch aussieht
+- Offene SIM-41-Funde: bleiben in SIM-41 (hier erledigt: Modellzahlen ±0,3, Greifhöhe zweiseitig, SG6 vor der Auswahl)
 
 ## Kontext
 tools/viewer/livesim.js (doLift, handPos), tools/viewer/index.html (updateLive, info.set), sim/sim_params.json (physik.greifen), ADR-051, SIM-41, M-11.
@@ -30,13 +35,12 @@ tools/viewer/livesim.js (doLift, handPos), tools/viewer/index.html (updateLive, 
 —
 
 ## Übergabe
-Stand (2026-11-12): Punkt 1 (Lift) erledigt: `physik.greifen.hand_hoehe` (basis + hub·sin θ aus dem CAD, je Roboter), `liveSim.liftDeg()/handZ()`, Viewer stellt `info.set` im Livesim aus dem Lift; Stufen = Hubbereich/5. Im Browser gesehen (Stacker, Stufe 0 → 5: Lift fährt von unten bis oben, vorher blieb das Modell stehen). Tests 91 + 80 ok, ctest grün.
-Zusätzlich erledigt (aus SIM-41, Punkt 2): Greifen nur auf Höhe des Teils (`greif_toleranz_in`, Hand zwischen Fußpunkt und Oberkante), SG6 filtert Kandidaten vor der Auswahl. Tests 93 + 80 ok; Browser: Pin vom Stapel greifen, zum Goal fahren, ablegen → STACK ok.
-Rest: ADR-051-Nachtrag, restliche SIM-41-Funde, Physik (Punkt 3) im Browser beurteilen. (alt:) Punkt 2 (Zusammenführen/Stapeln) im Browser durchspielen (Pin + Cup greifen, auf Goal setzen) und die passenden SIM-41-Funde mit rotem Test beheben; danach Punkt 3 (Physik, Auffälligkeiten im Browser suchen).
-Prüfstand: Chrome per DevTools-Protokoll (cdp.py in früherer Sitzung), Server `python3 -m http.server 8765` im Repo.
+Stand (2026-11-12): fertig, PR offen. Lift (hand_hoehe, liftDeg/handZ, Viewer stellt das Modell), Stufen = lift_stufe_in, Greifhöhe, SG6 vor der Auswahl, Pin auf Cup in der Hand, Q zuerst Cup. Mutationstest: ohne Höhenprüfung bzw. ohne SG6-Filter werden die jeweiligen Tests rot. SIM-40-Abhängigkeit: PR #116 ist gemergt, das Board war nur nicht nachgezogen.
+Am Rechner zu prüfen: Fühlt sich der Lift richtig an (Stufenhöhe 4,5 in, Tempo 20 in/s: Schätzwerte)? Stimmen `basis_in`/`hub_in` mit dem echten Roboter (M-11)? Der Greifarm bleibt im Livesim in Greifstellung (Klaue hängt am Schlitten), gehaltene Teile erscheinen 2,5 in vor dem Umriss: stimmt das optisch? Physik: siehe SIM-43.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt aus Handtest-Rückmeldung des Menschen · –
 2026-11-12 · arjanssen (KI) · Lift im Livesim: Winkel aus Handhöhe, Modell folgt · siehe Branch
 2026-11-12 · arjanssen (KI) · Greifhöhe zweiseitig, SG6 vor Auswahl · siehe Branch
+2026-11-12 · arjanssen (KI) · Stufen = Stapelebene, Pin auf Cup in der Hand, ADR-Nachtrag, Punkt 3 nach SIM-43 abgespalten · siehe Branch

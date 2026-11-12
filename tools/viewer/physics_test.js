@@ -307,6 +307,12 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const r3b = play(grabF, { 10: g1, 20: g1 }, 1, 200, false);
     check('Livesim: Pin und Cup in der Hand sind kein Verstoß', r3b.events.indexOf('stacker RULE:SG6') === -1 || r3b.live.hand('stacker').length === 2, r3b.events.join(' | '));
 
+    // SIM-42: Pin und Cup stecken in der Hand ineinander (Pin auf dem Cup, gleicher Fußpunkt in x/y), der Cup wird zuerst abgelegt
+    const nest = play(twoF, { 10: g1, 20: g1 }, 1, 1500);
+    const nc = nest.get('CUP_A').draw, np = nest.get('PIN_A').draw;
+    check('Livesim: Pin steckt auf dem Cup in der Hand (gleiches x/y, eine Stapelstufe höher)', Math.hypot(nc.bx_in - np.bx_in, nc.by_in - np.by_in) < 0.01 && Math.abs(np.z_in - nc.z_in - 4.0) < 0.05, JSON.stringify([nc, np]));
+    const nrel = play(twoF, { 10: g1, 20: g1, 1200: rel }, 1, 1500);
+    check('Livesim: Q legt zuerst den Cup ab, der Pin bleibt in der Hand', nrel.live.hand('stacker').join() === 'PIN_A', nrel.live.hand('stacker').join());
     // Zwei Teile übereinander: Pin + Cup halten, Lift auf Stufe 2, beide nacheinander ablegen
     const r4 = play(twoF, { 10: g1, 20: g1, 30: up, 40: up, 3000: rel, 3300: rel }, 1, 5000);
     const zs = ['PIN_A', 'CUP_A'].map((id) => r4.get(id).draw.z_in).sort((x, y) => x - y);
@@ -331,7 +337,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const hh = (b, h) => Object.assign({}, gp, {
       roboter: Object.assign({}, gp.roboter, { stacker: Object.assign({}, gp.roboter.stacker, { mechanismen: { lift: { min_deg: -40, max_deg: 45 } } }) }),
       physik: Object.assign({}, gp.physik, { greifen: Object.assign({}, grab, { hand_hoehe: { stacker: { basis_in: b, hub_in: h } } }) }) });
-    const mkHH = (b, h) => FBLive.create(hh(b, h), grabF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: script({ 10: up, 20: up, 30: up, 40: up, 50: up, 60: up }) });
+    const mkHH = (b, h) => FBLive.create(hh(b, h), grabF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: script({ 10: up, 20: up, 30: up, 40: up, 50: up, 60: up, 70: up, 80: up, 90: up, 100: up }) });
     const lz = mkHH(20, 24), s0 = lz.liftDeg('stacker');
     const zOf = (deg) => 20 + 24 * Math.sin(deg * Math.PI / 180);
     check('Livesim: Liftwinkel beginnt bei min_deg', Math.abs(s0 - -40) < 1e-9, String(s0));
@@ -340,7 +346,9 @@ function runPhysicsTests(FBPhysics, FBLive) {
     for (let t = 0; t < 1500; t += 5) { lz.advance(0.005); const d = lz.liftDeg('stacker'); if (d < prevDeg - 1e-9) mono = false; if (d < -40 - 1e-9 || d > 45 + 1e-9) inRange = false; prevDeg = d; }
     check('Livesim: Liftwinkel steigt monoton und bleibt zwischen min_deg und max_deg', mono && inRange && Math.abs(prevDeg - 45) < 1e-6, String(prevDeg));
     check('Livesim: Handhöhe oben = Basis + Hub·sin(max_deg), unten = Basis + Hub·sin(min_deg)', Math.abs(lz.handZ('stacker') - zOf(45)) < 1e-6 && Math.abs(mkHH(20, 24).handZ('stacker') - zOf(-40)) < 1e-9, lz.handZ('stacker') + '');
-    check('Livesim: Stufen sind gleich hoch (Hubbereich / lift_stufen)', (() => { const l = FBLive.create(hh(20, 24), grabF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: script({ 10: up }) }); for (let t = 0; t < 1000; t += 10) l.advance(0.01); return Math.abs(l.handZ('stacker') - (zOf(-40) + (zOf(45) - zOf(-40)) / 5)) < 1e-6; })());
+    check('Livesim: eine Stufe hebt die Hand um lift_stufe_in (wie eine Stapelebene), die oberste endet genau bei max_deg', (() => {
+      const l = FBLive.create(hh(20, 24), grabF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: script({ 10: up }) }); for (let t = 0; t < 1000; t += 10) l.advance(0.01);
+      return Math.abs(l.handZ('stacker') - (zOf(-40) + 4.0)) < 1e-6 && l.liftLevel('stacker') === 1 && Math.abs(lz.handZ('stacker') - zOf(45)) < 1e-6 && lz.liftLevel('stacker') === 9; })(), 'Stufen oben: ' + lz.liftLevel('stacker'));
     let threw2 = false;
     try { FBLive.create(hh(5, 24), grabF, { voltsAt: () => ({ left_V: 0, right_V: 0 }) }); } catch (e) { threw2 = true; }
     check('Livesim: Hand unter dem Boden bei min_deg wird abgelehnt', threw2);

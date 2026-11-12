@@ -252,7 +252,9 @@ var FBLive = (function () {
       return { base_in: e.base_in, hub_in: e.hub_in, min_deg: lo, zmin: zmin, range_in: zmax - zmin };
     }
     function handBase(r) { return r.geo ? r.geo.zmin : holdCfg().hand_z_in; }
-    function liftStep(r) { return r.geo ? r.geo.range_in / holdCfg().lift_levels : holdCfg().lift_step_in; }
+    // eine Stufe = lift_stufe_in (wie eine Stapelebene); mit hand_hoehe so viele Stufen, bis der Hubbereich erreicht ist, die oberste endet bei max_deg
+    function liftStep(r) { return holdCfg().lift_step_in; }
+    function liftLevels(r) { return r.geo ? Math.ceil(r.geo.range_in / liftStep(r) - 1e-9) : holdCfg().lift_levels; }
     var fieldIn = field && typeof field.feld_in === 'number' && field.feld_in > 0 ? field.feld_in : null;
     if (fieldIn === null) notes.push('Kollision: field.json fehlt oder ohne feld_in, kein Feldrand');
     var elements = loadElements(params, field, notes);
@@ -397,10 +399,11 @@ var FBLive = (function () {
     /* Greifen, Heben, Ablegen (SIM-39): nur mit Physik und Block physik.greifen. Befehle gelten am Steuertakt. Der Roboter hält
        höchstens einen Pin und einen Cup (SG6, RuleGuard: sonst RULE:SG6). Gegriffen wird ein freies, stehendes Teil vor dem Roboter. */
     function holdCfg() { return phys && phys.cfg.grab; }
+    // Hand: ein Teil vor dem Roboter; Pin und Cup stecken ineinander (Pin auf dem Cup, eine Stapelstufe höher)
     function handPoint(r, slot, count) {
       var g = holdCfg(), h = r.h_deg * DEG, fwd = r.outline.length_in / 2 + g.front_in;
-      var lat = count < 2 ? 0 : (slot === 0 ? -1 : 1) * (phys.bodies[r.hand[0]].r + phys.bodies[r.hand[1]].r) / 2 + (count < 2 ? 0 : (slot === 0 ? -0.3 : 0.3));
-      return { x: r.x_in + fwd * Math.cos(h) - lat * Math.sin(h), y: r.y_in + fwd * Math.sin(h) + lat * Math.cos(h), z: handBase(r) + r.lift.z };
+      var up = count >= 2 && phys.bodies[r.hand[slot]].kind === 'pin' ? g.stack_step_in : 0;
+      return { x: r.x_in + fwd * Math.cos(h), y: r.y_in + fwd * Math.sin(h), z: handBase(r) + r.lift.z + up };
     }
     function doGrab(name) {
       var r = robots[name], g = holdCfg(), h = r.h_deg * DEG, best = -1, bestD = Infinity;
@@ -423,13 +426,14 @@ var FBLive = (function () {
     function doRelease(name) {
       var r = robots[name];
       if (!r.hand.length) return;
-      var i = r.hand.pop();
+      // der Cup liegt unten und wird zuerst abgelegt; danach hebt der Lift, und der Pin kommt obenauf
+      var k = r.hand.findIndex(function (b) { return phys.bodies[b].kind === 'cup'; }), i = r.hand.splice(k < 0 ? r.hand.length - 1 : k, 1)[0];
       phys.release(i);
       emit(name, 'DROP:' + phys.bodies[i].id);
     }
     function doLift(name, dir) {
       var r = robots[name], g = holdCfg();
-      if (g) r.lift.level = Math.min(Math.max(r.lift.level + (dir < 0 ? -1 : 1), 0), g.lift_levels);
+      if (g) r.lift.level = Math.min(Math.max(r.lift.level + (dir < 0 ? -1 : 1), 0), liftLevels(r));
     }
     function applyCommand(name, c) {
       if (!phys || !holdCfg() || !c) return;
@@ -440,7 +444,7 @@ var FBLive = (function () {
       var g = holdCfg();
       if (!g) return;
       ROBOTS.forEach(function (n) {
-        var r = robots[n], goal = r.lift.level * liftStep(r), d = goal - r.lift.z, step = g.lift_speed_in_s * dt;
+        var r = robots[n], goal = Math.min(r.lift.level * liftStep(r), r.geo ? r.geo.range_in : Infinity), d = goal - r.lift.z, step = g.lift_speed_in_s * dt;
         r.lift.z = Math.abs(d) <= step ? goal : r.lift.z + (d > 0 ? step : -step);
         var follow = g.pull_in_s + Math.abs((r.left.v + r.right.v) / 2);
         r.hand.forEach(function (i, slot) {

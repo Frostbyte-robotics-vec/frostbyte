@@ -736,7 +736,8 @@ function updateLive(){
     const p = L.sim.pose(n);
     placeOnField(L.models[n], p.x_in, p.y_in, p.h_deg);
     const info = L.models[n].userData.info, ld = L.sim.liftDeg(n);   // Lift folgt der Simulation (SIM-42); ohne hand_hoehe bleibt die Startstellung
-    if (info && ld !== null) { const th = Math.min(info.thMax, Math.max(info.thMin, ld)); info.set(th * DEG, (th - info.thMin) / (info.thMax - info.thMin)); }
+    // t = 0: Greifarm bleibt in Greifstellung, so liegt die Klaue genau auf der Handhöhe der Simulation (hand_hoehe.basis_in ist dafür gemessen)
+    if (info && ld !== null) info.set(Math.min(info.thMax, Math.max(info.thMin, ld)) * DEG, 0);
     const pts = L.sim.outline(n).map(c => new THREE.Vector3(c.x_in, 0.3, -c.y_in));
     L.outlines[n].geometry.setFromPoints(pts); L.outlines[n].visible = L.showOutline;
   });
