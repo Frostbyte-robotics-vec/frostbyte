@@ -45,6 +45,6 @@ bekommt beim Push eine Ablehnung, zieht neu und nimmt das nächste freie Ticket.
 ## Fortschrittsseite
 Eine Webseite zeigt jederzeit den Stand: erledigte Tickets, Fortschritt pro Phase, wer woran arbeitet (mit Übergabe),
 welcher Merge was freischaltet, die letzten Einträge und alle Tickets zum Filtern.
-- Online: nicht mehr. Unter https://frostbyterobotics.ch liegt nur die öffentliche Teamseite (ADR-035/ADR-049, W-12); Board, Viewer und Simulation werden nicht veröffentlicht (.github/workflows/dashboard.yml baut nur web/ und die News).
-  Das Repo selbst ist öffentlich, Tickets und Code bleiben dort sichtbar; es geht nur um die veröffentlichten Seiten.
+- Online: https://frostbyterobotics.ch/board/ (Teamseite unter /, Viewer /viewer/, Simulation /sim/; nur über die direkte Adresse, die Teamseite verlinkt sie nicht, ADR-049/W-17) – wird bei jedem Push auf main neu gebaut (.github/workflows/dashboard.yml).
+  Achtung: Eine Pages-Seite ist öffentlich erreichbar. Sie zeigt Ticket-Titel und eure Board-Namen, keinen Code (das Repo ist ohnehin öffentlich).
 - Lokal: python3 tools/board.py export site/board, dann site/board/index.html im Browser öffnen.

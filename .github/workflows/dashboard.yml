@@ -1,5 +1,5 @@
-# Veröffentlicht die Teamseite (web/ und /news/) auf GitHub Pages – bei jedem Push auf main.
-# Board, Viewer und Simulation werden bewusst nicht veröffentlicht (W-12, ADR-049); sie laufen lokal (siehe LIESMICH.md).
+# Veröffentlicht auf GitHub Pages (frostbyterobotics.ch) bei jedem Push auf main: Teamseite (web/, /news/) und, nur über die direkte
+# Adresse erreichbar, /board/, /viewer/ und /sim/ (W-17, ADR-049). Die Teamseite verlinkt sie nicht.
 name: dashboard
 on:
   push:
@@ -21,6 +21,23 @@ jobs:
         run: mkdir -p site && cp -r web/. site/
       - name: News-Seite bauen (/news/)
         run: python3 tools/news_build.py news site/news
+      - name: Fortschrittsseite erzeugen (/board/)
+        run: python3 tools/board.py export site/board
+      - name: Simulation bauen und Demo-Logs erzeugen
+        run: |
+          cmake -S test -B build-test -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-test --target frostbyte_sim
+          ./build-test/frostbyte_sim --demo --seed 1 --out site/viewer/demo
+          ./build-test/frostbyte_sim --demo --runs 100 --seed 1 --out out/sim
+          python3 tools/sim_report.py out/sim --html site/viewer/report.html
+      - name: Viewer in die Seite legen
+        run: |
+          cp tools/viewer/index.html tools/viewer/logparse.js tools/viewer/robots.js tools/viewer/livesim.js tools/viewer/fieldmodels.js site/viewer/
+          cp -r tools/viewer/models site/viewer/models
+          cp sim/sim_params.json site/viewer/sim_params.json
+          cp field/field.json site/viewer/field.json
+      - name: Simulationsseite /sim/ aus dem Viewer erzeugen
+        run: python3 tools/sim_page.py tools/viewer/index.html site/sim/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
