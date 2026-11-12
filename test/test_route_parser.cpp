@@ -197,6 +197,7 @@ TEST_CASE("route: Windows-Zeilenenden und Tabs") {
     CHECK_MESSAGE(r.ok(), r.error);
 }
 
+// Bewusst nur Syntax: Zeiten und Ziele der Routen (z. B. target_p10) sind Entwurf und kein Testgegenstand (F-13).
 TEST_CASE(
     "route: alle Routen in routes/ lesen sich (nur Syntax und Namen; Zeiten und Ziele sind Entwurf und werden nicht "
     "geprüft)") {
