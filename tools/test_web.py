@@ -370,21 +370,25 @@ class WebTest(unittest.TestCase):
             self.assertIn(satz, html, name)
             self.assertIn("nichts gespeichert" if name == "impressum.html" else "nothing is stored", html, name)
 
-    def test_nur_teamseite_oeffentlich_keine_verweise_auf_board_viewer_sim(self):
-        # W-12 (Mensch, 2026-11-11): unter der Domain nur Teamseite und News; Board, Viewer und Sim werden nicht veröffentlicht
+    def test_board_viewer_sim_sind_nicht_von_der_teamseite_verlinkt(self):
+        # W-17 (Mensch, 2026-11-12): /board/, /viewer/, /sim/ sind wieder online, aber nur über die direkte Adresse (nicht beworben)
         for pfad in sorted(WEB.rglob("*")):
             if pfad.suffix not in (".html", ".css", ".js", ".json") or not pfad.is_file():
                 continue
             text = pfad.read_text(encoding="utf-8")
             for ziel in ("/board/", "/viewer/", "/sim/", "../board", "../viewer", "../sim"):
-                self.assertNotIn(ziel, text, f"{pfad}: {ziel}")
+                self.assertNotRegex(text, r"""(?:href|src|url\()=?["']?[^"'>\s]*""" + re.escape(ziel), f"{pfad}: {ziel}")
 
-    def test_pages_workflow_veroeffentlicht_nur_web_und_news(self):
+    def test_pages_workflow_veroeffentlicht_teamseite_board_viewer_und_sim(self):
         wf = (WEB.parent / ".github" / "workflows" / "dashboard.yml").read_text(encoding="utf-8")
-        self.assertIn("cp -r web/. site/", wf)
-        self.assertIn("tools/news_build.py", wf)
-        for verboten in ("site/board", "site/viewer", "site/sim", "board.py export", "sim_page.py", "cmake", "frostbyte_sim"):
-            self.assertNotIn(verboten, wf, verboten)
+        for pflicht in ("cp -r web/. site/", "tools/news_build.py", "board.py export site/board", "site/viewer", "tools/sim_page.py", "site/sim/index.html"):
+            self.assertIn(pflicht, wf, pflicht)
+
+    def test_datenschutz_nennt_fremdquellen_von_viewer_und_sim(self):
+        for name in ("impressum.html", "en/imprint.html"):
+            html = lade(name)
+            for b in ("/viewer/", "/sim/", "Google Fonts", "cdnjs", "jsDelivr"):
+                self.assertIn(b, html, f"{name}: {b}")
 
     def test_impressum_seiten_haben_angaben_und_verweisen_zurueck(self):
         # W-13: Angaben stammen vom Menschen (Chat 2026-11-11), nichts erfunden
