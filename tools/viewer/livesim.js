@@ -392,7 +392,7 @@ var FBLive = (function () {
       var r = robots[name], g = holdCfg(), h = r.h_deg * DEG, best = -1, bestD = Infinity;
       if (!g) return;
       phys.bodies.forEach(function (b, i) {
-        if (b.state !== 'standing' || b.z > g.hand_z_in + r.lift.z + 0.5 || !phys.isFree(i)) return;
+        if ((b.state !== 'standing' && !(b.state === 'lying' && g.rise_rad_s !== null)) || b.z > g.hand_z_in + r.lift.z + 0.5 || !phys.isFree(i)) return;
         var dx = b.x - r.x_in, dy = b.y - r.y_in, lu = dx * Math.cos(h) + dy * Math.sin(h), lv = -dx * Math.sin(h) + dy * Math.cos(h);
         var front = r.outline.length_in / 2;
         if (lu < front - b.r || lu > front + g.reach_in + b.r || Math.abs(lv) > r.outline.width_in / 2 + b.r) return;
