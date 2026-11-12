@@ -284,3 +284,125 @@ TEST_CASE("Claw: Modi haben getrennte Schwellen") {
     cup.run(0.6);
     CHECK(cup.claw.result() == ClawResult::missed);
 }
+
+// Grenzfälle: direkt gefütterte Sensorwerte statt der Strecke. Alle Zeiten sind Vielfache von 0.125 s (exakt in double),
+// damit "genau auf der Grenze" wirklich genau ist. Der Takt ist dt = 0.125 s; das erste update() hat dt = 0.
+namespace {
+
+constexpr double dt = 0.125;
+
+ClawConfig edge_config() {
+    ClawConfig c;
+    c.open_v = -4.0;
+    c.empty_travel_deg = 90.0;
+    c.empty_margin_deg = 5.0;  // leer ab 85 Grad Weg
+    c.grace_s = 0.25;
+    c.stall_deg_s = 10.0;
+    c.plateau_s = 0.125;
+    c.open_timeout_s = 100.0;
+    c.close_timeout_s = 100.0;
+    c.open_settle_s = 0.125;
+    c.cup = {.close_v = 6.0, .hold_v = 2.0, .plateau_a = 1.5};
+    c.pin = {.close_v = 4.0, .hold_v = 1.0, .plateau_a = 0.5};
+    return c;
+}
+
+constexpr double open_pos = 100.0;
+
+ClawSensor still(double pos_deg, double amps = 0.0) { return ClawSensor{pos_deg, 0.0, amps, true}; }
+
+// Treibt ein Subsystem im Takt dt mit gleichbleibendem Sensor; t ist die Zeit des letzten update().
+struct Stepper {
+    ClawSubsystem& claw;
+    double t = 0.0;
+    void step(const ClawSensor& s) {
+        t += dt;
+        claw.update(t, s);
+    }
+};
+
+// Öffnen bis "open" mit der Lage open_pos.
+void open_claw(Stepper& k) {
+    REQUIRE(k.claw.request_open(k.t));
+    k.claw.update(k.t, still(open_pos));  // dt = 0
+    k.step(still(open_pos));              // elapsed 0.125 < grace_s
+    k.step(still(open_pos));              // elapsed 0.25 == grace_s, Stillstand 0.125 == open_settle_s
+    REQUIRE(k.claw.state() == ClawState::open);
+}
+
+}  // namespace
+
+TEST_CASE("Claw: Oeffnen zaehlt ab grace_s einschliesslich (elapsed == grace_s ist die Anlaufzeit vorbei)") {
+    ClawConfig c = edge_config();  // open_settle_s = dt: ein Takt Stillstand reicht
+    ClawSubsystem claw{c, 0.0};
+    Stepper k{claw};
+    REQUIRE(claw.request_open(0.0));
+    claw.update(0.0, still(open_pos));
+    k.step(still(open_pos));
+    CHECK(claw.state() == ClawState::opening);  // elapsed 0.125 < grace_s
+    k.step(still(open_pos));                    // elapsed == grace_s
+    CHECK(claw.state() == ClawState::open);
+}
+
+TEST_CASE("Claw: Oeffnen ist fertig, sobald der Stillstand open_settle_s erreicht (einschliesslich)") {
+    ClawConfig c = edge_config();
+    c.open_settle_s = 0.25;  // zwei Takte Stillstand
+    c.grace_s = 0.125;
+    ClawSubsystem claw{c, 0.0};
+    Stepper k{claw};
+    REQUIRE(claw.request_open(0.0));
+    claw.update(0.0, still(open_pos));
+    k.step(still(open_pos));  // grace erreicht, Stillstand 0.125
+    CHECK(claw.state() == ClawState::opening);
+    k.step(still(open_pos));  // Stillstand == open_settle_s
+    CHECK(claw.state() == ClawState::open);
+}
+
+TEST_CASE("Claw: leer gegriffen genau bei empty_travel_deg - empty_margin_deg, knapp davor nicht") {
+    ClawConfig c = edge_config();
+    ClawSubsystem claw{c, 0.0};
+    Stepper k{claw};
+    open_claw(k);
+    REQUIRE(claw.request_close(ClawMode::cup, k.t));
+    k.step(still(open_pos + 84.875));  // 0.125 Grad vor der Grenze, Strom 0: kein Plateau
+    CHECK(claw.state() == ClawState::closing);
+    CHECK(claw.result() == ClawResult::none);
+    k.step(still(open_pos + 85.0));  // genau auf der Grenze
+    CHECK(claw.result() == ClawResult::missed);
+    CHECK(claw.state() == ClawState::opening);
+}
+
+TEST_CASE("Claw: Plateau-Strom genau plateau_a zaehlt, knapp darunter nicht") {
+    for (const double amps : {1.5, 1.4999}) {
+        INFO("Strom " << amps);
+        ClawConfig c = edge_config();  // plateau_s == dt: ein Takt reicht
+        ClawSubsystem claw{c, 0.0};
+        Stepper k{claw};
+        open_claw(k);
+        REQUIRE(claw.request_close(ClawMode::cup, k.t));
+        k.step(still(open_pos + 40.0, amps));  // elapsed 0.125 < grace_s: zaehlt nicht
+        CHECK(claw.state() == ClawState::closing);
+        k.step(still(open_pos + 40.0, amps));  // elapsed == grace_s
+        if (amps >= 1.5) {
+            CHECK(claw.state() == ClawState::held);
+            CHECK(claw.result() == ClawResult::gripped);
+        } else {
+            CHECK(claw.state() == ClawState::closing);
+            CHECK(claw.result() == ClawResult::none);
+        }
+    }
+}
+
+TEST_CASE("Claw: Plateau gilt, sobald es plateau_s erreicht (einschliesslich), nicht einen Takt spaeter") {
+    ClawConfig c = edge_config();
+    c.plateau_s = 0.25;  // zwei Takte
+    ClawSubsystem claw{c, 0.0};
+    Stepper k{claw};
+    open_claw(k);
+    REQUIRE(claw.request_close(ClawMode::cup, k.t));
+    k.step(still(open_pos + 40.0, 1.5));  // elapsed 0.125 < grace_s
+    k.step(still(open_pos + 40.0, 1.5));  // erster Takt mit Plateau: 0.125
+    CHECK(claw.state() == ClawState::closing);
+    k.step(still(open_pos + 40.0, 1.5));  // == plateau_s
+    CHECK(claw.state() == ClawState::held);
+}
