@@ -246,6 +246,17 @@ var FBLive = (function () {
     var elements = loadElements(params, field, notes);
     var objectCfg = loadObjects(params, field);
     var objects = objectCfg.list.map(function (o) { return Object.assign({}, o); });
+    // Physik der Objekte (SIM-38, ADR-051): nur mit Block physik in den Parametern; ohne ihn bleibt alles wie in SIM-30.
+    var physCfg = typeof FBPhysics !== 'undefined' ? FBPhysics.load(params) : null;
+    if (params.physik && typeof FBPhysics === 'undefined') notes.push('Physik: physics.js fehlt, Objekte kippen ohne Physik (Skript nicht eingebunden?)');
+    var phys = null, lastTouch = {};
+    function makeWorld() {
+      lastTouch = {};
+      return physCfg ? FBPhysics.create(physCfg, objectCfg.list.map(function (o) {
+        return { id: o.id, kind: o.kind, x_in: o.x_in, y_in: o.y_in, r_in: o.r_in, standing: o.standing, lie_dir_deg: o.yellow_deg };
+      }), { field_in: fieldIn === null ? 0 : fieldIn }) : null;
+    }
+    phys = makeWorld();
     var events = [];
     var keys = { w: false, a: false, s: false, d: false, shift: false };
     var active = 'stacker';
@@ -285,7 +296,34 @@ var FBLive = (function () {
     }
     function restartLog() { rows.stacker.length = 0; rows.runner.length = 0; pending.stacker.length = 0; pending.runner.length = 0; if (stepNo % logEvery === 0) record(); }
 
+    // Mit Physik: ein stehendes Objekt neigt sich, so weit der Roboter es erzwingt (kein Rückweichen des Roboters); ein
+    // liegendes wird wie in SIM-30 geschoben (aber als Geschwindigkeit, nicht als Sprung) und gleitet danach aus.
+    function touchBodies(r, name) {
+      var half = fieldIn === null ? Infinity : fieldIn / 2, share = objectCfg.share, dt = stepMs / 1000;
+      phys.bodies.forEach(function (b, i) {
+        if (b.z > 0 || b.state === 'falling') return;
+        var m = penetrationBoxCircle(boxOf(r), { x_in: b.x, y_in: b.y, r_in: b.r });
+        if (!m) return;
+        lastTouch[b.id] = name;
+        var len = Math.sqrt(m.x * m.x + m.y * m.y);
+        if (!(len > 0)) return;   // Überlappungsvektor 0: keine Richtung zum Wegschieben (sonst NaN)
+        if (b.state !== 'lying') {
+          phys.pushStanding(i, -m.x / len, -m.y / len, len, dt);
+          return;
+        }
+        // Weicht über physik.ausweich_s aus (Geschwindigkeit statt Sprung): das Objekt mit dem Anteil (1 − roboter_anteil) der
+        // Überlappung, mindestens aber mit der Fahrgeschwindigkeit des Roboters; der Roboter weicht um seinen Anteil zurück.
+        var px = -m.x / len, py = -m.y / len, tau = phys.cfg.evade_s;
+        var hr = r.h_deg * DEG, vn = Math.max(0, (r.left.v + r.right.v) / 2 * (Math.cos(hr) * px + Math.sin(hr) * py));
+        phys.pushLying(i, px, py, vn + (1 - share) * len / tau);
+        var wall = (px > 0 && b.x >= half - b.r - 1e-9) || (px < 0 && b.x <= -half + b.r + 1e-9) || (py > 0 && b.y >= half - b.r - 1e-9) || (py < 0 && b.y <= -half + b.r + 1e-9);
+        var back = wall ? len : Math.min(len, share * len * dt / tau);   // an der Wand trägt der Roboter alles
+        r.x_in += m.x / len * back; r.y_in += m.y / len * back;
+      });
+    }
+
     function touchObjects(r, name) {
+      if (phys) { touchBodies(r, name); return; }
       var half = fieldIn === null ? Infinity : fieldIn / 2, share = objectCfg.share;
       objects.forEach(function (o) {
         var m = penetrationBoxCircle(boxOf(r), o);
@@ -359,6 +397,7 @@ var FBLive = (function () {
           r.contact = {}; r.blockedS = 0; r.blockedSent = false;
         });
         objects = objectCfg.list.map(function (o) { return Object.assign({}, o); });
+        phys = makeWorld();
         acc_ms = 0; stepNo = 0; events.length = 0;
         restartLog(); seedNotes(); // R beginnt eine neue Aufnahme
       },
@@ -371,6 +410,7 @@ var FBLive = (function () {
           if (stepNo % ctlEvery === 0) control();
           ROBOTS.forEach(function (name) { stepRobot(robots[name], stepMs / 1000); });
           collide();
+          if (phys) phys.step(stepMs / 1000).forEach(function (e) { if (e.type === 'toppled') emit(lastTouch[e.id] || ROBOTS[0], 'TOPPLED:' + e.id); });
           acc_ms -= stepMs; stepNo++; n++;
           if (stepNo % logEvery === 0) record();
         }
@@ -389,7 +429,16 @@ var FBLive = (function () {
       outline: function (n) { var c = cornersOf(boxOf(robots[n])); return [c[0], c[1], c[3], c[2]]; },
       elements: function () { return elements.slice(); },
       // Feldobjekte mit aktuellem Zustand (kind = 'cup' | 'pin', standing = steht, sonst liegt), Kopie.
-      objects: function () { return objects.map(function (o) { return Object.assign({}, o); }); },
+      // Mit Physik (SIM-38) zusätzlich state ('standing' | 'tipping' | 'lying' | 'falling') und draw {bx_in, by_in, z_in, tilt_deg,
+      // dir_deg}: Fußpunkt, Neigung und Richtung zum Zeichnen; x_in/y_in bleiben der Kreis der Kollision.
+      objects: function () {
+        if (!phys) return objects.map(function (o) { return Object.assign({}, o); });
+        return phys.bodies.map(function (b, i) {
+          return Object.assign({}, objectCfg.list[i], { x_in: b.x, y_in: b.y, standing: b.state === 'standing', state: b.state, draw: phys.pose(i) });
+        });
+      },
+      // Richtung des oberen Endes eines Objekts, das von Anfang an liegt (nur Anzeige, ändert die Physik nicht).
+      setLieDir: function (id, deg) { if (phys) phys.bodies.forEach(function (b, i) { if (b.id === id) phys.setLieDir(i, deg); }); },
       speed: function (n) { var r = robots[n]; return (r.left.v + r.right.v) / 2; }
     };
   }

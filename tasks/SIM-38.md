@@ -29,10 +29,13 @@ docs/decisions/ADR-025-livesim-browser.md (Nachträge SIM-30, SIM-34), sim/field
 —
 
 ## Übergabe
-Noch nicht begonnen.
+Stand (2026-11-12): umgesetzt, bereit für Review. physics.js (Kippen, Fallen, Liegen, Stoß), Einbindung in livesim.js (nur mit Block `physik`), Anzeige in index.html (`o.draw`), Block `physik` in sim_params.json (Schätzwerte), physics_test.js (44 Prüfungen, analytisch; Mutationstest: Rückprall und Drehmoment geändert → Tests rot), ADR-051, CI/Dashboard kopieren physics.js. Rat des Advisors im ADR.
+Lokal geprüft: Tests unter jsc (kein node hier): 44 + 80 ok; ctest grün; board validate grün. Nicht geprüft: Roboter-Builds (kein PROS), test_livesim.py unter node (hier übersprungen, CI führt es aus), **Anzeige im Browser: gesehen** (Chrome über DevTools-Protokoll, Stacker fährt in CENTER_STACK_R1-Cup: Kippen bei 13/31/51/70/86°, dann liegend, TOPPLED im Ereignislog; `cam`/`controls` dafür in `window.FBViewer` exponiert). Nicht gesehen: liegende Pins mit gelber Seite aus dem Feldplan.
+Am Rechner zu prüfen: Liegende Pins aus dem Feldplan: gelbe Seite richtig? Stimmt das Gefühl (Roboter fährt im Livesim mit ca. 53 in/s, Schätzwert)? Werte in `physik` (Rückprall, Reibung, kontakt_hoehe_in) nach Gefühl nachstellen.
 
 KI-Review PR #114 (Empfehlung: ändern): (1) tests-macos in CI neu starten (rot, vermutlich Timeout); (2) livesim.js touchBodies: doppeltes `var len`, Guard gegen len=0 (NaN); (3) Mergebarkeit gegen main prüfen/rebasen (#115, #116 sind gestapelt).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt (Wunsch des Menschen: sichtbare Physik und Stapeln) · –
+2026-11-12 · arjanssen (KI) · Physik, Livesim-Einbindung, Anzeige, Tests, ADR-051 · siehe Branch

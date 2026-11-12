@@ -31,7 +31,7 @@ jobs:
           ./build-test/frostbyte_sim --demo --seed 1 --out viewer-demo/demo
           test -s viewer-demo/demo/run000_stacker.csv
           test -s viewer-demo/demo/run000_runner.csv
-          cp tools/viewer/index.html tools/viewer/logparse.js tools/viewer/robots.js tools/viewer/livesim.js viewer-demo/
+          cp tools/viewer/index.html tools/viewer/logparse.js tools/viewer/robots.js tools/viewer/physics.js tools/viewer/livesim.js viewer-demo/
           cp sim/sim_params.json viewer-demo/sim_params.json
           cp field/field.json viewer-demo/field.json
       - name: 100 Läufe in höchstens 30 s und Bericht
