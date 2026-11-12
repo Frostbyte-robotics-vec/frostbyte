@@ -26,8 +26,9 @@ Das GitHub-Release `vex-step-1.0.0` bleibt vorerst bestehen; Löschen entscheide
 —
 
 ## Übergabe
-Noch nicht begonnen.
+Stand: fertig, PR offen. Script, Test, BIBLIOTHEK.md, /start-Aufruf und Anleitungsabschnitt entfernt. Release `vex-step-1.0.0` auf GitHub steht noch (Mensch entscheidet über Löschen). Am Roboter nichts zu prüfen.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-11 · arjanssen (KI) · Ticket angelegt · –
+2026-11-11 · arjanssen (KI) · CAD-03-Dateien entfernt, /start und Anleitung bereinigt · ticket/cad-04
