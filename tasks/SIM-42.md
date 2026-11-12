@@ -25,7 +25,7 @@ Vermutungen (nicht geprüft, zuerst mit Test oder Blick im Browser bestätigen):
 - Eine Stufe = eine Stapelebene (`lift_stufe_in`), oberste Stufe endet bei `max_deg`
 - Greifen nur auf Teilhöhe, SG6 vor der Auswahl, Pin und Cup in der Hand ineinander, Q–F–Q stapelt (Browser)
 - Tests mit Fixture-Werten (95 + 80), Laptop-Tests und `board.py validate` grün, ADR-051-Nachtrag
-- **Punkt 3 (Physik sieht unnatürlich aus) ist abgespalten nach SIM-43**: braucht konkrete Beschreibung des Menschen, was falsch aussieht
+- Physik (Punkt 3) **nur teilweise**: `release()` setzt Neigung zurück (Test). Der Rest (Kippen nach Gefühl, `toLying` ohne Überlappungsauflösung, `settle`, `pushStanding`) steht in SIM-43; ob das Aussehen besser ist, kann nur der Mensch beurteilen
 - Offene SIM-41-Funde: bleiben in SIM-41 (hier erledigt: Modellzahlen ±0,3, Greifhöhe zweiseitig, SG6 vor der Auswahl)
 
 ## Kontext
@@ -35,7 +35,7 @@ tools/viewer/livesim.js (doLift, handPos), tools/viewer/index.html (updateLive, 
 —
 
 ## Übergabe
-Stand (2026-11-12): fertig, PR offen. Lift (hand_hoehe, liftDeg/handZ, Viewer stellt das Modell), Stufen = lift_stufe_in, Greifhöhe, SG6 vor der Auswahl, Pin auf Cup in der Hand, Q zuerst Cup. Mutationstest: ohne Höhenprüfung bzw. ohne SG6-Filter werden die jeweiligen Tests rot. SIM-40-Abhängigkeit: PR #116 ist gemergt, das Board war nur nicht nachgezogen.
+Stand (2026-11-12): fertig bis auf Physik (siehe SIM-43), PR offen. Neu seit dem ersten Stand: Greifhöhe (`greif_hoehe_in`), Klaue an der Haltestelle (LIVE_CLAW_T, basis_in 21,34), Pin sinkt nach dem Cup nicht ein, release setzt theta zurück. Lift (hand_hoehe, liftDeg/handZ, Viewer stellt das Modell), Stufen = lift_stufe_in, Greifhöhe, SG6 vor der Auswahl, Pin auf Cup in der Hand, Q zuerst Cup. Mutationstest: ohne Höhenprüfung bzw. ohne SG6-Filter werden die jeweiligen Tests rot. SIM-40-Abhängigkeit: PR #116 ist gemergt, das Board war nur nicht nachgezogen.
 Am Rechner zu prüfen: Fühlt sich der Lift richtig an (Stufenhöhe 4,5 in, Tempo 20 in/s: Schätzwerte)? Stimmen `basis_in`/`hub_in` mit dem echten Roboter (M-11)? Der Greifarm bleibt im Livesim in Greifstellung (Klaue hängt am Schlitten), gehaltene Teile erscheinen 2,5 in vor dem Umriss: stimmt das optisch? Physik: siehe SIM-43.
 
 ## Verlauf
@@ -44,3 +44,4 @@ Am Rechner zu prüfen: Fühlt sich der Lift richtig an (Stufenhöhe 4,5 in, Temp
 2026-11-12 · arjanssen (KI) · Lift im Livesim: Winkel aus Handhöhe, Modell folgt · siehe Branch
 2026-11-12 · arjanssen (KI) · Greifhöhe zweiseitig, SG6 vor Auswahl · siehe Branch
 2026-11-12 · arjanssen (KI) · Stufen = Stapelebene, Pin auf Cup in der Hand, ADR-Nachtrag, Punkt 3 nach SIM-43 abgespalten · siehe Branch
+2026-11-12 · arjanssen (KI) · Griffhöhe, Klaue/Haltestelle gemessen, release-Fix, ADR · siehe Branch

@@ -296,7 +296,7 @@ var FBPhysics = (function () {
       release: function (i) {
         var b = bodies[i];
         if (b.state !== 'held') return false;
-        b.state = 'falling'; b.vz = 0;
+        b.state = 'falling'; b.vz = 0; b.theta = 0; b.omega = 0;   // eine Restneigung aus dem Aufrichten gilt nicht für den Fall
         return true;
       },
       // Richtung (Feld, Grad) des oberen Endes eines Objekts, das von Anfang an liegt und noch nie berührt wurde.

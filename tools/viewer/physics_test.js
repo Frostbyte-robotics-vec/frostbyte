@@ -382,6 +382,15 @@ function runPhysicsTests(FBPhysics, FBLive) {
     w = lyingPin();
     const before = w.pose(0), b = w.bodies[0];
     check('hold auf ein liegendes Teil: gehalten, Fußpunkt und Höhe wie vorher gezeichnet (kein Sprung)', w.hold(0) && b.state === 'held' && (() => { const q = w.pose(0); return Math.hypot(q.bx_in - before.bx_in, q.by_in - before.by_in, q.z_in - before.z_in) < 1e-9 && q.tilt_deg === 90; })(), JSON.stringify([before, w.pose(0)]));
+    // SIM-42 (SIM-41-Fund): mitten im Aufrichten losgelassen landet das Teil senkrecht, ohne Restneigung
+    {
+      const w2 = lyingPin(), b2 = w2.bodies[0];
+      w2.hold(0); w2.moveHeld(0, 12, 6, 4, DT);
+      check('Vorbedingung: Teil ist beim Loslassen noch geneigt', b2.theta > 0.1, String(b2.theta));
+      w2.release(0);
+      for (let k = 0; k < 400; k++) w2.step(DT);
+      check('Loslassen mitten im Aufrichten: Teil steht senkrecht (theta = 0, omega = 0)', b2.state === 'standing' && b2.theta === 0 && b2.omega === 0 && w2.pose(0).tilt_deg === 0, b2.state + ' ' + b2.theta);
+    }
     let prevPose = w.pose(0), maxJump = 0, monotone = true, steps = 0, prevTilt = 90;
     while (!w.moveHeld(0, 12, 6, 4, DT) && steps < 5000) {
       steps++;
