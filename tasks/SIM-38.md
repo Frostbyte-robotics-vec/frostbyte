@@ -30,8 +30,8 @@ docs/decisions/ADR-025-livesim-browser.md (Nachträge SIM-30, SIM-34), sim/field
 
 ## Übergabe
 Stand (2026-11-12): umgesetzt, bereit für Review. physics.js (Kippen, Fallen, Liegen, Stoß), Einbindung in livesim.js (nur mit Block `physik`), Anzeige in index.html (`o.draw`), Block `physik` in sim_params.json (Schätzwerte), physics_test.js (44 Prüfungen, analytisch; Mutationstest: Rückprall und Drehmoment geändert → Tests rot), ADR-051, CI/Dashboard kopieren physics.js. Rat des Advisors im ADR.
-Lokal geprüft: Tests unter jsc (kein node hier): 44 + 80 ok; ctest grün; board validate grün. Nicht geprüft: Roboter-Builds (kein PROS), test_livesim.py unter node (hier übersprungen, CI führt es aus), **Anzeige im Browser** (headless-Chrome-Steuerung wurde nicht erlaubt).
-Am Rechner zu prüfen: index.html über http öffnen, Live starten, in einen Cup/Pin fahren: kippt er sichtbar um die Kante, prallt, bleibt liegen? Liegende Pins aus dem Feldplan: gelbe Seite richtig? Werte in `physik` (Rückprall, Reibung, kontakt_hoehe_in) nach Gefühl nachstellen.
+Lokal geprüft: Tests unter jsc (kein node hier): 44 + 80 ok; ctest grün; board validate grün. Nicht geprüft: Roboter-Builds (kein PROS), test_livesim.py unter node (hier übersprungen, CI führt es aus), **Anzeige im Browser: gesehen** (Chrome über DevTools-Protokoll, Stacker fährt in CENTER_STACK_R1-Cup: Kippen bei 13/31/51/70/86°, dann liegend, TOPPLED im Ereignislog; `cam`/`controls` dafür in `window.FBViewer` exponiert). Nicht gesehen: liegende Pins mit gelber Seite aus dem Feldplan.
+Am Rechner zu prüfen: Liegende Pins aus dem Feldplan: gelbe Seite richtig? Stimmt das Gefühl (Roboter fährt im Livesim mit ca. 53 in/s, Schätzwert)? Werte in `physik` (Rückprall, Reibung, kontakt_hoehe_in) nach Gefühl nachstellen.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
