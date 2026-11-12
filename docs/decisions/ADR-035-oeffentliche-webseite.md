@@ -10,4 +10,4 @@ Status: angenommen (4. Nov 2026), Ticket W-01.
 - Leere Listen blenden ihren Abschnitt aus. Es gibt keine Beispiel-Sponsoren und keine Platzhaltertexte auf der veröffentlichten Seite.
 
 ## Nicht entschieden (Mensch)
-Sprache, eigene Domain, eigenes Repo für eine Adresse ohne `/frostbyte/`, Texte und Kontaktdaten: siehe tasks/W-01.md.
+Sprache (entschieden: ADR-046), eigene Domain (entschieden: ADR-049), eigenes Repo für eine Adresse ohne `/frostbyte/` (erledigt durch die Domain, ADR-049), Texte und Kontaktdaten: siehe tasks/W-01.md.

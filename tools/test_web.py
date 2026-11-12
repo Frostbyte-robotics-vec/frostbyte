@@ -351,6 +351,16 @@ class WebTest(unittest.TestCase):
         css = (WEB / "assets" / "style.css").read_text(encoding="utf-8")
         self.assertIn("prefers-reduced-motion", css)
 
+    def test_keine_verweise_auf_alte_github_adresse(self):
+        # W-10: Seite liegt unter https://frostbyterobotics.ch (ADR-049); Pfade mit /frostbyte/ oder github.io würden brechen
+        for pfad in sorted(WEB.rglob("*")):
+            if pfad.suffix not in (".html", ".css", ".js", ".json") or not pfad.is_file():
+                continue
+            text = pfad.read_text(encoding="utf-8")
+            self.assertNotIn("github.io", text, str(pfad))
+            self.assertNotRegex(text, r"""(?:href|src|url\()=?["']?/frostbyte/""", str(pfad))
+            for dom in re.findall(r"https?://frostbyterobotics\.[a-z]+", text):
+                self.assertEqual(dom, "https://frostbyterobotics.ch", str(pfad))
 
     def test_impressum_seiten_haben_angaben_und_verweisen_zurueck(self):
         # W-13: Angaben stammen vom Menschen (Chat 2026-11-11), nichts erfunden
