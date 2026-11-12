@@ -362,6 +362,14 @@ class WebTest(unittest.TestCase):
             for dom in re.findall(r"https?://frostbyterobotics\.[a-z]+", text):
                 self.assertEqual(dom, "https://frostbyterobotics.ch", str(pfad))
 
+    def test_datenschutz_nennt_die_formulare(self):
+        # W-15: seit W-14 gibt es zwei Formulare (mailto, ADR-050); der Datenschutztext muss sie nennen
+        for name, satz in (("impressum.html", "Die Formulare öffnen dein Mail-Programm"),
+                           ("en/imprint.html", "The forms open your mail program")):
+            html = lade(name)
+            self.assertIn(satz, html, name)
+            self.assertIn("nichts gespeichert" if name == "impressum.html" else "nothing is stored", html, name)
+
     def test_impressum_seiten_haben_angaben_und_verweisen_zurueck(self):
         # W-13: Angaben stammen vom Menschen (Chat 2026-11-11), nichts erfunden
         erwartet = {
