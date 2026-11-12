@@ -197,7 +197,9 @@ TEST_CASE("route: Windows-Zeilenenden und Tabs") {
     CHECK_MESSAGE(r.ok(), r.error);
 }
 
-TEST_CASE("route: alle Routen in routes/ lesen sich mit den Namen aus field.json") {
+TEST_CASE(
+    "route: alle Routen in routes/ lesen sich (nur Syntax und Namen; Zeiten und Ziele sind Entwurf und werden nicht "
+    "geprüft)") {
     const RouteNames n = route_names_from_field(std::string(FB_ROOT_DIR) + "/field/field.json");
     CHECK(n.goals.size() == 9);
     CHECK(n.loaders.size() == 4);

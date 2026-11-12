@@ -73,3 +73,6 @@ endforeach()
 
 enable_testing()
 add_test(NAME unit COMMAND frostbyte_tests)
+add_test(NAME sim_cli_determinism
+         COMMAND ${CMAKE_COMMAND} -DSIM=$<TARGET_FILE:frostbyte_sim> -DFIXTURES=${CMAKE_CURRENT_SOURCE_DIR}/fixtures
+                 -DOUT=${CMAKE_CURRENT_BINARY_DIR}/cli_determinism -P ${CMAKE_CURRENT_SOURCE_DIR}/cli_determinism.cmake)
