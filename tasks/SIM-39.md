@@ -2,7 +2,7 @@
 id: SIM-39
 phase: "5"
 titel: Greifen, Ablegen und Stapeln im Browser-Livesim (Cups/Pins aufnehmen, auf Goals und Stapel setzen, Fall auf die Stapelspitze)
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-39
 depends: [SIM-38]
