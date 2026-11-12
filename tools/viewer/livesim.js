@@ -305,14 +305,15 @@ var FBLive = (function () {
         var m = penetrationBoxCircle(boxOf(r), { x_in: b.x, y_in: b.y, r_in: b.r });
         if (!m) return;
         lastTouch[b.id] = name;
+        var len = Math.sqrt(m.x * m.x + m.y * m.y);
+        if (!(len > 0)) return;   // Überlappungsvektor 0: keine Richtung zum Wegschieben (sonst NaN)
         if (b.state !== 'lying') {
-          var len = Math.sqrt(m.x * m.x + m.y * m.y);
           phys.pushStanding(i, -m.x / len, -m.y / len, len, dt);
           return;
         }
         // Weicht über physik.ausweich_s aus (Geschwindigkeit statt Sprung): das Objekt mit dem Anteil (1 − roboter_anteil) der
         // Überlappung, mindestens aber mit der Fahrgeschwindigkeit des Roboters; der Roboter weicht um seinen Anteil zurück.
-        var len = Math.sqrt(m.x * m.x + m.y * m.y), px = -m.x / len, py = -m.y / len, tau = phys.cfg.evade_s;
+        var px = -m.x / len, py = -m.y / len, tau = phys.cfg.evade_s;
         var hr = r.h_deg * DEG, vn = Math.max(0, (r.left.v + r.right.v) / 2 * (Math.cos(hr) * px + Math.sin(hr) * py));
         phys.pushLying(i, px, py, vn + (1 - share) * len / tau);
         var wall = (px > 0 && b.x >= half - b.r - 1e-9) || (px < 0 && b.x <= -half + b.r + 1e-9) || (py > 0 && b.y >= half - b.r - 1e-9) || (py < 0 && b.y <= -half + b.r + 1e-9);
