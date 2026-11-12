@@ -75,7 +75,6 @@ Nach jedem Ticket: Pull Request von jemand anderem lesen lassen und mergen.
 ## Fortschrittsseite
 Eine Webseite zeigt jederzeit den Stand: erledigte Tickets, Fortschritt pro Phase, wer woran arbeitet (mit Übergabe),
 welcher Merge was freischaltet, die letzten Einträge und alle Tickets zum Filtern.
-- Online: GitHub Pages unter https://frostbyterobotics.ch (öffentliche Teamseite, ADR-035/ADR-049), das Board unter https://frostbyterobotics.ch/board/ (Forks: https://<besitzer>.github.io/frostbyte/board/) – wird bei jedem Push auf main neu gebaut (.github/workflows/dashboard.yml).
-  Achtung: Eine Pages-Seite ist öffentlich erreichbar, auch wenn das Repo privat ist (nur mit GitHub Enterprise nicht).
-  Sie zeigt Ticket-Titel und eure Board-Namen, keinen Code. Wollt ihr das nicht: Workflow löschen und lokal arbeiten.
+- Online: nicht mehr. Unter https://frostbyterobotics.ch liegt nur die öffentliche Teamseite (ADR-035/ADR-049, W-12); Board, Viewer und Simulation werden nicht veröffentlicht (.github/workflows/dashboard.yml baut nur web/ und die News).
+  Das Repo selbst ist öffentlich, Tickets und Code bleiben dort sichtbar; es geht nur um die veröffentlichten Seiten.
 - Lokal: python3 tools/board.py export site/board, dann site/board/index.html im Browser öffnen.
