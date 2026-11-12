@@ -285,7 +285,7 @@ TEST_CASE("Claw: Modi haben getrennte Schwellen") {
     CHECK(cup.claw.result() == ClawResult::missed);
 }
 
-// Grenzfälle: direkt gefütterte Sensorwerte statt der Strecke. Alle Zeiten sind Vielfache von 0.125 s (exakt in double),
+// Grenzfaelle: direkt gefuetterte Sensorwerte statt der Strecke. Alle Zeiten sind Vielfache von 0.125 s (exakt in double),
 // damit "genau auf der Grenze" wirklich genau ist. Der Takt ist dt = 0.125 s; das erste update() hat dt = 0.
 namespace {
 
@@ -321,7 +321,7 @@ struct Stepper {
     }
 };
 
-// Öffnen bis "open" mit der Lage open_pos.
+// Oeffnen bis "open" mit der Lage open_pos.
 void open_claw(Stepper& k) {
     REQUIRE(k.claw.request_open(k.t));
     k.claw.update(k.t, still(open_pos));  // dt = 0
