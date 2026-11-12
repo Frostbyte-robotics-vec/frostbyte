@@ -208,7 +208,7 @@ class WebTest(unittest.TestCase):
             self.assertNotIn("novagear.png", sup, name)
             self.assertIn("Hauptpartner" if name == "index.html" else "Main partner", haupt, name)
             self.assertIn("Supporter", sup, name)
-            self.assertIn('href="#partner-werden"', wand, name)
+            self.assertNotIn('class="slot"', wand, name)  # W-16: kein Platz "Partner werden" neben dem Supporter
             self.assertNotIn("Ihr Logo", wand, name)
             self.assertNotIn("Your logo", wand, name)
 
