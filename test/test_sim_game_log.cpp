@@ -11,7 +11,6 @@ using namespace frostbyte::sim;
 
 namespace {
 
-const std::string root = FB_ROOT_DIR;
 const std::string fixtures = FB_TEST_FIXTURES;
 
 // Letzte Spalte "score" je Zeile; leer = ""
@@ -42,9 +41,10 @@ std::vector<std::string> score_column(const std::string& csv) {
 }
 
 SimConfig demo_with_game() {
-    SimConfig cfg = load_config(root + "/sim/sim_params.json", root + "/field/field.json", "", "");
-    apply_demo(cfg, root + "/sim/sim_params.json");
-    // Annahmen und Platzhalter festnageln: die Tests hängen nicht an `schaetzung`-Werten oder der Demo-Fahrt.
+    // Fixtures statt sim/sim_params.json und field/field.json: die Tests hängen nicht an `schaetzung`-Werten (F-13).
+    SimConfig cfg = load_config(fixtures + "/sim_params_game.json", fixtures + "/field_game.json", "", "");
+    apply_demo(cfg, fixtures + "/sim_params_game.json");
+    // Annahmen festnageln: die Tests hängen nicht an der Demo-Fahrt.
     cfg.game.cup_opaque_lower = false;
     cfg.game.midfield.present = false;
     return cfg;
@@ -78,8 +78,9 @@ TEST_CASE("Demo mit Spielzustand: score steht in jeder Zeile beider Roboter, und
 
 TEST_CASE("Demo mit Spielzustand: gleicher Seed = byte-gleiche Logs, Spielzufall verschiebt die Posen nicht") {
     const auto run = [](bool with_game, std::uint64_t seed) {
-        SimConfig cfg = with_game ? demo_with_game()
-                                  : load_config(root + "/sim/sim_params.json", root + "/field/field.json", "", "");
+        SimConfig cfg = with_game
+                            ? demo_with_game()
+                            : load_config(fixtures + "/sim_params_game.json", fixtures + "/field_game.json", "", "");
         if (!with_game)
             apply_demo(cfg);
         std::ostringstream s, r;

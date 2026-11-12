@@ -66,7 +66,7 @@ TEST_CASE("HeightMap: ungültige Tabelle (nicht steigend) wird nicht gültig") {
     CHECK_FALSE(h.valid());
 }
 
-TEST_CASE("Mechanismen laden: hoehe aus sim_params.json, ohne hoehe ist sie nicht modelliert") {
+TEST_CASE("Mechanismen laden: hoehe aus eingebettetem JSON (nur Ladecode), ohne hoehe nicht modelliert") {
     const char* text = R"({"roboter":{"a":{"mechanismen":{
         "lift":{"min_deg":0,"max_deg":100,"max_deg_s":90,"max_deg_s2":500,
                 "hoehe":{"winkel_deg":[0,25,50,75,100],"hoehe_in":[9,19,29,39,49],"quelle":"Test"}},
