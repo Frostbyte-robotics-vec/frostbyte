@@ -2,7 +2,7 @@
 id: SIM-40
 phase: "5"
 titel: Liegende Cups/Pins im Browser-Livesim greifen: sichtbares Aufrichten in der Hand (Folge von SIM-39)
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-40
 depends: [SIM-39]
@@ -26,8 +26,10 @@ tasks/SIM-39.md, docs/decisions/ADR-051 (Nachtrag SIM-39: „liegende Objekte we
 —
 
 ## Übergabe
-Noch nicht begonnen.
+Stand (2026-11-12): umgesetzt, bereit für Review. Baut auf ticket/sim-39 auf (PR #115 noch offen; PR gegen ticket/sim-39). `aufricht_rad_s` (optional, Schätzwert), `hold` für liegende Teile über den Fußpunkt, `moveHeld` richtet auf, Livesim greift liegende Teile. Tests: physics_test.js 85 ok (Mutation „kein Aufrichten“ → rot), livesim_test.js 80 ok, ctest, validate. Im Browser nicht eigens angesehen (Anzeige läuft über `draw` wie SIM-38/39).
+Am Rechner zu prüfen: liegenden Pin aus dem Feldplan greifen (E): richtet er sich ruhig in der Hand auf? Passt `aufricht_rad_s` (6 rad/s geschätzt)?
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt (Lücke aus SIM-39) · –
+2026-11-12 · arjanssen (KI) · Liegende Teile greifen und aufrichten, Tests, ADR-Nachtrag · siehe Branch
