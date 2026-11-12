@@ -2,7 +2,7 @@
 id: CAD-04
 phase: "1"
 titel: VEX-STEP-Download wieder entfernen (Team hat die Bibliothek per WhatsApp)
-status: review
+status: done
 owner: arjanssen
 branch: ticket/cad-04
 depends: [CAD-03]
