@@ -54,6 +54,33 @@
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){say(copyBtn.dataset.ok||'E-Mail-Adresse kopiert');},fallback);}else fallback();
   });
 
+  // Formulare (W-14, ADR-050): setzen aus den Feldern eine E-Mail an die Teamadresse zusammen und öffnen das Mail-Programm.
+  // Alle Texte der Mail und der Meldungen stehen in der Seite (Labels, data-Attribute), nicht hier (ADR-046). Es wird nichts gesendet.
+  [].forEach.call(document.querySelectorAll('form.mailform'),function(form){
+    var status=form.querySelector('.fstatus');
+    function show(msg,err){status.textContent=msg;status.classList.toggle('err',!!err);}
+    form.addEventListener('input',function(e){if(e.target.getAttribute('aria-invalid')&&e.target.checkValidity())e.target.removeAttribute('aria-invalid');});
+    form.addEventListener('submit',function(e){
+      e.preventDefault();
+      if(!form.checkValidity()){
+        [].forEach.call(form.elements,function(el){if(el.willValidate)el.setAttribute('aria-invalid',el.checkValidity()?'false':'true');});
+        show(form.dataset.invalid,true);
+        var bad=form.querySelector(':invalid'); if(bad)bad.focus();
+        return;
+      }
+      [].forEach.call(form.elements,function(el){el.removeAttribute('aria-invalid');});
+      var lines=[];
+      [].forEach.call(form.querySelectorAll('label.fld'),function(l){
+        var el=l.querySelector('input,select,textarea'); if(!el||!el.value.trim())return;
+        var lab=l.querySelector('.lab').firstChild.textContent.trim();
+        lines.push(lab+': '+el.value.trim());
+      });
+      var href='mailto:'+form.dataset.to+'?subject='+encodeURIComponent(form.dataset.subject)+'&body='+encodeURIComponent(lines.join('\r\n\r\n'));
+      var a=document.createElement('a'); a.href=href; a.hidden=true; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      show(form.dataset.sent+' '+form.dataset.to+'.',false);
+    });
+  });
+
   // Binär-Schnee im Hero
   var cv=document.getElementById('snow'); if(!cv||reduce) return;
   var ctx=cv.getContext('2d'), W=0, H=0, dpr=Math.min(2,window.devicePixelRatio||1), parts=[];
