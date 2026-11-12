@@ -268,3 +268,14 @@ TEST_CASE("Health: Kabel ziehen -> Text am Controller in höchstens 200 ms (alle
     }
     CHECK(worst_ms <= 200.0);
 }
+
+TEST_CASE("Health: Akku warnt genau bei battery_warn_v, knapp darueber nicht") {
+    FakeMotor m;
+    HealthMonitor<2> h{test_cfg()};
+    REQUIRE(h.add_motor(m, "Lift"));
+    HealthInput in = ok_input();
+    in.battery_v = 11.0625;  // knapp ueber der Schwelle 11.0 (exakt in double)
+    CHECK(h.update(in).warning == HealthWarning::none);
+    in.battery_v = 11.0;  // genau auf der Schwelle
+    CHECK(h.update(in).warning == HealthWarning::battery_low);
+}
