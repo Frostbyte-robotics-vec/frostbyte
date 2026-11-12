@@ -22,8 +22,10 @@ HEAD_TOL_DEG = 0.5
 
 def run_node(body):
     src = (HERE / "logparse.js").read_text(encoding="utf-8") + "\n" + \
+        (HERE / "physics.js").read_text(encoding="utf-8") + "\n" + \
         (HERE / "livesim.js").read_text(encoding="utf-8") + "\n" + \
-        (HERE / "livesim_test.js").read_text(encoding="utf-8") + "\n" + body
+        (HERE / "livesim_test.js").read_text(encoding="utf-8") + "\n" + \
+        (HERE / "physics_test.js").read_text(encoding="utf-8") + "\n" + body
     with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
         f.write(src)
     try:
@@ -48,6 +50,12 @@ class TestLivesim(unittest.TestCase):
         self.assertEqual(res["fail"], 0, "\n".join(res["msgs"]))
         self.assertGreater(res["ok"], 30)
 
+    def test_physik_der_objekte(self):
+        """SIM-38: Kippen, Fallen, Liegen, Stoß; Energiebilanz und Fallzeit analytisch (physics_test.js)."""
+        res = run_node("console.log(JSON.stringify(runPhysicsTests(FBPhysics, FBLive)));")
+        self.assertEqual(res["fail"], 0, "\n".join(res["msgs"]))
+        self.assertGreater(res["ok"], 30)
+
     def test_spalten_wie_log_format(self):
         res = run_node("console.log(JSON.stringify(FBLive.LOG_COLUMNS));")
         self.assertEqual(res, mtl.COLUMNS)
@@ -60,7 +68,8 @@ const params = {params.read_text(encoding="utf-8")}, field = {field.read_text(en
 const live = FBLive.create(params, field);
 live.setKeys({{ w: true }});
 for (let i = 0; i < 100; i++) live.advance(0.01);
-console.log(JSON.stringify({{ notes: live.notes.length, pose: live.pose('stacker') }}));""")
+console.log(JSON.stringify({{ notes: live.notes.length, pose: live.pose('stacker'), draw: live.objects().every(o => !!o.draw), n: live.objects().length }}));""")
+        self.assertTrue(res["draw"] and res["n"] > 0, "Block physik in sim_params.json: jedes Objekt hat Zeichendaten")
         self.assertLessEqual(res["notes"], 2)
         self.assertTrue(all(abs(v) < 1e6 for v in res["pose"].values()))
 

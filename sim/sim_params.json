@@ -10,6 +10,20 @@
     "aufnahme": { "reichweite_in": 3.0, "liegt_zusatz_dauer_s": 1.0, "liegt_zusatz_fehlschlag": 0.2 },
     "quelle": "schaetzung (aufnahme (SIM-34): reichweite_in = Abstand vom Roboterumriss, in dem der Roboter ein Bodenobjekt aufnimmt, liegt_zusatz_* = Zuschlag auf Dauer und Fehlschlag für ein vom Roboter umgestoßenes Objekt, alle drei geschätzt, aus Aufnahmeversuchen ersetzen; radius_in: Game Manual v2.1 S. A5/A6 (größter Ø 3.16), Zahl aus Ticket SIM-33, noch nicht am PDF geprüft; roboter_anteil: schaetzung (Anteil der Überlappung, den der Roboter beim Schieben eines liegenden Objekts zurückweicht; 0 = Objekt gibt ganz nach, 1 = Wand; Wert aus Fahrversuchen ersetzen, SIM-30))"
   },
+  "physik": {
+    "hoehe_in": { "cup": 6.5, "pin": 6.5 },
+    "schwerpunkt_anteil": { "cup": 0.4, "pin": 0.5 },
+    "rueckprall": 0.25,
+    "ruhe_omega_rad_s": 1.0,
+    "gleit_reibung": 0.4,
+    "ruhe_v_in_s": 1.0,
+    "stoss_rueckprall": 0.5,
+    "fall_rueckprall": 0.2,
+    "kontakt_hoehe_in": 4.0,
+    "kick_faktor": 1.0,
+    "ausweich_s": 0.05,
+    "quelle": "schaetzung (SIM-38, nur Browser-Livesim, ADR-051; hoehe_in: Game Manual v2.1 / Feld-CAD (SIM-37: Pin 6,50, Cup 6,48 in); alle anderen Zahlen geschätzt, aus Videos oder Fallversuchen ersetzen: schwerpunkt_anteil = Schwerpunkthöhe / Höhe (Cup als Kegel tiefer), rueckprall = Anteil der Winkelgeschwindigkeit nach dem Aufschlag, gleit_reibung = Gleitreibzahl liegend auf den Matten, kontakt_hoehe_in = Höhe, in der ein Roboter ein stehendes Objekt berührt, ausweich_s = Zeit, in der ein liegendes Objekt der Roboterüberlappung ausweicht)"
+  },
   "motoren": {
     "v5": { "widerstand_ohm": 4.0, "max_strom_A": 2.5, "quelle": "schaetzung (V5-Motor 11 W: Stall bei 12 V etwa 2,5 A; Widerstand daraus grob; SIM-08/M-13 messen; noch von keinem Lader gelesen, F-08)" }
   },

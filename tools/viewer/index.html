@@ -190,6 +190,7 @@ body[data-ansicht="sim"] #livectl{display:flex}
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="logparse.js"></script>
 <script src="robots.js"></script>
+<script src="physics.js"></script>
 <script src="livesim.js"></script>
 <script src="fieldmodels.js"></script>
 <script src="models/models.js" onerror="void 0"></script><!-- CAD-Modelle der Spielelemente, mit tools/export_field_models.py erzeugt (SIM-37, ADR-045); fehlt die Datei, einfache Körper -->
@@ -701,13 +702,26 @@ function makeObjectMesh(o){
   m.userData = { cad: false, h, r: o.r_in }; m.castShadow = true;
   return m;
 }
-const OBJ_UP = new THREE.Vector3(0, 1, 0);
+const OBJ_UP = new THREE.Vector3(0, 1, 0), OBJ_TIP = new THREE.Vector3();
 function updateObjects(L){
   L.sim.objects().forEach((o, i) => {
     let m = L.objects[i];
     if (m && !m.userData.cad && CADM.ready && CADM.tpl[FBModels.objectKey(o)]) { scene.remove(m); m = null; }   // Modelle kamen nach dem Start
     if (!m) { m = makeObjectMesh(o); scene.add(m); L.objects[i] = m; }
     const u = m.userData;
+    if (o.draw) {   // Physik (SIM-38): Fußpunkt, Neigung und Richtung kommen aus der Simulation, kein Sprung zwischen den Zuständen
+      const d = o.draw, t = d.tilt_deg * Math.PI / 180, a = d.dir_deg * Math.PI / 180;
+      if (u.cad && !u.liegeRichtung && o.state === 'lying' && typeof o.yellow_deg === 'number') {   // Pin, der von Anfang an liegt: gelbe Seite wie im Feldplan
+        const ax = FBModels.lyingAxis(u.entry, o.yellow_deg);
+        L.sim.setLieDir(o.id, Math.atan2(-ax[2], ax[0]) * 180 / Math.PI);
+        u.liegeRichtung = true;   // dieses Bild zeichnet noch mit der alten Richtung, das nächste mit der neuen
+      }
+      OBJ_TIP.set(Math.sin(t) * Math.cos(a), Math.cos(t), -Math.sin(t) * Math.sin(a));   // Längsachse: Senkrechte, zur Kipprichtung geneigt
+      m.quaternion.setFromUnitVectors(OBJ_UP, OBJ_TIP);
+      m.position.set(d.bx_in, d.z_in, -d.by_in);
+      if (!u.cad) m.position.addScaledVector(OBJ_TIP, u.h / 2);   // der einfache Zylinder hat seinen Ursprung in der Mitte
+      return;
+    }
     if (o.standing) { m.position.set(o.x_in, u.h / 2, -o.y_in); m.quaternion.identity(); return; }
     m.position.set(o.x_in, u.r, -o.y_in);
     if (u.cad) { const a = FBModels.lyingAxis(u.entry, o.yellow_deg); m.quaternion.setFromUnitVectors(OBJ_UP, new THREE.Vector3(a[0], a[1], a[2])); }
@@ -817,7 +831,7 @@ if (q.has('selftest')) {
     el.textContent = (el.hidden ? '' : el.textContent + '\n') + `Selbsttest ${name}: ${r.ok} ok, ${r.fail} Fehler` + (r.msgs.length ? '\n' + r.msgs.join('\n') : '');
     el.className = bad ? 'bad' : 'ok'; el.hidden = false;
   };
-  [['logparse_test.js', () => runLogparseTests(FBLog), 'logparse'], ['livesim_test.js', () => runLivesimTests(FBLive, FBLog), 'livesim'], ['fieldmodels_test.js', () => runFieldmodelsTests(FBModels), 'fieldmodels']].forEach(([src, run, name]) => {
+  [['logparse_test.js', () => runLogparseTests(FBLog), 'logparse'], ['livesim_test.js', () => runLivesimTests(FBLive, FBLog), 'livesim'], ['physics_test.js', () => runPhysicsTests(FBPhysics, FBLive), 'physics'], ['fieldmodels_test.js', () => runFieldmodelsTests(FBModels), 'fieldmodels']].forEach(([src, run, name]) => {
     const s = document.createElement('script'); s.src = src;
     s.onload = () => showTest(name, run());
     document.head.appendChild(s);
