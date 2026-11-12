@@ -382,9 +382,7 @@ footer .wrap{padding-block:56px 34px;display:grid;gap:40px}
 .plogo img{height:auto;width:100%}
 .plogo-main img{max-width:620px}
 .plogo-sup img{max-width:300px}
-.ptier-row{display:grid;grid-template-columns:2fr 1fr;gap:18px}
-.ptier-row .slot{min-height:140px}
-@media (max-width:640px){.ptier-row{grid-template-columns:1fr}}
+.plogo-sup{max-width:640px}
 
 /* W-14: zehn Menüpunkte brauchen auf schmalen Laptops weniger Abstand */
 .nav ul a{white-space:nowrap}
