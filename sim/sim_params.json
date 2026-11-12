@@ -22,6 +22,19 @@
     "kontakt_hoehe_in": 4.0,
     "kick_faktor": 1.0,
     "ausweich_s": 0.05,
+    "greifen": {
+      "reichweite_in": 3.0,
+      "vorn_in": 2.5,
+      "hand_z_in": 1.0,
+      "lift_stufen": 5,
+      "lift_stufe_in": 4.5,
+      "lift_geschw_in_s": 20.0,
+      "zieh_geschw_in_s": 40.0,
+      "fangradius_in": 3.0,
+      "stapel_stufe_in": 4.5,
+      "fang_zug_1_s": 20.0,
+      "quelle": "schaetzung (SIM-39, nur Browser-Livesim, ADR-051; alles geschätzt, mit M-11/C-06 nachmessen: reichweite_in = Greifweite vor dem Umriss, vorn_in = Abstand der Hand vor dem Umriss, hand_z_in = Höhe der Hand bei Lift-Stufe 0, lift_stufen/lift_stufe_in = Stufen und Hub je Stufe, stapel_stufe_in = Höhe, die ein Teil auf dem Stapel dazugibt (ebenen.stufe_in in field.json ist null, C-06), fangradius_in = ein abgelegtes Teil wird dann zur Mitte des Goals bzw. Teils darunter gezogen; Zusammenhang: live.kollision.radius_in.goals - vorn_in muss <= fangradius_in bleiben, sonst kommt die Hand am Goal nicht in den Fangradius)"
+    },
     "quelle": "schaetzung (SIM-38, nur Browser-Livesim, ADR-051; hoehe_in: Game Manual v2.1 / Feld-CAD (SIM-37: Pin 6,50, Cup 6,48 in); alle anderen Zahlen geschätzt, aus Videos oder Fallversuchen ersetzen: schwerpunkt_anteil = Schwerpunkthöhe / Höhe (Cup als Kegel tiefer), rueckprall = Anteil der Winkelgeschwindigkeit nach dem Aufschlag, gleit_reibung = Gleitreibzahl liegend auf den Matten, kontakt_hoehe_in = Höhe, in der ein Roboter ein stehendes Objekt berührt, ausweich_s = Zeit, in der ein liegendes Objekt der Roboterüberlappung ausweicht)"
   },
   "motoren": {

@@ -48,10 +48,6 @@ function runPhysicsTests(FBPhysics, FBLive) {
   check('Fallzeit aus 20 in = √(2h/g)', Math.abs(tLand - Math.sqrt(2 * 20 / G)) < 0.002, tLand);
   check('nach dem Fall steht es ruhig auf dem Boden', w.bodies[0].state === 'standing' && w.bodies[0].z === 0 && w.bodies[0].vz === 0, JSON.stringify(w.bodies[0]));
   check('nie unter dem Boden', minZ >= 0, minZ);
-  w.drop(0, 0, 0, 20);
-  w.setSupport(() => 10);
-  run(w, 1.5);
-  check('Landung auf einer höheren Stützfläche', w.bodies[0].z === 10 && w.bodies[0].state === 'standing', w.bodies[0].z);
 
   // 5 Umfallen: Energiebilanz beim Aufschlag. Start bei θ0 über dem Kippwinkel, ohne Anfangsschwung.
   const tipFrom = (th0, dir) => {
@@ -190,6 +186,148 @@ function runPhysicsTests(FBPhysics, FBLive) {
     check('Livesim: Reset stellt Cup und Pin wieder auf', one.live.objects()[0].state === 'standing' && one.live.objects()[0].x_in === -25 && one.live.objects()[2].state === 'lying');
     const plain = FBLive.create(Object.assign({}, lp, { physik: undefined }), lf, { voltsAt: volts });
     check('Livesim ohne Block physik: Objekte ohne Physik-Felder', plain.objects()[0].draw === undefined && plain.objects()[0].state === undefined);
+  }
+
+  // ---- SIM-39: Stützflächen, Greifen, Ablegen, Stapeln ----
+  const grab = { reichweite_in: 3.0, vorn_in: 2.5, hand_z_in: 1.0, lift_stufen: 5, lift_stufe_in: 4.0, lift_geschw_in_s: 40, zieh_geschw_in_s: 80,
+    fangradius_in: 3.0, stapel_stufe_in: 4.0, fang_zug_1_s: 10 };
+  const baseG = Object.assign({}, base, { physik: Object.assign({}, physik, { greifen: grab }) });
+  const cfgG = FBPhysics.load(baseG);
+  check('greifen ist ohne Block null, mit Block gelesen', cfg.grab === null && cfgG.grab.fang_radius_in === 3.0 && cfgG.grab.stack_step_in === 4.0);
+  threw = false;
+  try { FBPhysics.load({ welt: base.welt, physik: Object.assign({}, physik, { greifen: Object.assign({}, grab, { fangradius_in: 0 }) }) }); } catch (e) { threw = true; }
+  check('Fangradius 0 wird abgelehnt', threw);
+  const makeG = (specs, goals) => { const wd = FBPhysics.create(cfgG, specs, {}); wd.setGoals(goals || []); return wd; };
+  const runG = (wd, seconds, evs) => { for (let t = 0; t < Math.round(seconds / DT); t++) { const e = wd.step(DT); if (evs) e.forEach((x) => evs.push(x)); } };
+
+  // 15 Fall auf ein Goal: landet nach √(2Δh/g) auf hoehe_in, wird zur Goal-Mitte gezogen, bleibt stehen
+  w = makeG([spec('P', 1.5, 1.0)], [{ x_in: 0, y_in: 0, z_in: 3.25 }]);
+  w.drop(0, 1.5, 1.0, 10);
+  let landT = -1;
+  const evG = [];
+  for (let t = 1; t <= 1500; t++) { w.step(DT).forEach((e) => evG.push(e)); if (landT < 0 && w.bodies[0].z <= 3.25 + 1e-9) landT = t * DT; }
+  check('Fallzeit auf das Goal = √(2·6,75/g) (±3 ms, das Teil wird währenddessen zur Mitte gezogen, die Höhe bleibt)', Math.abs(landT - Math.sqrt(2 * 6.75 / G)) < 0.003, landT);
+  check('steht auf dem Goal in dessen Mitte, ruhig', w.bodies[0].state === 'standing' && w.bodies[0].z === 3.25 && Math.abs(w.bodies[0].x) < 1e-3 && Math.abs(w.bodies[0].y) < 1e-3, JSON.stringify(w.bodies[0]));
+  check('Ereignis landed mit stacked', evG.filter((e) => e.type === 'landed').length >= 1 && evG.filter((e) => e.type === 'landed')[0].stacked === true);
+  // außerhalb des Fangradius: fällt neben das Goal auf den Boden
+  w = makeG([spec('P', 5, 0)], [{ x_in: 0, y_in: 0, z_in: 3.25 }]);
+  w.drop(0, 5, 0, 10);
+  runG(w, 1.5);
+  check('außerhalb des Fangradius: Boden, kein Stapel', w.bodies[0].z === 0 && w.bodies[0].x === 5 && w.bodies[0].state === 'standing');
+
+  // 16 Stapel: ein Teil auf dem anderen, Stufe aus den Parametern; mehr als zwei gehen auch
+  w = makeG([spec('A', 0, 0), spec('B', 0, 0), spec('C', 0, 0)], [{ x_in: 0, y_in: 0, z_in: 3.25 }]);
+  w.drop(0, 0, 0, 8); runG(w, 1.0);
+  w.drop(1, 0.5, 0, 14); runG(w, 1.0);
+  w.drop(2, -0.5, 0.5, 20); runG(w, 1.5);
+  check('drei Teile: Höhen 3,25 / 7,25 / 11,25', [0, 1, 2].every((i, k) => Math.abs(w.bodies[i].z - (3.25 + 4 * k)) < 1e-9), w.bodies.map((b) => b.z).join());
+  check('drei Teile: alle in der Goal-Mitte', w.bodies.every((b) => Math.abs(b.x) < 1e-2 && Math.abs(b.y) < 1e-2), w.bodies.map((b) => b.x + ',' + b.y).join(' '));
+
+  // 17 Stütze weg: wird das untere Teil gegriffen oder kippt es, fällt das obere (und zwar auf den Boden)
+  w = makeG([spec('CUP', 0, 0, { kind: 'cup' }), spec('PIN', 0, 0, { z_in: 4 })]);
+  check('Pin steht auf dem Cup (Start bei z = 4), nichts fällt', (runG(w, 1.0), w.bodies[1].z === 4 && w.bodies[1].state === 'standing'));
+  check('der Cup hat etwas obendrauf: nicht frei', w.isFree(0) === false && w.isFree(1) === true);
+  w.pushStanding(0, 1, 0, 1.5, DT);
+  runG(w, 2.0);
+  check('Cup kippt weg: der Pin fällt auf den Boden und steht', w.bodies[1].z === 0 && w.bodies[1].state === 'standing', JSON.stringify([w.bodies[0].state, w.bodies[1].state, w.bodies[1].z]));
+  w = makeG([spec('CUP', 0, 0, { kind: 'cup' }), spec('PIN', 0, 0, { z_in: 4 })]);
+  w.hold(0);
+  runG(w, 0.5);
+  check('Cup gegriffen: der Pin fällt', w.bodies[1].z === 0 && w.bodies[0].state === 'held');
+
+  // 18 Halten: moveHeld zieht mit endlicher Geschwindigkeit, kein Sprung
+  w = makeG([spec('P', 0, 0)]);
+  w.hold(0);
+  let far = 0, steps = 0;
+  while (!w.moveHeld(0, 8, 0, 3, DT) && steps < 5000) { steps++; far = Math.max(far, 0); }
+  check('moveHeld erreicht das Ziel mit Zieh-Geschwindigkeit (|Ziel|/v = 8,54/80 s ± 3 ms)', Math.abs(steps * DT - Math.hypot(8, 3) / 80) < 0.003, steps);
+  check('gehalten: Zustand held, Position am Ziel', w.bodies[0].state === 'held' && w.bodies[0].x === 8 && w.bodies[0].z === 3);
+  w.release(0);
+  runG(w, 1.0);
+  check('losgelassen: fällt auf den Boden und steht', w.bodies[0].state === 'standing' && w.bodies[0].z === 0);
+
+  // 19 Livesim: Greifen, Lift, Ablegen auf ein Goal, SG6. Befehle gelten am Steuertakt (cmdAt wie voltsAt).
+  {
+    const dr = (spur) => ({ kS_V: 1.0, kV_V_per_in_s: 0.2, kA_V_per_in_s2: 0.04, spurbreite_in: spur, mu: 1.0, motor_max_V: 11.5 });
+    const gp = {
+      welt: base.welt,
+      live: { langsam_faktor: 0.4, ersatzpose_in: { stacker: { x_in: 0, y_in: 0, h_deg: 0 }, runner: { x_in: 0, y_in: 0, h_deg: 0 } }, kollision: { radius_in: { goals: 4.0 } } },
+      roboter: { stacker: { antrieb: dr(12), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 12, breite: 12 } },
+                 runner: { antrieb: dr(10), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 10, breite: 10 } } },
+      feldobjekte: { radius_in: { cup: 2.0, pin: 2.0 }, roboter_anteil: 0.5 }, physik: baseG.physik };
+    const mkField = (objs) => ({ feld_in: 144, goals: [{ id: 'G1', typ: 'neutral', x_in: 0, y_in: 0, hoehe_in: 3.25 }],
+      posen: [{ id: 'START_STACKER', x_in: -40, y_in: 0, h_deg: 0 }, { id: 'START_RUNNER', x_in: 40, y_in: 60, h_deg: 180 }], objekte_start: objs });
+    const pinA = { id: 'PIN_A', x_in: -30, y_in: 0, lage: 'steht', ebene: 0, variante: 'yellow' }, cupA = { id: 'CUP_A', x_in: -30, y_in: -3.5, lage: 'steht', ebene: 0 };
+    const grabF = mkField({ cups: [cupA, { id: 'CUP_UNTEN', x_in: -60, y_in: -40, lage: 'steht', ebene: 0 }],
+                            pins: [pinA, { id: 'PIN_B', x_in: -30, y_in: 3.5, lage: 'steht', ebene: 0, variante: 'yellow' },
+                                   { id: 'PIN_LIEGT', x_in: -60, y_in: 40, lage: 'liegt', ebene: 0 }, { id: 'PIN_OBEN', x_in: -60, y_in: -40, lage: 'steht', ebene: 1 }] });
+    const oneF = mkField({ pins: [pinA] }), twoF = mkField({ cups: [cupA], pins: [pinA] });   // fahren ohne weitere Hindernisse auf dem Weg
+    // Skript: Takt (ms) → Befehl; Fahren bis 3000 ms
+    const script = (plan) => (n, t_ms) => (n === 'stacker' && plan[t_ms]) || null;
+    const volts = (n, t_ms) => (n === 'stacker' && t_ms < 3000 ? { left_V: 6, right_V: 6 } : { left_V: 0, right_V: 0 });
+    const play = (field, plan, chunkMs, endMs, withVolts) => {
+      const live = FBLive.create(gp, field, { voltsAt: withVolts === false ? () => ({ left_V: 0, right_V: 0 }) : volts, cmdAt: script(plan) });
+      const events = [], pos = {};
+      let maxJump = 0;
+      const prev = {};
+      for (let t = 0; t < endMs; t += chunkMs) {
+        live.advance(chunkMs / 1000);
+        live.takeEvents().forEach((e) => events.push(e.robot + ' ' + e.text));
+        if (chunkMs === 1) live.objects().forEach((o) => { if (prev[o.id]) maxJump = Math.max(maxJump, Math.hypot(o.draw.bx_in - prev[o.id].bx_in, o.draw.by_in - prev[o.id].by_in, o.draw.z_in - prev[o.id].z_in)); prev[o.id] = o.draw; });
+      }
+      return { live, events, maxJump, get: (id) => live.objects().filter((o) => o.id === id)[0] };
+    };
+    const g1 = { type: 'grab' }, up = { type: 'lift', dir: 1 }, rel = { type: 'release' };
+
+    const ob = play(grabF, {}, 1, 10, false);
+    check('Livesim: Pin obenauf (ebene 1) ist ein Körper, noch in der Luft über dem Boden (z = Stufe)', ob.get('PIN_OBEN') && ob.get('PIN_OBEN').draw.z_in === 4 && ob.get('PIN_OBEN').state === 'standing', ob.get('PIN_OBEN') && JSON.stringify(ob.get('PIN_OBEN').draw));
+
+    const onGoal = play(mkField({ cups: [{ id: 'CUP_G', x_in: 30, y_in: 30, lage: 'steht', ebene: 0 }], pins: [{ id: 'PIN_GOAL', x_in: 0, y_in: 0, lage: 'steht', ebene: 1 }, { id: 'PIN_CUP', x_in: 30, y_in: 30, lage: 'steht', ebene: 1 }] }), {}, 1, 300, false);
+    check('Livesim: Pin obenauf an einem Goal steht auf dessen Oberkante, einer auf einem Cup auf dem Cup (setzt sich beim Start)', onGoal.get('PIN_GOAL').draw.z_in === 3.25 && onGoal.get('PIN_CUP').draw.z_in === 4,
+      onGoal.get('PIN_GOAL').draw.z_in + ' / ' + onGoal.get('PIN_CUP').draw.z_in);
+
+    // Greifen, anheben, zum Goal fahren, ablegen
+    const r1 = play(oneF, { 10: g1, 20: up, 3000: rel }, 1, 4500);
+    check('Livesim: GRAB-Ereignis, Pin in der Hand, danach gestapelt', r1.events.indexOf('stacker GRAB:PIN_A') >= 0 && r1.events.indexOf('stacker STACK:PIN_A') >= 0, r1.events.join(' | '));
+    const a = r1.get('PIN_A');
+    check('Livesim: Pin liegt auf dem Goal (z = hoehe_in), in dessen Mitte, steht', a.state === 'standing' && Math.abs(a.draw.z_in - 3.25) < 1e-9 && Math.hypot(a.x_in, a.y_in) < 0.01, JSON.stringify(a));
+    check('Livesim: Greifen, Halten, Ablegen ohne Sprung (< 0,5 in je ms)', r1.maxJump < 0.5, r1.maxJump);
+    check('Livesim: Hand ist danach leer, Lift steht auf Stufe 1', r1.live.hand('stacker').length === 0 && r1.live.liftLevel('stacker') === 1);
+    const r16 = play(oneF, { 10: g1, 20: up, 3000: rel }, 16, 4500);
+    check('Livesim: andere Bildrate, gleicher Zustand', JSON.stringify(r16.live.objects()) === JSON.stringify(r1.live.objects()));
+
+    // Ablegen weit weg vom Goal: Boden, kein STACK
+    const r2 = play(oneF, { 10: g1, 500: rel }, 1, 3000, false);   // Roboter steht: das abgelegte Teil wird nicht überfahren
+    check('Livesim: Ablegen fern vom Goal landet auf dem Boden ohne STACK', r2.get('PIN_A').draw.z_in === 0 && r2.get('PIN_A').state === 'standing' && !r2.events.some((e) => /STACK:/.test(e)), r2.events.join(' | '));
+
+    // SG6: zweiter Pin abgelehnt, Cup daneben erlaubt
+    const r3 = play(grabF, { 10: g1, 20: g1, 30: g1 }, 1, 200, false);
+    check('Livesim: SG6: zweiter Pin wird abgelehnt (RULE:SG6), Cup wird gegriffen', r3.events.indexOf('stacker RULE:SG6') >= 0 && r3.live.hand('stacker').sort().join() === 'CUP_A,PIN_A' && r3.get('PIN_B').state === 'standing', r3.live.hand('stacker').join() + ' | ' + r3.events.join(' | '));
+    const r3b = play(grabF, { 10: g1, 20: g1 }, 1, 200, false);
+    check('Livesim: Pin und Cup in der Hand sind kein Verstoß', r3b.events.indexOf('stacker RULE:SG6') === -1 || r3b.live.hand('stacker').length === 2, r3b.events.join(' | '));
+
+    // Zwei Teile übereinander: Pin + Cup halten, Lift auf Stufe 2, beide nacheinander ablegen
+    const r4 = play(twoF, { 10: g1, 20: g1, 30: up, 40: up, 3000: rel, 3300: rel }, 1, 5000);
+    const zs = ['PIN_A', 'CUP_A'].map((id) => r4.get(id).draw.z_in).sort((x, y) => x - y);
+    check('Livesim: zwei Teile gestapelt: 3,25 und 7,25 (Stufe 4)', Math.abs(zs[0] - 3.25) < 1e-9 && Math.abs(zs[1] - 7.25) < 1e-9, zs.join());
+    check('Livesim: Hand nach beiden Ablagen leer', r4.live.hand('stacker').length === 0, r4.events.join(' | '));
+
+    // Nichts in Reichweite / liegende Objekte / Grenzen
+    const r5 = play(grabF, { 10: g1 }, 1, 200, false);
+    check('Livesim: Greifen mit Objekt in Reichweite funktioniert nur einmal je Takt', r5.live.hand('stacker').length === 1);
+    const far5 = play(mkField({ pins: [{ id: 'PIN_FERN', x_in: -10, y_in: 30, lage: 'steht', ebene: 0 }, { id: 'PIN_LIEGT', x_in: -30, y_in: 0, lage: 'liegt', ebene: 0 }] }), { 10: g1 }, 1, 200, false);
+    check('Livesim: weder fernes noch liegendes Objekt wird gegriffen', far5.live.hand('stacker').length === 0 && far5.events.filter((e) => /GRAB/.test(e)).length === 0, far5.events.join(' | '));
+    const lift = play(grabF, { 10: up, 20: up, 30: up, 40: up, 50: up, 60: up, 70: up }, 1, 1000, false);
+    check('Livesim: Lift bleibt bei Stufe 5 stehen (Grenze)', lift.live.liftLevel('stacker') === 5);
+
+    // Reset: Hand und Lift leer, Objekte wie am Anfang
+    r1.live.reset();
+    check('Livesim: Reset leert Hand und Lift, stellt Objekte zurück', r1.live.hand('stacker').length === 0 && r1.live.liftLevel('stacker') === 0 && r1.live.objects().filter((o) => o.id === 'PIN_A')[0].x_in === -30 && r1.live.objects().filter((o) => o.id === 'PIN_A')[0].draw.z_in === 0);
+
+    // Ohne Block greifen: Befehle ohne Wirkung
+    const noG = FBLive.create(Object.assign({}, gp, { physik: physik }), grabF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: script({ 10: g1 }) });
+    for (let t = 0; t < 100; t++) noG.advance(0.001);
+    check('Livesim ohne Block greifen: Befehl wirkungslos, kein Ereignis', noG.hand('stacker').length === 0 && noG.takeEvents().filter((e) => /GRAB/.test(e.text)).length === 0);
   }
 
   return { ok, fail, msgs };

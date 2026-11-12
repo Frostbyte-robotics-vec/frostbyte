@@ -56,6 +56,13 @@ class TestLivesim(unittest.TestCase):
         self.assertEqual(res["fail"], 0, "\n".join(res["msgs"]))
         self.assertGreater(res["ok"], 30)
 
+    def test_hand_erreicht_goal_mit_echten_parametern(self):
+        """SIM-39: Der Roboter stoppt am Goal-Kreis (live.kollision); die Hand davor muss im Fangradius liegen, sonst ist Ablegen unbenutzbar."""
+        params = json.loads((ROOT / "sim" / "sim_params.json").read_text(encoding="utf-8"))
+        greifen = params["physik"]["greifen"]
+        goal_r = params["live"]["kollision"]["radius_in"]["goals"]
+        self.assertLessEqual(goal_r - greifen["vorn_in"], greifen["fangradius_in"])
+
     def test_spalten_wie_log_format(self):
         res = run_node("console.log(JSON.stringify(FBLive.LOG_COLUMNS));")
         self.assertEqual(res, mtl.COLUMNS)

@@ -10,6 +10,7 @@ hw: nein
 ---
 
 ## Ziel
+(Anpassung beim Bau: „ein schlecht gesetzter Stapel kippt“ ist nur als Minimalform umgesetzt: außerhalb des Fangradius fällt das Teil neben das Goal; Kippen vom Stapel und Greifen liegender Teile sind nicht modelliert, siehe ADR-051-Nachtrag.)
 Aufbauend auf der Physik von SIM-38: Der Roboter im Livesim kann ein Objekt greifen (Besitz höchstens 1 Pin + 1 Cup, SG6), mit dem Lift heben, vor einem Goal oder Stapel ablegen. Das Objekt fällt auf die höchste Stützfläche (Boden, Goal, Stapelspitze), rastet auf der Goal-Mitte ein und bleibt sichtbar gestapelt; ein schlecht gesetzter Stapel kippt.
 
 ## Fertig, wenn …
@@ -27,8 +28,10 @@ tasks/SIM-38.md, docs/decisions/ADR-026 und ADR-024 (Stapelregeln), docs/rules_s
 —
 
 ## Übergabe
-Noch nicht begonnen.
+Stand (2026-11-12): umgesetzt, bereit für Review. Baut auf ticket/sim-38 auf (PR #114 noch offen; Abhängigkeit bewusst übersprungen, weil SIM-39 dessen Physik braucht; PR gegen ticket/sim-38). Stützflächen statt Stapelverwaltung (Boden, Goal, Teil darunter), Hand/Lift/Greifen/Ablegen mit Befehlen am Steuertakt, SG6 mit RULE:SG6, Ebene-1-Pins als Körper auf ihrer Stütze, Tasten E/Q/F/V, Block `physik.greifen` (Schätzwerte), ADR-051-Nachtrag. Tests: physics_test.js (75 ok, Mutationen Stütze-weg und SG6 → rot), livesim_test.js 80 ok, ctest, validate. Im Browser (Chrome/CDP) vom Cup-Stapel zum Goal gefahren und gestapelt.
+Am Rechner zu prüfen: Gefühl der Schätzwerte (Hubhöhe, Handabstand, Fangradius), liegende Pins greifen (noch nicht), Goal-Radius echt messen (ADR: Goal-Radius − vorn_in ≤ fangradius_in).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt (Folge von SIM-38) · –
+2026-11-12 · arjanssen (KI) · Stützflächen, Greifen, Lift, Ablegen, Stapeln, SG6, Tasten, Tests, ADR-Nachtrag · siehe Branch
