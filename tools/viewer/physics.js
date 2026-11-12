@@ -57,8 +57,14 @@ var FBPhysics = (function () {
       pull_in_s: need(g, 'zieh_geschw_in_s', 'physik.greifen', true), fang_radius_in: need(g, 'fangradius_in', 'physik.greifen', true),
       stack_step_in: need(g, 'stapel_stufe_in', 'physik.greifen', true), snap_rate_1_s: need(g, 'fang_zug_1_s', 'physik.greifen', true),
       // SIM-40: liegende Teile greifen; ohne die Zahl bleibt das Greifen auf stehende Teile beschränkt
-      rise_rad_s: g.aufricht_rad_s === undefined ? null : need(g, 'aufricht_rad_s', 'physik.greifen', true)
+      rise_rad_s: g.aufricht_rad_s === undefined ? null : need(g, 'aufricht_rad_s', 'physik.greifen', true),
+      // SIM-42: Handhöhe je Roboter = basis_in + hub_in · sin(Liftwinkel); ohne den Eintrag bleibt es bei hand_z_in und lift_stufe_in
+      hand_geo: {}
     };
+    if (g) Object.keys(g.hand_hoehe || {}).forEach(function (n) {
+      var e = g.hand_hoehe[n];
+      cfg.grab.hand_geo[n] = { base_in: need(e, 'basis_in', 'physik.greifen.hand_hoehe.' + n), hub_in: need(e, 'hub_in', 'physik.greifen.hand_hoehe.' + n, true) };
+    });
     return cfg;
   }
 

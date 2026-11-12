@@ -321,6 +321,24 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const lift = play(grabF, { 10: up, 20: up, 30: up, 40: up, 50: up, 60: up, 70: up }, 1, 1000, false);
     check('Livesim: Lift bleibt bei Stufe 5 stehen (Grenze)', lift.live.liftLevel('stacker') === 5);
 
+    // SIM-42: Liftwinkel aus der Handhöhe (Basis + Hub · sin θ), damit das CAD-Modell dem Lift folgt und nie im Boden steht
+    const hh = (b, h) => Object.assign({}, gp, {
+      roboter: Object.assign({}, gp.roboter, { stacker: Object.assign({}, gp.roboter.stacker, { mechanismen: { lift: { min_deg: -40, max_deg: 45 } } }) }),
+      physik: Object.assign({}, gp.physik, { greifen: Object.assign({}, grab, { hand_hoehe: { stacker: { basis_in: b, hub_in: h } } }) }) });
+    const mkHH = (b, h) => FBLive.create(hh(b, h), grabF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: script({ 10: up, 20: up, 30: up, 40: up, 50: up, 60: up }) });
+    const lz = mkHH(20, 24), s0 = lz.liftDeg('stacker');
+    const zOf = (deg) => 20 + 24 * Math.sin(deg * Math.PI / 180);
+    check('Livesim: Liftwinkel beginnt bei min_deg', Math.abs(s0 - -40) < 1e-9, String(s0));
+    check('Livesim: ohne hand_hoehe ist liftDeg null (Altverhalten)', play(grabF, {}, 1, 10, false).live.liftDeg('stacker') === null);
+    let prevDeg = s0, mono = true, inRange = true;
+    for (let t = 0; t < 1500; t += 5) { lz.advance(0.005); const d = lz.liftDeg('stacker'); if (d < prevDeg - 1e-9) mono = false; if (d < -40 - 1e-9 || d > 45 + 1e-9) inRange = false; prevDeg = d; }
+    check('Livesim: Liftwinkel steigt monoton und bleibt zwischen min_deg und max_deg', mono && inRange && Math.abs(prevDeg - 45) < 1e-6, String(prevDeg));
+    check('Livesim: Handhöhe oben = Basis + Hub·sin(max_deg), unten = Basis + Hub·sin(min_deg)', Math.abs(lz.handZ('stacker') - zOf(45)) < 1e-6 && Math.abs(mkHH(20, 24).handZ('stacker') - zOf(-40)) < 1e-9, lz.handZ('stacker') + '');
+    check('Livesim: Stufen sind gleich hoch (Hubbereich / lift_stufen)', (() => { const l = FBLive.create(hh(20, 24), grabF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: script({ 10: up }) }); for (let t = 0; t < 1000; t += 10) l.advance(0.01); return Math.abs(l.handZ('stacker') - (zOf(-40) + (zOf(45) - zOf(-40)) / 5)) < 1e-6; })());
+    let threw2 = false;
+    try { FBLive.create(hh(5, 24), grabF, { voltsAt: () => ({ left_V: 0, right_V: 0 }) }); } catch (e) { threw2 = true; }
+    check('Livesim: Hand unter dem Boden bei min_deg wird abgelehnt', threw2);
+
     // Reset: Hand und Lift leer, Objekte wie am Anfang
     r1.live.reset();
     check('Livesim: Reset leert Hand und Lift, stellt Objekte zurück', r1.live.hand('stacker').length === 0 && r1.live.liftLevel('stacker') === 0 && r1.live.objects().filter((o) => o.id === 'PIN_A')[0].x_in === -30 && r1.live.objects().filter((o) => o.id === 'PIN_A')[0].draw.z_in === 0);
