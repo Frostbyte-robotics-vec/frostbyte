@@ -137,7 +137,7 @@ body[data-ansicht="sim"] #livectl{display:flex}
         <div class="fieldinfo" id="fieldinfo"></div>
         <div class="stats" id="stats" hidden></div>
         <div class="liveinfo" id="liveinfo" hidden></div>
-        <div class="livebar"><button class="btn" id="bLive" aria-pressed="false" title="Roboter mit der Tastatur fahren: W/S vor/zurück, A/D drehen, Shift langsam, Tab Roboter wechseln, Rücktaste zurücksetzen, R Kamera zurück">Live</button></div>
+        <div class="livebar"><button class="btn" id="bLive" aria-pressed="false" title="Roboter mit der Tastatur fahren: W/S vor/zurück, A/D drehen, Shift langsam, Tab Roboter wechseln, Rücktaste zurücksetzen, R Kamera zurück; E greifen, Q ablegen, F/V Lift">Live</button></div>
       </div>
       <div class="time">
         <button class="btn" id="bPlay" aria-label="Abspielen">▶</button>
@@ -681,6 +681,7 @@ window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; docume
 
 /* ---------- Live-Handsteuerung (SIM-14, livesim.js) ---------- */
 const LIVE_KEYS = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd' };
+const LIVE_CMDS = { KeyE: { type: 'grab' }, KeyQ: { type: 'release' }, KeyF: { type: 'lift', dir: 1 }, KeyV: { type: 'lift', dir: -1 } };
 const liveHeld = { w: false, a: false, s: false, d: false, shift: false };
 function liveSend(){ if (S.live) S.live.sim.setKeys(liveHeld); }
 /* Feldobjekte der Live-Simulation (SIM-35): mit CAD-Modell (SIM-37) sonst Cup = Zylinder, Pin = schlanker Zylinder; liegend auf der Seite. Die Netze
@@ -744,7 +745,7 @@ function updateLive(){
   const p = L.sim.pose(a);
   const head = `Live · ${a === 'stacker' ? 'Stacker' : 'Runner'} aktiv · ${fmt(L.sim.speed(a))} in/s · x ${fmt(p.x_in)} y ${fmt(p.y_in)} h ${fmt(p.h_deg, 0)}°`
     + (liveHeld.shift ? ' · langsam' : '');
-  $('liveinfo').textContent = SIM ? head : head + '\nW/S fahren · A/D drehen · Shift langsam · Tab Roboter wechseln · Rücktaste zurücksetzen · R Kamera zurück · C Kollisionsumriss'
+  $('liveinfo').textContent = SIM ? head : head + '\nW/S fahren · A/D drehen · Shift langsam · Tab Roboter wechseln · Rücktaste zurücksetzen · R Kamera zurück · C Kollisionsumriss\nE greifen · Q ablegen · F/V Lift hoch/runter (nur mit Block physik.greifen)'
     + (L.log.length ? '\n' + L.log.join('\n') : '')
     + (L.sim.notes.length ? '\n' + L.sim.notes.join('\n') : '');
 }
@@ -796,6 +797,7 @@ window.addEventListener('keydown', e => {
   else if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) S.live.sim.toggle(); }
   else if (e.code === 'Backspace') { e.preventDefault(); if (!e.repeat) { S.live.sim.reset(); S.live.log.length = 0; S.live.entries.length = 0; liveSeed(); renderLiveEvents(); } }
   else if (e.code === 'KeyC') { if (!e.repeat) S.live.showOutline = !S.live.showOutline; }
+  else if (e.code in LIVE_CMDS) { if (!e.repeat) S.live.sim.command(S.live.sim.active(), LIVE_CMDS[e.code]); }   // greifen, ablegen, Lift (SIM-39)
   liveHeld.shift = e.shiftKey; liveSend();
 });
 window.addEventListener('keyup', e => {
