@@ -34,11 +34,12 @@
       <li><a href="#saison">Season</a></li>
       <li><a href="#reichweite">Reach</a></li>
       <li><a href="../news/index.html" hreflang="de" lang="de">News (DE)</a></li>
+      <li><a href="#bewerben">Join</a></li>
       <li><a href="#kontakt">Contact</a></li>
     </ul>
     <div class="nav-cta">
       <a class="lang" hreflang="de" href="../index.html" lang="de" aria-label="Auf Deutsch wechseln" title="Deutsch">DE</a>
-      <a class="btn sm ghost" href="#partner">Support us <span class="arr">→</span></a>
+      <a class="btn sm ghost" href="#partner-werden">Support us <span class="arr">→</span></a>
       <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="menu"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -77,20 +78,26 @@
 
 <main id="main">
 <!-- ================= PARTNER ================= -->
+<!-- Logos vom Menschen (W-14). Neuer Partner: Logo unter assets/sponsoren/ ablegen und in die passende Stufe setzen. Keine Pakete, Preise oder Budgets öffentlich. -->
 <section class="sec partner-big" id="partner">
   <div class="wrap">
     <div class="sec-head rv">
       <div class="eyebrow">Our partners</div>
       <h2>This is what makes <span class="hl">Frostbyte</span> possible.</h2>
-      <p class="lead">These companies support the team in the 2026/27 season. Would you like to join them? Write to us.</p>
+      <p class="lead">These companies support the team in the 2026/27 season. Would you like to join them? Fill in the form further down.</p>
     </div>
-    <div class="wall wall-big rv">
-      <div class="slot filled"><span class="name">Novagear</span></div>
-      <div class="slot filled"><span class="name name-asis">norelem</span></div>
-      <a class="slot" href="#kontakt"><div><div class="plus">+</div><small>Your logo</small></div></a>
-      <a class="slot" href="#kontakt"><div><div class="plus">+</div><small>Your logo</small></div></a>
-      <a class="slot" href="#kontakt"><div><div class="plus">+</div><small>Your logo</small></div></a>
-      <a class="slot" href="#kontakt"><div><div class="plus">+</div><small>Your logo</small></div></a>
+    <div class="partners rv">
+      <div class="ptier ptier-main">
+        <div class="ptier-label">Main partner</div>
+        <div class="plogo plogo-main"><img src="../assets/sponsoren/novagear.png" alt="Novagear" width="738" height="99"></div>
+      </div>
+      <div class="ptier ptier-sup">
+        <div class="ptier-label">Supporter</div>
+        <div class="ptier-row">
+          <div class="plogo plogo-sup"><img src="../assets/sponsoren/techlabs.png" alt="TechLabs" width="738" height="174"></div>
+          <a class="slot" href="#partner-werden"><div><div class="plus">+</div><small>Become a partner</small></div></a>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -303,6 +310,54 @@
         <div><h3>Robotics from Zurich</h3><p>A Swiss university team on the international stage.</p></div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ================= BEWERBEN ================= -->
+<section class="sec team-bg" id="bewerben">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="eyebrow">Join us</div>
+      <h2>Apply to <span class="hl">the team.</span></h2>
+      <p class="lead">Students who want to build, program or organise with us: tell us briefly who you are. We will reply by e-mail.</p>
+    </div>
+    <p class="nojs-note rv"><noscript>The form needs JavaScript. Please write directly to <a href="mailto:frostbyte.eth.robotics@gmail.com">frostbyte.eth.robotics@gmail.com</a>.</noscript></p>
+    <form class="mailform rv" id="form-team" data-to="frostbyte.eth.robotics@gmail.com" data-subject="Team application Frostbyte" data-sent="Your mail program opens. If not, write directly to" data-invalid="Please fill in all required fields." novalidate>
+      <div class="fgrid">
+        <label class="fld" for="t-name"><span class="lab">Name <span class="req" title="required">*</span></span><input id="t-name" name="t-name" type="text" maxlength="120" autocomplete="name" required></label>
+        <label class="fld" for="t-mail"><span class="lab">E-mail <span class="req" title="required">*</span></span><input id="t-mail" name="t-mail" type="email" maxlength="120" autocomplete="email" required></label>
+        <label class="fld" for="t-studium"><span class="lab">Degree programme and semester <span class="req" title="required">*</span></span><input id="t-studium" name="t-studium" type="text" maxlength="120" required></label>
+        <label class="fld" for="t-gebiet"><span class="lab">Area of interest <span class="req" title="required">*</span></span><select id="t-gebiet" name="t-gebiet" required><option>Mechanics and CAD</option><option>Electronics</option><option>Software</option><option>Marketing and organisation</option></select></label>
+        <label class="fld wide" for="t-text"><span class="lab">Message</span><textarea id="t-text" name="t-text" rows="5" maxlength="800"></textarea></label>
+      </div>
+      <p class="fnote">On submit, the mail program opens with a ready-made message to the team. Nothing is stored on this page.</p>
+      <div class="frow"><button class="btn" type="submit">Prepare application <span class="arr">→</span></button></div>
+      <p class="fstatus" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<!-- ================= PARTNER-WERDEN ================= -->
+<section class="sec " id="partner-werden">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="eyebrow">Become a partner</div>
+      <h2>Support <span class="hl">Frostbyte.</span></h2>
+      <p class="lead">Companies and organisations that want to support the team with money, material or know-how: introduce yourself briefly. We will reply by e-mail.</p>
+    </div>
+    <p class="nojs-note rv"><noscript>The form needs JavaScript. Please write directly to <a href="mailto:frostbyte.eth.robotics@gmail.com">frostbyte.eth.robotics@gmail.com</a>.</noscript></p>
+    <form class="mailform rv" id="form-partner" data-to="frostbyte.eth.robotics@gmail.com" data-subject="Partner enquiry Frostbyte" data-sent="Your mail program opens. If not, write directly to" data-invalid="Please fill in all required fields." novalidate>
+      <div class="fgrid">
+        <label class="fld" for="p-firma"><span class="lab">Company or organisation <span class="req" title="required">*</span></span><input id="p-firma" name="p-firma" type="text" maxlength="120" autocomplete="organization" required></label>
+        <label class="fld" for="p-person"><span class="lab">Contact person <span class="req" title="required">*</span></span><input id="p-person" name="p-person" type="text" maxlength="120" autocomplete="name" required></label>
+        <label class="fld" for="p-mail"><span class="lab">E-mail <span class="req" title="required">*</span></span><input id="p-mail" name="p-mail" type="email" maxlength="120" autocomplete="email" required></label>
+        <label class="fld" for="p-art"><span class="lab">Type of support <span class="req" title="required">*</span></span><select id="p-art" name="p-art" required><option>Money</option><option>Material</option><option>Know-how</option><option>Other</option></select></label>
+        <label class="fld wide" for="p-text"><span class="lab">Message</span><textarea id="p-text" name="p-text" rows="5" maxlength="800"></textarea></label>
+      </div>
+      <p class="fnote">On submit, the mail program opens with a ready-made message to the team. Nothing is stored on this page.</p>
+      <div class="frow"><button class="btn" type="submit">Prepare enquiry <span class="arr">→</span></button></div>
+      <p class="fstatus" role="status" aria-live="polite"></p>
+    </form>
   </div>
 </section>
 

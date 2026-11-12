@@ -34,11 +34,12 @@
       <li><a href="#saison">Saison</a></li>
       <li><a href="#reichweite">Reichweite</a></li>
       <li><a href="news/index.html">News</a></li>
+      <li><a href="#bewerben">Mitmachen</a></li>
       <li><a href="#kontakt">Kontakt</a></li>
     </ul>
     <div class="nav-cta">
       <a class="lang" hreflang="en" href="en/index.html" lang="en" aria-label="Switch to English" title="English">EN</a>
-      <a class="btn sm ghost" href="#partner">Unterstützen <span class="arr">→</span></a>
+      <a class="btn sm ghost" href="#partner-werden">Unterstützen <span class="arr">→</span></a>
       <button class="burger" id="burger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="menu"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -77,21 +78,26 @@
 
 <main id="main">
 <!-- ================= PARTNER ================= -->
-<!-- Sponsor eintragen: einen freien <a class="slot">-Platz durch <div class="slot filled"><img src="assets/sponsoren/NAME.svg" alt="NAME"></div> ersetzen. Keine Stufen, Preise oder Pakete öffentlich (W-09). -->
+<!-- Logos vom Menschen (W-14). Neuer Partner: Logo unter assets/sponsoren/ ablegen und in die passende Stufe setzen. Keine Pakete, Preise oder Budgets öffentlich. -->
 <section class="sec partner-big" id="partner">
   <div class="wrap">
     <div class="sec-head rv">
       <div class="eyebrow">Unsere Partner</div>
       <h2>Das macht <span class="hl">Frostbyte</span> möglich.</h2>
-      <p class="lead">Diese Unternehmen unterstützen das Team in der Saison 2026/27. Möchten Sie dabei sein? Schreiben Sie uns.</p>
+      <p class="lead">Diese Unternehmen unterstützen das Team in der Saison 2026/27. Möchten Sie dabei sein? Füllen Sie das Formular weiter unten aus.</p>
     </div>
-    <div class="wall wall-big rv">
-      <div class="slot filled"><span class="name">Novagear</span></div>
-      <div class="slot filled"><span class="name name-asis">norelem</span></div>
-      <a class="slot" href="#kontakt"><div><div class="plus">+</div><small>Ihr Logo</small></div></a>
-      <a class="slot" href="#kontakt"><div><div class="plus">+</div><small>Ihr Logo</small></div></a>
-      <a class="slot" href="#kontakt"><div><div class="plus">+</div><small>Ihr Logo</small></div></a>
-      <a class="slot" href="#kontakt"><div><div class="plus">+</div><small>Ihr Logo</small></div></a>
+    <div class="partners rv">
+      <div class="ptier ptier-main">
+        <div class="ptier-label">Hauptpartner</div>
+        <div class="plogo plogo-main"><img src="assets/sponsoren/novagear.png" alt="Novagear" width="738" height="99"></div>
+      </div>
+      <div class="ptier ptier-sup">
+        <div class="ptier-label">Supporter</div>
+        <div class="ptier-row">
+          <div class="plogo plogo-sup"><img src="assets/sponsoren/techlabs.png" alt="TechLabs" width="738" height="174"></div>
+          <a class="slot" href="#partner-werden"><div><div class="plus">+</div><small>Partner werden</small></div></a>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -308,6 +314,54 @@
 </section>
 
 
+
+<!-- ================= BEWERBEN ================= -->
+<section class="sec team-bg" id="bewerben">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="eyebrow">Mitmachen</div>
+      <h2>Bewirb dich <span class="hl">im Team.</span></h2>
+      <p class="lead">Studierende, die mitbauen, programmieren oder organisieren wollen: Erzähl uns kurz, wer du bist. Wir melden uns per E-Mail.</p>
+    </div>
+    <p class="nojs-note rv"><noscript>Ohne JavaScript funktioniert das Formular nicht. Bitte schreiben Sie direkt an <a href="mailto:frostbyte.eth.robotics@gmail.com">frostbyte.eth.robotics@gmail.com</a>.</noscript></p>
+    <form class="mailform rv" id="form-team" data-to="frostbyte.eth.robotics@gmail.com" data-subject="Bewerbung Team Frostbyte" data-sent="Dein Mail-Programm öffnet sich. Falls nicht, schreib direkt an" data-invalid="Bitte alle Pflichtfelder ausfüllen." novalidate>
+      <div class="fgrid">
+        <label class="fld" for="t-name"><span class="lab">Name <span class="req" title="Pflichtfeld">*</span></span><input id="t-name" name="t-name" type="text" maxlength="120" autocomplete="name" required></label>
+        <label class="fld" for="t-mail"><span class="lab">E-Mail <span class="req" title="Pflichtfeld">*</span></span><input id="t-mail" name="t-mail" type="email" maxlength="120" autocomplete="email" required></label>
+        <label class="fld" for="t-studium"><span class="lab">Studiengang und Semester <span class="req" title="Pflichtfeld">*</span></span><input id="t-studium" name="t-studium" type="text" maxlength="120" required></label>
+        <label class="fld" for="t-gebiet"><span class="lab">Interessengebiet <span class="req" title="Pflichtfeld">*</span></span><select id="t-gebiet" name="t-gebiet" required><option>Mechanik und CAD</option><option>Elektronik</option><option>Software</option><option>Marketing und Organisation</option></select></label>
+        <label class="fld wide" for="t-text"><span class="lab">Nachricht</span><textarea id="t-text" name="t-text" rows="5" maxlength="800"></textarea></label>
+      </div>
+      <p class="fnote">Beim Absenden öffnet sich das Mail-Programm mit einer fertigen Nachricht an das Team. Auf dieser Seite wird nichts gespeichert.</p>
+      <div class="frow"><button class="btn" type="submit">Bewerbung vorbereiten <span class="arr">→</span></button></div>
+      <p class="fstatus" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<!-- ================= PARTNER-WERDEN ================= -->
+<section class="sec " id="partner-werden">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="eyebrow">Partner werden</div>
+      <h2>Unterstützen Sie <span class="hl">Frostbyte.</span></h2>
+      <p class="lead">Unternehmen und Organisationen, die das Team mit Geld, Material oder Know-how unterstützen möchten: Stellen Sie sich kurz vor. Wir melden uns per E-Mail.</p>
+    </div>
+    <p class="nojs-note rv"><noscript>Ohne JavaScript funktioniert das Formular nicht. Bitte schreiben Sie direkt an <a href="mailto:frostbyte.eth.robotics@gmail.com">frostbyte.eth.robotics@gmail.com</a>.</noscript></p>
+    <form class="mailform rv" id="form-partner" data-to="frostbyte.eth.robotics@gmail.com" data-subject="Partneranfrage Frostbyte" data-sent="Ihr Mail-Programm öffnet sich. Falls nicht, schreiben Sie direkt an" data-invalid="Bitte alle Pflichtfelder ausfüllen." novalidate>
+      <div class="fgrid">
+        <label class="fld" for="p-firma"><span class="lab">Firma oder Organisation <span class="req" title="Pflichtfeld">*</span></span><input id="p-firma" name="p-firma" type="text" maxlength="120" autocomplete="organization" required></label>
+        <label class="fld" for="p-person"><span class="lab">Ansprechperson <span class="req" title="Pflichtfeld">*</span></span><input id="p-person" name="p-person" type="text" maxlength="120" autocomplete="name" required></label>
+        <label class="fld" for="p-mail"><span class="lab">E-Mail <span class="req" title="Pflichtfeld">*</span></span><input id="p-mail" name="p-mail" type="email" maxlength="120" autocomplete="email" required></label>
+        <label class="fld" for="p-art"><span class="lab">Art der Unterstützung <span class="req" title="Pflichtfeld">*</span></span><select id="p-art" name="p-art" required><option>Geld</option><option>Material</option><option>Know-how</option><option>Anderes</option></select></label>
+        <label class="fld wide" for="p-text"><span class="lab">Nachricht</span><textarea id="p-text" name="p-text" rows="5" maxlength="800"></textarea></label>
+      </div>
+      <p class="fnote">Beim Absenden öffnet sich das Mail-Programm mit einer fertigen Nachricht an das Team. Auf dieser Seite wird nichts gespeichert.</p>
+      <div class="frow"><button class="btn" type="submit">Anfrage vorbereiten <span class="arr">→</span></button></div>
+      <p class="fstatus" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
 
 <!-- ================= CTA ================= -->
 <section class="sec cta dark" id="kontakt">
