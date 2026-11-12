@@ -190,7 +190,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
 
   // ---- SIM-39: Stützflächen, Greifen, Ablegen, Stapeln ----
   const grab = { reichweite_in: 3.0, vorn_in: 2.5, hand_z_in: 1.0, lift_stufen: 5, lift_stufe_in: 4.0, lift_geschw_in_s: 40, zieh_geschw_in_s: 80,
-    fangradius_in: 3.0, stapel_stufe_in: 4.0, fang_zug_1_s: 10, aufricht_rad_s: 6.0 };
+    fangradius_in: 3.0, stapel_stufe_in: 4.0, fang_zug_1_s: 10, aufricht_rad_s: 6.0, greif_toleranz_in: 0.5 };
   const baseG = Object.assign({}, base, { physik: Object.assign({}, physik, { greifen: grab }) });
   const cfgG = FBPhysics.load(baseG);
   check('greifen ist ohne Block null, mit Block gelesen', cfg.grab === null && cfgG.grab.fang_radius_in === 3.0 && cfgG.grab.stack_step_in === 4.0);
@@ -321,6 +321,12 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const lift = play(grabF, { 10: up, 20: up, 30: up, 40: up, 50: up, 60: up, 70: up }, 1, 1000, false);
     check('Livesim: Lift bleibt bei Stufe 5 stehen (Grenze)', lift.live.liftLevel('stacker') === 5);
 
+    // SIM-42: Greifen nur auf Höhe des Teils (SIM-41) und SG6 vor der Auswahl: ein nahes, abgelehntes Pin sperrt keinen ferneren Cup
+    const hi3 = play(grabF, { 10: up, 20: up, 30: up, 40: up, 800: g1 }, 1, 1000, false);
+    check('Livesim: Hand weit über dem Boden greift kein Teil vom Boden', hi3.live.hand('stacker').length === 0 && hi3.events.filter((e) => /GRAB/.test(e)).length === 0, hi3.events.join(' | '));
+    const sg6 = play(mkField({ pins: [{ id: 'PIN_NAH', x_in: -30, y_in: 0, lage: 'steht', ebene: 0, variante: 'yellow' }, { id: 'PIN_HAND', x_in: -30, y_in: 3.5, lage: 'steht', ebene: 0, variante: 'yellow' }],
+      cups: [{ id: 'CUP_FERN', x_in: -30, y_in: -5.5, lage: 'steht', ebene: 0 }] }), { 10: g1, 20: g1 }, 1, 200, false);
+    check('Livesim: SG6 filtert die Kandidaten: Pin in der Hand, nahes Pin abgelehnt, ferner Cup wird trotzdem gegriffen', sg6.live.hand('stacker').length === 2 && sg6.live.hand('stacker').some((id) => /CUP/.test(id)), sg6.live.hand('stacker').join() + ' | ' + sg6.events.join(' | '));
     // SIM-42: Liftwinkel aus der Handhöhe (Basis + Hub · sin θ), damit das CAD-Modell dem Lift folgt und nie im Boden steht
     const hh = (b, h) => Object.assign({}, gp, {
       roboter: Object.assign({}, gp.roboter, { stacker: Object.assign({}, gp.roboter.stacker, { mechanismen: { lift: { min_deg: -40, max_deg: 45 } } }) }),

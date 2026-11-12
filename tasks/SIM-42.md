@@ -31,10 +31,12 @@ tools/viewer/livesim.js (doLift, handPos), tools/viewer/index.html (updateLive, 
 
 ## Übergabe
 Stand (2026-11-12): Punkt 1 (Lift) erledigt: `physik.greifen.hand_hoehe` (basis + hub·sin θ aus dem CAD, je Roboter), `liveSim.liftDeg()/handZ()`, Viewer stellt `info.set` im Livesim aus dem Lift; Stufen = Hubbereich/5. Im Browser gesehen (Stacker, Stufe 0 → 5: Lift fährt von unten bis oben, vorher blieb das Modell stehen). Tests 91 + 80 ok, ctest grün.
-Nächster Schritt: Punkt 2 (Zusammenführen/Stapeln) im Browser durchspielen (Pin + Cup greifen, auf Goal setzen) und die passenden SIM-41-Funde mit rotem Test beheben; danach Punkt 3 (Physik, Auffälligkeiten im Browser suchen).
+Zusätzlich erledigt (aus SIM-41, Punkt 2): Greifen nur auf Höhe des Teils (`greif_toleranz_in`, Hand zwischen Fußpunkt und Oberkante), SG6 filtert Kandidaten vor der Auswahl. Tests 93 + 80 ok; Browser: Pin vom Stapel greifen, zum Goal fahren, ablegen → STACK ok.
+Rest: ADR-051-Nachtrag, restliche SIM-41-Funde, Physik (Punkt 3) im Browser beurteilen. (alt:) Punkt 2 (Zusammenführen/Stapeln) im Browser durchspielen (Pin + Cup greifen, auf Goal setzen) und die passenden SIM-41-Funde mit rotem Test beheben; danach Punkt 3 (Physik, Auffälligkeiten im Browser suchen).
 Prüfstand: Chrome per DevTools-Protokoll (cdp.py in früherer Sitzung), Server `python3 -m http.server 8765` im Repo.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt aus Handtest-Rückmeldung des Menschen · –
 2026-11-12 · arjanssen (KI) · Lift im Livesim: Winkel aus Handhöhe, Modell folgt · siehe Branch
+2026-11-12 · arjanssen (KI) · Greifhöhe zweiseitig, SG6 vor Auswahl · siehe Branch

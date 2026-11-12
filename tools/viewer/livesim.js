@@ -405,17 +405,19 @@ var FBLive = (function () {
     function doGrab(name) {
       var r = robots[name], g = holdCfg(), h = r.h_deg * DEG, best = -1, bestD = Infinity;
       if (!g) return;
+      var blocked = -1, hz = handBase(r) + r.lift.z;
       phys.bodies.forEach(function (b, i) {
-        if ((b.state !== 'standing' && !(b.state === 'lying' && g.rise_rad_s !== null)) || b.z > handBase(r) + r.lift.z + 0.5 || !phys.isFree(i)) return;
+        // Hand auf Höhe des Teils (Fußpunkt bis Oberkante, mit Spielraum): mit hohem Lift wird nichts vom Boden gegriffen
+        if ((b.state !== 'standing' && !(b.state === 'lying' && g.rise_rad_s !== null)) || hz < b.z - g.grab_tol_in || hz > b.z + b.h + g.grab_tol_in || !phys.isFree(i)) return;
         var dx = b.x - r.x_in, dy = b.y - r.y_in, lu = dx * Math.cos(h) + dy * Math.sin(h), lv = -dx * Math.sin(h) + dy * Math.cos(h);
         var front = r.outline.length_in / 2;
         if (lu < front - b.r || lu > front + g.reach_in + b.r || Math.abs(lv) > r.outline.width_in / 2 + b.r) return;
         var d = Math.sqrt((lu - front) * (lu - front) + lv * lv);
+        // SG6 (RuleGuard) wirkt vor der Auswahl: ein abgelehntes Teil sperrt kein anderes
+        if (r.hand.some(function (k) { return phys.bodies[k].kind === b.kind; })) { blocked = i; return; }
         if (d < bestD) { best = i; bestD = d; }
       });
-      if (best < 0) return;
-      var kind = phys.bodies[best].kind;
-      if (r.hand.some(function (i) { return phys.bodies[i].kind === kind; })) { emit(name, 'RULE:SG6'); return; }
+      if (best < 0) { if (blocked >= 0) emit(name, 'RULE:SG6'); return; }
       if (phys.hold(best)) { r.hand.push(best); emit(name, 'GRAB:' + phys.bodies[best].id); }
     }
     function doRelease(name) {
