@@ -370,11 +370,27 @@ class WebTest(unittest.TestCase):
             self.assertIn(satz, html, name)
             self.assertIn("nichts gespeichert" if name == "impressum.html" else "nothing is stored", html, name)
 
+    def test_nur_teamseite_oeffentlich_keine_verweise_auf_board_viewer_sim(self):
+        # W-12 (Mensch, 2026-11-11): unter der Domain nur Teamseite und News; Board, Viewer und Sim werden nicht veröffentlicht
+        for pfad in sorted(WEB.rglob("*")):
+            if pfad.suffix not in (".html", ".css", ".js", ".json") or not pfad.is_file():
+                continue
+            text = pfad.read_text(encoding="utf-8")
+            for ziel in ("/board/", "/viewer/", "/sim/", "../board", "../viewer", "../sim"):
+                self.assertNotIn(ziel, text, f"{pfad}: {ziel}")
+
+    def test_pages_workflow_veroeffentlicht_nur_web_und_news(self):
+        wf = (WEB.parent / ".github" / "workflows" / "dashboard.yml").read_text(encoding="utf-8")
+        self.assertIn("cp -r web/. site/", wf)
+        self.assertIn("tools/news_build.py", wf)
+        for verboten in ("site/board", "site/viewer", "site/sim", "board.py export", "sim_page.py", "cmake", "frostbyte_sim"):
+            self.assertNotIn(verboten, wf, verboten)
+
     def test_impressum_seiten_haben_angaben_und_verweisen_zurueck(self):
         # W-13: Angaben stammen vom Menschen (Chat 2026-11-11), nichts erfunden
         erwartet = {
-            "impressum.html": ("Verein Frostbyte", "David Čop", "Präsident", "Gujerstrasse 7", "8050 Zürich", "Datenschutz", "Cloudflare", "/viewer/", "frostbyte.eth.robotics@gmail.com"),
-            "en/imprint.html": ("Verein Frostbyte", "David Čop", "President", "Gujerstrasse 7", "8050 Zürich", "Privacy", "Cloudflare", "/viewer/", "frostbyte.eth.robotics@gmail.com"),
+            "impressum.html": ("Verein Frostbyte", "David Čop", "Präsident", "Gujerstrasse 7", "8050 Zürich", "Datenschutz", "Cloudflare", "frostbyte.eth.robotics@gmail.com"),
+            "en/imprint.html": ("Verein Frostbyte", "David Čop", "President", "Gujerstrasse 7", "8050 Zürich", "Privacy", "Cloudflare", "frostbyte.eth.robotics@gmail.com"),
         }
         for name, begriffe in erwartet.items():
             html = lade(name)

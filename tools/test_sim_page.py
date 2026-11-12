@@ -98,9 +98,9 @@ class SimPageTest(unittest.TestCase):
                 self.assertNotIn(ziel, zeile.split("{")[0], zeile)
 
     def test_workflow_und_board_seite(self):
+        # W-12: der Pages-Workflow veröffentlicht /sim/ nicht mehr (nur Teamseite); sim_page.py bleibt lokal nutzbar
         wf = (ROOT / ".github" / "workflows" / "dashboard.yml").read_text(encoding="utf-8")
-        self.assertIn("tools/sim_page.py", wf)
-        self.assertIn("site/sim/index.html", wf)
+        self.assertNotIn("sim_page.py", wf)
         tpl = (ROOT / "tools" / "dashboard" / "template.html").read_text(encoding="utf-8")
         self.assertIn('href="../sim/"', tpl)  # Board liegt unter /board/ (ADR-035)
         self.assertIn("Simulation (intern)", tpl)
