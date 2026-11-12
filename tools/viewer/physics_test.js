@@ -190,7 +190,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
 
   // ---- SIM-39: Stützflächen, Greifen, Ablegen, Stapeln ----
   const grab = { reichweite_in: 3.0, vorn_in: 2.5, hand_z_in: 1.0, lift_stufen: 5, lift_stufe_in: 4.0, lift_geschw_in_s: 40, zieh_geschw_in_s: 80,
-    fangradius_in: 3.0, stapel_stufe_in: 4.0, fang_zug_1_s: 10, aufricht_rad_s: 6.0, greif_toleranz_in: 0.5 };
+    fangradius_in: 3.0, stapel_stufe_in: 4.0, fang_zug_1_s: 10, aufricht_rad_s: 6.0, greif_toleranz_in: 0.5, greif_hoehe_in: 0 };
   const baseG = Object.assign({}, base, { physik: Object.assign({}, physik, { greifen: grab }) });
   const cfgG = FBPhysics.load(baseG);
   check('greifen ist ohne Block null, mit Block gelesen', cfg.grab === null && cfgG.grab.fang_radius_in === 3.0 && cfgG.grab.stack_step_in === 4.0);
@@ -307,12 +307,21 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const r3b = play(grabF, { 10: g1, 20: g1 }, 1, 200, false);
     check('Livesim: Pin und Cup in der Hand sind kein Verstoß', r3b.events.indexOf('stacker RULE:SG6') === -1 || r3b.live.hand('stacker').length === 2, r3b.events.join(' | '));
 
+    // SIM-42: die Hand fasst das Teil greif_hoehe_in über dem Fußpunkt; ein Bodenteil springt beim Greifen auf Stufe 0 nicht um die ganze Handhöhe
+    const gh = (n) => Object.assign({}, gp, { physik: Object.assign({}, gp.physik, { greifen: Object.assign({}, grab, { greif_hoehe_in: n }) }) });
+    const ghLive = (n) => { const l = FBLive.create(gh(n), oneF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: script({ 10: g1 }) }); for (let t = 0; t < 1500; t += 10) l.advance(0.01); return l.objects().filter((o) => o.id === 'PIN_A')[0].draw.z_in; };
+    check('Livesim: gehaltenes Teil hängt greif_hoehe_in unter der Hand (Fußpunkt = Hand − Griffhöhe)', Math.abs(ghLive(0) - 1.0) < 1e-6 && Math.abs(ghLive(0.75) - 0.25) < 1e-6, ghLive(0) + ' / ' + ghLive(0.75));
+    let threw3 = false;
+    try { FBPhysics.load({ welt: base.welt, physik: Object.assign({}, physik, { greifen: Object.assign({}, grab, { greif_hoehe_in: -1 }) }) }); } catch (e) { threw3 = true; }
+    check('physik.greifen.greif_hoehe_in darf nicht negativ sein', threw3);
     // SIM-42: Pin und Cup stecken in der Hand ineinander (Pin auf dem Cup, gleicher Fußpunkt in x/y), der Cup wird zuerst abgelegt
     const nest = play(twoF, { 10: g1, 20: g1 }, 1, 1500);
     const nc = nest.get('CUP_A').draw, np = nest.get('PIN_A').draw;
     check('Livesim: Pin steckt auf dem Cup in der Hand (gleiches x/y, eine Stapelstufe höher)', Math.hypot(nc.bx_in - np.bx_in, nc.by_in - np.by_in) < 0.01 && Math.abs(np.z_in - nc.z_in - 4.0) < 0.05, JSON.stringify([nc, np]));
     const nrel = play(twoF, { 10: g1, 20: g1, 1200: rel }, 1, 1500);
     check('Livesim: Q legt zuerst den Cup ab, der Pin bleibt in der Hand', nrel.live.hand('stacker').join() === 'PIN_A', nrel.live.hand('stacker').join());
+    const pinZ = (live) => live.objects().filter((o) => o.id === 'PIN_A')[0].draw.z_in;
+    check('Livesim: nach dem Ablegen des Cups sinkt der Pin nicht in den Cup (bleibt auf seiner Höhe)', Math.abs(pinZ(nrel.live) - pinZ(nest.live)) < 0.05, pinZ(nrel.live) + ' / ' + pinZ(nest.live));
     // Zwei Teile übereinander: Pin + Cup halten, Lift auf Stufe 2, beide nacheinander ablegen
     const r4 = play(twoF, { 10: g1, 20: g1, 30: up, 40: up, 3000: rel, 3300: rel }, 1, 5000);
     const zs = ['PIN_A', 'CUP_A'].map((id) => r4.get(id).draw.z_in).sort((x, y) => x - y);

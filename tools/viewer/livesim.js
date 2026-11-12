@@ -399,11 +399,11 @@ var FBLive = (function () {
     /* Greifen, Heben, Ablegen (SIM-39): nur mit Physik und Block physik.greifen. Befehle gelten am Steuertakt. Der Roboter hält
        höchstens einen Pin und einen Cup (SG6, RuleGuard: sonst RULE:SG6). Gegriffen wird ein freies, stehendes Teil vor dem Roboter. */
     function holdCfg() { return phys && phys.cfg.grab; }
-    // Hand: ein Teil vor dem Roboter; Pin und Cup stecken ineinander (Pin auf dem Cup, eine Stapelstufe höher)
+    // Hand: ein Teil vor dem Roboter, mit dem Fußpunkt greif_hoehe_in unter der Hand; Pin und Cup stecken ineinander (Pin auf dem Cup, eine Stapelstufe höher)
     function handPoint(r, slot, count) {
       var g = holdCfg(), h = r.h_deg * DEG, fwd = r.outline.length_in / 2 + g.front_in;
-      var up = count >= 2 && phys.bodies[r.hand[slot]].kind === 'pin' ? g.stack_step_in : 0;
-      return { x: r.x_in + fwd * Math.cos(h), y: r.y_in + fwd * Math.sin(h), z: handBase(r) + r.lift.z + up };
+      var up = (count >= 2 || r.pinRaised) && phys.bodies[r.hand[slot]].kind === 'pin' ? g.stack_step_in : 0;
+      return { x: r.x_in + fwd * Math.cos(h), y: r.y_in + fwd * Math.sin(h), z: handBase(r) + r.lift.z - g.grip_in + up };
     }
     function doGrab(name) {
       var r = robots[name], g = holdCfg(), h = r.h_deg * DEG, best = -1, bestD = Infinity;
@@ -428,6 +428,7 @@ var FBLive = (function () {
       if (!r.hand.length) return;
       // der Cup liegt unten und wird zuerst abgelegt; danach hebt der Lift, und der Pin kommt obenauf
       var k = r.hand.findIndex(function (b) { return phys.bodies[b].kind === 'cup'; }), i = r.hand.splice(k < 0 ? r.hand.length - 1 : k, 1)[0];
+      r.pinRaised = r.hand.length === 1 && phys.bodies[i].kind === 'cup';   // der Pin bleibt oben, bis er selbst abgelegt wird (sinkt nicht in den Cup)
       phys.release(i);
       emit(name, 'DROP:' + phys.bodies[i].id);
     }
@@ -477,7 +478,7 @@ var FBLive = (function () {
           var r = robots[n];
           r.left.v = 0; r.right.v = 0; r.volts = { left_V: 0, right_V: 0 };
           r.x_in = r.start.x_in; r.y_in = r.start.y_in; r.h_deg = r.start.h_deg;
-          r.contact = {}; r.blockedS = 0; r.blockedSent = false; r.hand = []; r.lift = { level: 0, z: 0 };
+          r.contact = {}; r.blockedS = 0; r.blockedSent = false; r.hand = []; r.pinRaised = false; r.lift = { level: 0, z: 0 };
           cmdQueue[n].length = 0;
         });
         objects = objectCfg.list.map(function (o) { return Object.assign({}, o); });

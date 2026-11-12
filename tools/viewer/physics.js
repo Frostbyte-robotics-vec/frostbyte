@@ -52,7 +52,7 @@ var FBPhysics = (function () {
     var g = p.greifen;
     cfg.grab = !g ? null : {
       reach_in: need(g, 'reichweite_in', 'physik.greifen', true), front_in: need(g, 'vorn_in', 'physik.greifen'),
-      hand_z_in: need(g, 'hand_z_in', 'physik.greifen'), grab_tol_in: need(g, 'greif_toleranz_in', 'physik.greifen', true), lift_levels: need(g, 'lift_stufen', 'physik.greifen', true),
+      hand_z_in: need(g, 'hand_z_in', 'physik.greifen'), grab_tol_in: need(g, 'greif_toleranz_in', 'physik.greifen', true), grip_in: need(g, 'greif_hoehe_in', 'physik.greifen'), lift_levels: need(g, 'lift_stufen', 'physik.greifen', true),
       lift_step_in: need(g, 'lift_stufe_in', 'physik.greifen', true), lift_speed_in_s: need(g, 'lift_geschw_in_s', 'physik.greifen', true),
       pull_in_s: need(g, 'zieh_geschw_in_s', 'physik.greifen', true), fang_radius_in: need(g, 'fangradius_in', 'physik.greifen', true),
       stack_step_in: need(g, 'stapel_stufe_in', 'physik.greifen', true), snap_rate_1_s: need(g, 'fang_zug_1_s', 'physik.greifen', true),
