@@ -55,7 +55,9 @@ var FBPhysics = (function () {
       hand_z_in: need(g, 'hand_z_in', 'physik.greifen'), lift_levels: need(g, 'lift_stufen', 'physik.greifen', true),
       lift_step_in: need(g, 'lift_stufe_in', 'physik.greifen', true), lift_speed_in_s: need(g, 'lift_geschw_in_s', 'physik.greifen', true),
       pull_in_s: need(g, 'zieh_geschw_in_s', 'physik.greifen', true), fang_radius_in: need(g, 'fangradius_in', 'physik.greifen', true),
-      stack_step_in: need(g, 'stapel_stufe_in', 'physik.greifen', true), snap_rate_1_s: need(g, 'fang_zug_1_s', 'physik.greifen', true)
+      stack_step_in: need(g, 'stapel_stufe_in', 'physik.greifen', true), snap_rate_1_s: need(g, 'fang_zug_1_s', 'physik.greifen', true),
+      // SIM-40: liegende Teile greifen; ohne die Zahl bleibt das Greifen auf stehende Teile beschränkt
+      rise_rad_s: g.aufricht_rad_s === undefined ? null : need(g, 'aufricht_rad_s', 'physik.greifen', true)
     };
     return cfg;
   }
@@ -261,18 +263,26 @@ var FBPhysics = (function () {
           return o !== b && o.state === 'standing' && o.z > b.z + 1e-9 && dx * dx + dy * dy <= f2;
         });
       },
-      // Roboter nimmt ein stehendes Teil in die Hand; es bleibt, wo es ist, bis moveHeld es zur Hand zieht.
+      // Roboter nimmt ein stehendes Teil (mit physik.greifen.aufricht_rad_s auch ein liegendes) in die Hand; es bleibt, wo es ist,
+      // bis moveHeld es zur Hand zieht. Ein gehaltenes Teil wird über seinen Fußpunkt (x, y, z) und die Neigung theta geführt.
       hold: function (i) {
         var b = bodies[i];
+        if (b.state === 'lying' && cfg.grab && cfg.grab.rise_rad_s !== null) {
+          b.x -= b.c * Math.cos(b.phi); b.y -= b.c * Math.sin(b.phi); b.z = b.r;   // Schwerpunkt → Fußpunkt, wie pose() es zeichnet
+          b.state = 'held'; b.vx = 0; b.vy = 0; b.vz = 0; b.theta = HALF_PI; b.omega = 0;
+          return true;
+        }
         if (b.state !== 'standing') return false;
         b.state = 'held'; b.vx = 0; b.vy = 0; b.vz = 0; b.theta = 0; b.omega = 0;
         return true;
       },
-      // Zieht ein gehaltenes Teil mit höchstens speed_in_s (Standard: physik.greifen.zieh_geschw_in_s) zum Ziel; true, wenn dort.
+      // Zieht ein gehaltenes Teil mit höchstens speed_in_s (Standard: physik.greifen.zieh_geschw_in_s) zum Ziel und richtet es mit
+      // aufricht_rad_s auf; true, wenn es dort steht.
       moveHeld: function (i, tx, ty, tz, dt_s, speed_in_s) {
         var b = bodies[i], dx = tx - b.x, dy = ty - b.y, dz = tz - b.z, d = Math.sqrt(dx * dx + dy * dy + dz * dz);
         var step = (speed_in_s === undefined ? cfg.grab.pull_in_s : speed_in_s) * dt_s;
-        if (d <= step) { b.x = tx; b.y = ty; b.z = tz; return true; }
+        if (b.theta > 0) b.theta = Math.max(0, b.theta - (cfg.grab.rise_rad_s || 0) * dt_s);
+        if (d <= step) { b.x = tx; b.y = ty; b.z = tz; return b.theta === 0; }
         b.x += dx / d * step; b.y += dy / d * step; b.z += dz / d * step;
         return false;
       },
@@ -296,7 +306,7 @@ var FBPhysics = (function () {
           return { bx_in: b.x + shift * dx, by_in: b.y + shift * dy, z_in: b.z + b.r * Math.sin(b.theta), tilt_deg: b.theta * RAD, dir_deg: b.phi * RAD };
         }
         if (b.state === 'lying') return { bx_in: b.x - b.c * dx, by_in: b.y - b.c * dy, z_in: b.r, tilt_deg: 90, dir_deg: b.phi * RAD };
-        return { bx_in: b.x, by_in: b.y, z_in: b.z, tilt_deg: 0, dir_deg: b.phi * RAD };
+        return { bx_in: b.x, by_in: b.y, z_in: b.z, tilt_deg: b.state === 'held' ? b.theta * RAD : 0, dir_deg: b.phi * RAD };
       }
     };
     return world;

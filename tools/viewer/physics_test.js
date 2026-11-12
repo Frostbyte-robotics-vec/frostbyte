@@ -190,7 +190,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
 
   // ---- SIM-39: Stützflächen, Greifen, Ablegen, Stapeln ----
   const grab = { reichweite_in: 3.0, vorn_in: 2.5, hand_z_in: 1.0, lift_stufen: 5, lift_stufe_in: 4.0, lift_geschw_in_s: 40, zieh_geschw_in_s: 80,
-    fangradius_in: 3.0, stapel_stufe_in: 4.0, fang_zug_1_s: 10 };
+    fangradius_in: 3.0, stapel_stufe_in: 4.0, fang_zug_1_s: 10, aufricht_rad_s: 6.0 };
   const baseG = Object.assign({}, base, { physik: Object.assign({}, physik, { greifen: grab }) });
   const cfgG = FBPhysics.load(baseG);
   check('greifen ist ohne Block null, mit Block gelesen', cfg.grab === null && cfgG.grab.fang_radius_in === 3.0 && cfgG.grab.stack_step_in === 4.0);
@@ -265,8 +265,9 @@ function runPhysicsTests(FBPhysics, FBLive) {
     // Skript: Takt (ms) → Befehl; Fahren bis 3000 ms
     const script = (plan) => (n, t_ms) => (n === 'stacker' && plan[t_ms]) || null;
     const volts = (n, t_ms) => (n === 'stacker' && t_ms < 3000 ? { left_V: 6, right_V: 6 } : { left_V: 0, right_V: 0 });
-    const play = (field, plan, chunkMs, endMs, withVolts) => {
-      const live = FBLive.create(gp, field, { voltsAt: withVolts === false ? () => ({ left_V: 0, right_V: 0 }) : volts, cmdAt: script(plan) });
+    const play = (field, plan, chunkMs, endMs, withVolts, noRise) => {
+      const pp = noRise ? Object.assign({}, gp, { physik: Object.assign({}, gp.physik, { greifen: Object.assign({}, grab, { aufricht_rad_s: undefined }) }) }) : gp;
+      const live = FBLive.create(pp, field, { voltsAt: withVolts === false ? () => ({ left_V: 0, right_V: 0 }) : volts, cmdAt: script(plan) });
       const events = [], pos = {};
       let maxJump = 0;
       const prev = {};
@@ -315,8 +316,8 @@ function runPhysicsTests(FBPhysics, FBLive) {
     // Nichts in Reichweite / liegende Objekte / Grenzen
     const r5 = play(grabF, { 10: g1 }, 1, 200, false);
     check('Livesim: Greifen mit Objekt in Reichweite funktioniert nur einmal je Takt', r5.live.hand('stacker').length === 1);
-    const far5 = play(mkField({ pins: [{ id: 'PIN_FERN', x_in: -10, y_in: 30, lage: 'steht', ebene: 0 }, { id: 'PIN_LIEGT', x_in: -30, y_in: 0, lage: 'liegt', ebene: 0 }] }), { 10: g1 }, 1, 200, false);
-    check('Livesim: weder fernes noch liegendes Objekt wird gegriffen', far5.live.hand('stacker').length === 0 && far5.events.filter((e) => /GRAB/.test(e)).length === 0, far5.events.join(' | '));
+    const far5 = play(mkField({ pins: [{ id: 'PIN_FERN', x_in: -10, y_in: 30, lage: 'steht', ebene: 0 }, { id: 'PIN_LIEGT', x_in: -30, y_in: 0, lage: 'liegt', ebene: 0 }] }), { 10: g1 }, 1, 200, false, true);
+    check('Livesim: ohne aufricht_rad_s wird weder ein fernes noch ein liegendes Objekt gegriffen', far5.live.hand('stacker').length === 0 && far5.events.filter((e) => /GRAB/.test(e)).length === 0, far5.events.join(' | '));
     const lift = play(grabF, { 10: up, 20: up, 30: up, 40: up, 50: up, 60: up, 70: up }, 1, 1000, false);
     check('Livesim: Lift bleibt bei Stufe 5 stehen (Grenze)', lift.live.liftLevel('stacker') === 5);
 
@@ -328,6 +329,59 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const noG = FBLive.create(Object.assign({}, gp, { physik: physik }), grabF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: script({ 10: g1 }) });
     for (let t = 0; t < 100; t++) noG.advance(0.001);
     check('Livesim ohne Block greifen: Befehl wirkungslos, kein Ereignis', noG.hand('stacker').length === 0 && noG.takeEvents().filter((e) => /GRAB/.test(e.text)).length === 0);
+  }
+
+  // ---- SIM-40: liegende Teile greifen, sichtbar aufrichten ----
+  check('aufricht_rad_s ist optional (ohne: null) und muss > 0 sein', FBPhysics.load(Object.assign({}, baseG, { physik: Object.assign({}, physik, { greifen: Object.assign({}, grab, { aufricht_rad_s: undefined }) }) })).grab.rise_rad_s === null && cfgG.grab.rise_rad_s === 6.0);
+  threw = false;
+  try { FBPhysics.load({ welt: base.welt, physik: Object.assign({}, physik, { greifen: Object.assign({}, grab, { aufricht_rad_s: 0 }) }) }); } catch (e) { threw = true; }
+  check('aufricht_rad_s = 0 wird abgelehnt', threw);
+  {
+    const lyingPin = () => makeG([spec('L', 10, 5, { standing: false, lie_dir_deg: 30 })]);
+    w = lyingPin();
+    const before = w.pose(0), b = w.bodies[0];
+    check('hold auf ein liegendes Teil: gehalten, Fußpunkt und Höhe wie vorher gezeichnet (kein Sprung)', w.hold(0) && b.state === 'held' && (() => { const q = w.pose(0); return Math.hypot(q.bx_in - before.bx_in, q.by_in - before.by_in, q.z_in - before.z_in) < 1e-9 && q.tilt_deg === 90; })(), JSON.stringify([before, w.pose(0)]));
+    let prevPose = w.pose(0), maxJump = 0, monotone = true, steps = 0, prevTilt = 90;
+    while (!w.moveHeld(0, 12, 6, 4, DT) && steps < 5000) {
+      steps++;
+      const q = w.pose(0);
+      maxJump = Math.max(maxJump, Math.hypot(q.bx_in - prevPose.bx_in, q.by_in - prevPose.by_in, q.z_in - prevPose.z_in));
+      if (q.tilt_deg > prevTilt + 1e-9) monotone = false;
+      prevTilt = q.tilt_deg; prevPose = q;
+    }
+    const tUp = (Math.PI / 2) / 6.0, tMove = Math.hypot(12 - w.pose(0).bx_in + 0, 0) * 0;   // Zielzeit unten aus der Ausgangslage
+    check('Aufrichten dauert (π/2)/ω = 0,262 s (±4 ms), der Weg zur Hand ist kürzer', Math.abs(steps * DT - tUp) < 0.004, steps);
+    check('Aufrichten: Winkel nimmt monoton ab, Fußpunkt springt nie (< 0,15 in je ms)', monotone && maxJump < 0.15, maxJump);
+    check('am Ende senkrecht in der Hand am Ziel', b.theta === 0 && b.x === 12 && b.y === 6 && b.z === 4 && w.pose(0).tilt_deg === 0);
+    w.release(0); runG(w, 1.0);
+    check('losgelassen: steht senkrecht auf dem Boden', b.state === 'standing' && b.z === 0 && b.theta === 0);
+  }
+  {
+    const gp2 = { welt: base.welt, physik: baseG.physik };
+    void gp2;
+    const lieF = { feld_in: 144, goals: [{ id: 'G1', typ: 'neutral', x_in: 0, y_in: 0, hoehe_in: 3.25 }],
+      posen: [{ id: 'START_STACKER', x_in: -40, y_in: 0, h_deg: 0 }, { id: 'START_RUNNER', x_in: 40, y_in: 60, h_deg: 180 }],
+      objekte_start: { pins: [{ id: 'PIN_L', x_in: -30, y_in: 0, lage: 'liegt', ebene: 0, gelb_deg: 0 }] } };
+    const dr = (spur) => ({ kS_V: 1.0, kV_V_per_in_s: 0.2, kA_V_per_in_s2: 0.04, spurbreite_in: spur, mu: 1.0, motor_max_V: 11.5 });
+    const lp = { welt: base.welt, live: { langsam_faktor: 0.4, ersatzpose_in: { stacker: { x_in: 0, y_in: 0, h_deg: 0 }, runner: { x_in: 0, y_in: 0, h_deg: 0 } }, kollision: { radius_in: { goals: 4.0 } } },
+      roboter: { stacker: { antrieb: dr(12), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 12, breite: 12 } }, runner: { antrieb: dr(10), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 10, breite: 10 } } },
+      feldobjekte: { radius_in: { cup: 2.0, pin: 2.0 }, roboter_anteil: 0.5 }, physik: baseG.physik };
+    const plan = { 10: { type: 'grab' }, 20: { type: 'lift', dir: 1 }, 3000: { type: 'release' } };
+    const volts = (n, t_ms) => (n === 'stacker' && t_ms < 3000 ? { left_V: 6, right_V: 6 } : { left_V: 0, right_V: 0 });
+    const live = FBLive.create(lp, lieF, { voltsAt: volts, cmdAt: (n, t) => (n === 'stacker' && plan[t]) || null });
+    const tilts = [], events = [];
+    let prev = live.objects()[0].draw, maxJump = 0;
+    for (let t = 0; t < 4500; t++) {
+      live.advance(0.001);
+      live.takeEvents().forEach((e) => events.push(e.text));
+      const o = live.objects()[0];
+      maxJump = Math.max(maxJump, Math.hypot(o.draw.bx_in - prev.bx_in, o.draw.by_in - prev.by_in, o.draw.z_in - prev.z_in)); prev = o.draw;
+      if (t === 100 || t === 150) tilts.push(o.draw.tilt_deg);
+    }
+    const o = live.objects()[0];
+    check('Livesim: liegender Pin wird gegriffen (GRAB), richtet sich in der Hand auf (Winkel bei 100 ms > bei 150 ms > 0)', events.indexOf('GRAB:PIN_L') >= 0 && tilts[0] > tilts[1] && tilts[1] >= 0, tilts.join() + ' | ' + events.join(' '));
+    check('Livesim: Aufrichten, Halten, Fahren, Ablegen ohne Sprung (< 0,5 in je ms)', maxJump < 0.5, maxJump);
+    check('Livesim: der aufgerichtete Pin steht danach gestapelt auf dem Goal (3,25) in dessen Mitte', o.state === 'standing' && Math.abs(o.draw.z_in - 3.25) < 1e-9 && o.draw.tilt_deg === 0 && Math.hypot(o.x_in, o.y_in) < 0.01 && events.indexOf('STACK:PIN_L') >= 0, JSON.stringify(o) + events.join(' '));
   }
 
   return { ok, fail, msgs };
