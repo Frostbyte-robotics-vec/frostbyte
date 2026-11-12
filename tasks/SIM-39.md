@@ -29,6 +29,8 @@ tasks/SIM-38.md, docs/decisions/ADR-026 und ADR-024 (Stapelregeln), docs/rules_s
 ## Übergabe
 Noch nicht begonnen.
 
+KI-Review PR #115 (Empfehlung: ändern): physics_test.js:307 ist fast tautologisch (`kein SG6 || hand.length === 2`) → beides prüfen (`&&`, Hand = {CUP, PIN}). Stapelt auf #114.
+
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt (Folge von SIM-38) · –
