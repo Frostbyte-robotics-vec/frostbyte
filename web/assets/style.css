@@ -52,7 +52,7 @@ section{position:relative}
 .nav-cta{display:flex;align-items:center;gap:12px}
 .burger{display:none;background:none;border:1px solid var(--line-dark);color:#fff;width:42px;height:42px;border-radius:4px;cursor:pointer}
 .burger span{display:block;width:18px;height:2px;background:currentColor;margin:4px auto;transition:transform .25s}
-@media (max-width:1020px){
+@media (max-width:1100px){
   .nav ul{position:absolute;top:68px;left:0;right:0;flex-direction:column;gap:0;background:var(--night);border-bottom:1px solid var(--line-dark);padding:8px max(16px, env(safe-area-inset-right,0px)) 16px max(16px, env(safe-area-inset-left,0px))}
   .nav ul a{display:block;padding:14px 0;border-bottom:1px solid var(--line-dark);font-size:13px}
   .nav ul:not(.open){display:none}
@@ -388,7 +388,7 @@ footer .wrap{padding-block:56px 34px;display:grid;gap:40px}
 
 /* W-14: zehn Menüpunkte brauchen auf schmalen Laptops weniger Abstand */
 .nav ul a{white-space:nowrap}
-@media (min-width:1021px) and (max-width:1400px){.nav ul{gap:14px}.nav ul a{letter-spacing:.04em;font-size:11.5px}.nav-cta .btn{padding-inline:14px}}
+@media (min-width:1101px){.nav ul{gap:14px}.nav ul a{letter-spacing:.04em;font-size:11.5px}.nav-cta .btn{padding-inline:14px}}
 
 /* ---------- W-14: Formulare (mailto, nichts auf dem Server) ---------- */
 .mailform{display:none}

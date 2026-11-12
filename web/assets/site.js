@@ -59,6 +59,7 @@
   [].forEach.call(document.querySelectorAll('form.mailform'),function(form){
     var status=form.querySelector('.fstatus');
     function show(msg,err){status.textContent=msg;status.classList.toggle('err',!!err);}
+    form.addEventListener('input',function(e){if(e.target.getAttribute('aria-invalid')&&e.target.checkValidity())e.target.removeAttribute('aria-invalid');});
     form.addEventListener('submit',function(e){
       e.preventDefault();
       if(!form.checkValidity()){
@@ -67,6 +68,7 @@
         var bad=form.querySelector(':invalid'); if(bad)bad.focus();
         return;
       }
+      [].forEach.call(form.elements,function(el){el.removeAttribute('aria-invalid');});
       var lines=[];
       [].forEach.call(form.querySelectorAll('label.fld'),function(l){
         var el=l.querySelector('input,select,textarea'); if(!el||!el.value.trim())return;
