@@ -31,6 +31,8 @@ docs/decisions/ADR-025-livesim-browser.md (Nachträge SIM-30, SIM-34), sim/field
 ## Übergabe
 Noch nicht begonnen.
 
+KI-Review PR #114 (Empfehlung: ändern): (1) tests-macos in CI neu starten (rot, vermutlich Timeout); (2) livesim.js touchBodies: doppeltes `var len`, Guard gegen len=0 (NaN); (3) Mergebarkeit gegen main prüfen/rebasen (#115, #116 sind gestapelt).
+
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt (Wunsch des Menschen: sichtbare Physik und Stapeln) · –
