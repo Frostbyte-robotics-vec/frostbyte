@@ -2,7 +2,7 @@
 id: SIM-38
 phase: "5"
 titel: Physik für Spielobjekte im Browser-Livesim: Kippen, Fallen, Liegen, Ruhe (statt Sprung stehend → liegend)
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-38
 depends: [SIM-30, SIM-35]
