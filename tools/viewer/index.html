@@ -681,6 +681,7 @@ window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; docume
 
 /* ---------- Live-Handsteuerung (SIM-14, livesim.js) ---------- */
 const LIVE_KEYS = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd' };
+const LIVE_CLAW_T = 0.246;
 const LIVE_CMDS = { KeyE: { type: 'grab' }, KeyQ: { type: 'release' }, KeyF: { type: 'lift', dir: 1 }, KeyV: { type: 'lift', dir: -1 } };
 const liveHeld = { w: false, a: false, s: false, d: false, shift: false };
 function liveSend(){ if (S.live) S.live.sim.setKeys(liveHeld); }
@@ -735,6 +736,9 @@ function updateLive(){
   ['stacker', 'runner'].forEach(n => {
     const p = L.sim.pose(n);
     placeOnField(L.models[n], p.x_in, p.y_in, p.h_deg);
+    const info = L.models[n].userData.info, ld = L.sim.liftDeg(n);   // Lift folgt der Simulation (SIM-42); ohne hand_hoehe bleibt die Startstellung
+    // Greifarm fest teilweise vorgeschwenkt (LIVE_CLAW_T): die Klaue liegt vor dem Schlitten dort, wo die Simulation das Teil hält (vorn_in), in der Höhe hand_hoehe.basis_in (beides am Modell gemessen)
+    if (info && ld !== null) info.set(Math.min(info.thMax, Math.max(info.thMin, ld)) * DEG, LIVE_CLAW_T);
     const pts = L.sim.outline(n).map(c => new THREE.Vector3(c.x_in, 0.3, -c.y_in));
     L.outlines[n].geometry.setFromPoints(pts); L.outlines[n].visible = L.showOutline;
   });

@@ -52,13 +52,19 @@ var FBPhysics = (function () {
     var g = p.greifen;
     cfg.grab = !g ? null : {
       reach_in: need(g, 'reichweite_in', 'physik.greifen', true), front_in: need(g, 'vorn_in', 'physik.greifen'),
-      hand_z_in: need(g, 'hand_z_in', 'physik.greifen'), lift_levels: need(g, 'lift_stufen', 'physik.greifen', true),
+      hand_z_in: need(g, 'hand_z_in', 'physik.greifen'), grab_tol_in: need(g, 'greif_toleranz_in', 'physik.greifen', true), grip_in: need(g, 'greif_hoehe_in', 'physik.greifen'), lift_levels: need(g, 'lift_stufen', 'physik.greifen', true),
       lift_step_in: need(g, 'lift_stufe_in', 'physik.greifen', true), lift_speed_in_s: need(g, 'lift_geschw_in_s', 'physik.greifen', true),
       pull_in_s: need(g, 'zieh_geschw_in_s', 'physik.greifen', true), fang_radius_in: need(g, 'fangradius_in', 'physik.greifen', true),
       stack_step_in: need(g, 'stapel_stufe_in', 'physik.greifen', true), snap_rate_1_s: need(g, 'fang_zug_1_s', 'physik.greifen', true),
       // SIM-40: liegende Teile greifen; ohne die Zahl bleibt das Greifen auf stehende Teile beschränkt
-      rise_rad_s: g.aufricht_rad_s === undefined ? null : need(g, 'aufricht_rad_s', 'physik.greifen', true)
+      rise_rad_s: g.aufricht_rad_s === undefined ? null : need(g, 'aufricht_rad_s', 'physik.greifen', true),
+      // SIM-42: Handhöhe je Roboter = basis_in + hub_in · sin(Liftwinkel); ohne den Eintrag bleibt es bei hand_z_in und lift_stufe_in
+      hand_geo: {}
     };
+    if (g) Object.keys(g.hand_hoehe || {}).forEach(function (n) {
+      var e = g.hand_hoehe[n];
+      cfg.grab.hand_geo[n] = { base_in: need(e, 'basis_in', 'physik.greifen.hand_hoehe.' + n), hub_in: need(e, 'hub_in', 'physik.greifen.hand_hoehe.' + n, true) };
+    });
     return cfg;
   }
 
@@ -290,7 +296,7 @@ var FBPhysics = (function () {
       release: function (i) {
         var b = bodies[i];
         if (b.state !== 'held') return false;
-        b.state = 'falling'; b.vz = 0;
+        b.state = 'falling'; b.vz = 0; b.theta = 0; b.omega = 0;   // eine Restneigung aus dem Aufrichten gilt nicht für den Fall
         return true;
       },
       // Richtung (Feld, Grad) des oberen Endes eines Objekts, das von Anfang an liegt und noch nie berührt wurde.

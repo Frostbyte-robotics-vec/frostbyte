@@ -241,6 +241,20 @@ var FBLive = (function () {
       robots[n] = { p: loadDrive(params, n), outline: loadOutline(params, n), start: s, contact: {}, blockedS: 0, blockedSent: false, left: { v: 0 }, right: { v: 0 }, volts: { left_V: 0, right_V: 0 },
         hand: [], lift: { level: 0, z: 0 }, x_in: s.x_in, y_in: s.y_in, h_deg: s.h_deg };
     });
+    // SIM-42: Handhöhe aus dem Liftwinkel (basis + hub · sin θ). Stufen teilen den Hubbereich gleich auf; z zählt ab der untersten Stellung.
+    function liftGeo(name) {
+      var g = physCfg && physCfg.grab, e = g && g.hand_geo[name], m = params.roboter && params.roboter[name] && params.roboter[name].mechanismen;
+      if (!e || !m || !m.lift) return null;
+      var lo = m.lift.min_deg, hi = m.lift.max_deg, sin = function (d) { return Math.sin(d * DEG); };
+      if (typeof lo !== 'number' || typeof hi !== 'number' || !(hi > lo)) throw new Error('sim_params roboter.' + name + '.mechanismen.lift: min_deg/max_deg fehlen');
+      var zmin = e.base_in + e.hub_in * sin(lo), zmax = e.base_in + e.hub_in * sin(hi);
+      if (zmin < 0) throw new Error('sim_params physik.greifen.hand_hoehe.' + name + ': Hand läge bei min_deg unter dem Boden (' + zmin.toFixed(1) + ' in)');
+      return { base_in: e.base_in, hub_in: e.hub_in, min_deg: lo, zmin: zmin, range_in: zmax - zmin };
+    }
+    function handBase(r) { return r.geo ? r.geo.zmin : holdCfg().hand_z_in; }
+    // eine Stufe = lift_stufe_in (wie eine Stapelebene); mit hand_hoehe so viele Stufen, bis der Hubbereich erreicht ist, die oberste endet bei max_deg
+    function liftStep(r) { return holdCfg().lift_step_in; }
+    function liftLevels(r) { return r.geo ? Math.ceil(r.geo.range_in / liftStep(r) - 1e-9) : holdCfg().lift_levels; }
     var fieldIn = field && typeof field.feld_in === 'number' && field.feld_in > 0 ? field.feld_in : null;
     if (fieldIn === null) notes.push('Kollision: field.json fehlt oder ohne feld_in, kein Feldrand');
     var elements = loadElements(params, field, notes);
@@ -250,6 +264,7 @@ var FBLive = (function () {
     var objects = objectCfg.list.map(function (o) { return Object.assign({}, o); });
     // Physik der Objekte (SIM-38, ADR-051): nur mit Block physik in den Parametern; ohne ihn bleibt alles wie in SIM-30.
     var physCfg = typeof FBPhysics !== 'undefined' ? FBPhysics.load(params) : null;
+    ROBOTS.forEach(function (n) { robots[n].geo = liftGeo(n); });
     if (params.physik && typeof FBPhysics === 'undefined') notes.push('Physik: physics.js fehlt, Objekte kippen ohne Physik (Skript nicht eingebunden?)');
     var phys = null, lastTouch = {};
     function makeWorld() {
@@ -384,37 +399,42 @@ var FBLive = (function () {
     /* Greifen, Heben, Ablegen (SIM-39): nur mit Physik und Block physik.greifen. Befehle gelten am Steuertakt. Der Roboter hält
        höchstens einen Pin und einen Cup (SG6, RuleGuard: sonst RULE:SG6). Gegriffen wird ein freies, stehendes Teil vor dem Roboter. */
     function holdCfg() { return phys && phys.cfg.grab; }
+    // Hand: ein Teil vor dem Roboter, mit dem Fußpunkt greif_hoehe_in unter der Hand; Pin und Cup stecken ineinander (Pin auf dem Cup, eine Stapelstufe höher)
     function handPoint(r, slot, count) {
       var g = holdCfg(), h = r.h_deg * DEG, fwd = r.outline.length_in / 2 + g.front_in;
-      var lat = count < 2 ? 0 : (slot === 0 ? -1 : 1) * (phys.bodies[r.hand[0]].r + phys.bodies[r.hand[1]].r) / 2 + (count < 2 ? 0 : (slot === 0 ? -0.3 : 0.3));
-      return { x: r.x_in + fwd * Math.cos(h) - lat * Math.sin(h), y: r.y_in + fwd * Math.sin(h) + lat * Math.cos(h), z: g.hand_z_in + r.lift.z };
+      var up = (count >= 2 || r.pinRaised) && phys.bodies[r.hand[slot]].kind === 'pin' ? g.stack_step_in : 0;
+      return { x: r.x_in + fwd * Math.cos(h), y: r.y_in + fwd * Math.sin(h), z: handBase(r) + r.lift.z - g.grip_in + up };
     }
     function doGrab(name) {
       var r = robots[name], g = holdCfg(), h = r.h_deg * DEG, best = -1, bestD = Infinity;
       if (!g) return;
+      var blocked = -1, hz = handBase(r) + r.lift.z;
       phys.bodies.forEach(function (b, i) {
-        if ((b.state !== 'standing' && !(b.state === 'lying' && g.rise_rad_s !== null)) || b.z > g.hand_z_in + r.lift.z + 0.5 || !phys.isFree(i)) return;
+        // Hand auf Höhe des Teils (Fußpunkt bis Oberkante, mit Spielraum): mit hohem Lift wird nichts vom Boden gegriffen
+        if ((b.state !== 'standing' && !(b.state === 'lying' && g.rise_rad_s !== null)) || hz < b.z - g.grab_tol_in || hz > b.z + b.h + g.grab_tol_in || !phys.isFree(i)) return;
         var dx = b.x - r.x_in, dy = b.y - r.y_in, lu = dx * Math.cos(h) + dy * Math.sin(h), lv = -dx * Math.sin(h) + dy * Math.cos(h);
         var front = r.outline.length_in / 2;
         if (lu < front - b.r || lu > front + g.reach_in + b.r || Math.abs(lv) > r.outline.width_in / 2 + b.r) return;
         var d = Math.sqrt((lu - front) * (lu - front) + lv * lv);
+        // SG6 (RuleGuard) wirkt vor der Auswahl: ein abgelehntes Teil sperrt kein anderes
+        if (r.hand.some(function (k) { return phys.bodies[k].kind === b.kind; })) { blocked = i; return; }
         if (d < bestD) { best = i; bestD = d; }
       });
-      if (best < 0) return;
-      var kind = phys.bodies[best].kind;
-      if (r.hand.some(function (i) { return phys.bodies[i].kind === kind; })) { emit(name, 'RULE:SG6'); return; }
+      if (best < 0) { if (blocked >= 0) emit(name, 'RULE:SG6'); return; }
       if (phys.hold(best)) { r.hand.push(best); emit(name, 'GRAB:' + phys.bodies[best].id); }
     }
     function doRelease(name) {
       var r = robots[name];
       if (!r.hand.length) return;
-      var i = r.hand.pop();
+      // der Cup liegt unten und wird zuerst abgelegt; danach hebt der Lift, und der Pin kommt obenauf
+      var k = r.hand.findIndex(function (b) { return phys.bodies[b].kind === 'cup'; }), i = r.hand.splice(k < 0 ? r.hand.length - 1 : k, 1)[0];
+      r.pinRaised = r.hand.length === 1 && phys.bodies[i].kind === 'cup';   // der Pin bleibt oben, bis er selbst abgelegt wird (sinkt nicht in den Cup)
       phys.release(i);
       emit(name, 'DROP:' + phys.bodies[i].id);
     }
     function doLift(name, dir) {
       var r = robots[name], g = holdCfg();
-      if (g) r.lift.level = Math.min(Math.max(r.lift.level + (dir < 0 ? -1 : 1), 0), g.lift_levels);
+      if (g) r.lift.level = Math.min(Math.max(r.lift.level + (dir < 0 ? -1 : 1), 0), liftLevels(r));
     }
     function applyCommand(name, c) {
       if (!phys || !holdCfg() || !c) return;
@@ -425,7 +445,7 @@ var FBLive = (function () {
       var g = holdCfg();
       if (!g) return;
       ROBOTS.forEach(function (n) {
-        var r = robots[n], goal = r.lift.level * g.lift_step_in, d = goal - r.lift.z, step = g.lift_speed_in_s * dt;
+        var r = robots[n], goal = Math.min(r.lift.level * liftStep(r), r.geo ? r.geo.range_in : Infinity), d = goal - r.lift.z, step = g.lift_speed_in_s * dt;
         r.lift.z = Math.abs(d) <= step ? goal : r.lift.z + (d > 0 ? step : -step);
         var follow = g.pull_in_s + Math.abs((r.left.v + r.right.v) / 2);
         r.hand.forEach(function (i, slot) {
@@ -458,7 +478,7 @@ var FBLive = (function () {
           var r = robots[n];
           r.left.v = 0; r.right.v = 0; r.volts = { left_V: 0, right_V: 0 };
           r.x_in = r.start.x_in; r.y_in = r.start.y_in; r.h_deg = r.start.h_deg;
-          r.contact = {}; r.blockedS = 0; r.blockedSent = false; r.hand = []; r.lift = { level: 0, z: 0 };
+          r.contact = {}; r.blockedS = 0; r.blockedSent = false; r.hand = []; r.pinRaised = false; r.lift = { level: 0, z: 0 };
           cmdQueue[n].length = 0;
         });
         objects = objectCfg.list.map(function (o) { return Object.assign({}, o); });
@@ -514,6 +534,13 @@ var FBLive = (function () {
       // Ids der gehaltenen Teile und Liftstufe (SIM-39)
       hand: function (name) { return phys ? robots[name].hand.map(function (i) { return phys.bodies[i].id; }) : []; },
       liftLevel: function (name) { return robots[name].lift.level; },
+      // Handhöhe über dem Boden und Liftwinkel (SIM-42); liftDeg ist null ohne physik.greifen.hand_hoehe
+      handZ: function (name) { var r = robots[name]; return holdCfg() ? handBase(r) + r.lift.z : null; },
+      liftDeg: function (name) {
+        var r = robots[name], e = r.geo;
+        if (!e) return null;
+        return Math.asin(Math.min(1, Math.max(-1, (e.zmin + r.lift.z - e.base_in) / e.hub_in))) / DEG;
+      },
       // Richtung des oberen Endes eines Objekts, das von Anfang an liegt (nur Anzeige, ändert die Physik nicht).
       setLieDir: function (id, deg) { if (phys) phys.bodies.forEach(function (b, i) { if (b.id === id) phys.setLieDir(i, deg); }); },
       speed: function (n) { var r = robots[n]; return (r.left.v + r.right.v) / 2; }

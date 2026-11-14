@@ -190,7 +190,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
 
   // ---- SIM-39: Stützflächen, Greifen, Ablegen, Stapeln ----
   const grab = { reichweite_in: 3.0, vorn_in: 2.5, hand_z_in: 1.0, lift_stufen: 5, lift_stufe_in: 4.0, lift_geschw_in_s: 40, zieh_geschw_in_s: 80,
-    fangradius_in: 3.0, stapel_stufe_in: 4.0, fang_zug_1_s: 10, aufricht_rad_s: 6.0 };
+    fangradius_in: 3.0, stapel_stufe_in: 4.0, fang_zug_1_s: 10, aufricht_rad_s: 6.0, greif_toleranz_in: 0.5, greif_hoehe_in: 0 };
   const baseG = Object.assign({}, base, { physik: Object.assign({}, physik, { greifen: grab }) });
   const cfgG = FBPhysics.load(baseG);
   check('greifen ist ohne Block null, mit Block gelesen', cfg.grab === null && cfgG.grab.fang_radius_in === 3.0 && cfgG.grab.stack_step_in === 4.0);
@@ -307,6 +307,21 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const r3b = play(grabF, { 10: g1, 20: g1 }, 1, 200, false);
     check('Livesim: Pin und Cup in der Hand sind kein Verstoß', r3b.events.indexOf('stacker RULE:SG6') === -1 || r3b.live.hand('stacker').length === 2, r3b.events.join(' | '));
 
+    // SIM-42: die Hand fasst das Teil greif_hoehe_in über dem Fußpunkt; ein Bodenteil springt beim Greifen auf Stufe 0 nicht um die ganze Handhöhe
+    const gh = (n) => Object.assign({}, gp, { physik: Object.assign({}, gp.physik, { greifen: Object.assign({}, grab, { greif_hoehe_in: n }) }) });
+    const ghLive = (n) => { const l = FBLive.create(gh(n), oneF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: script({ 10: g1 }) }); for (let t = 0; t < 1500; t += 10) l.advance(0.01); return l.objects().filter((o) => o.id === 'PIN_A')[0].draw.z_in; };
+    check('Livesim: gehaltenes Teil hängt greif_hoehe_in unter der Hand (Fußpunkt = Hand − Griffhöhe)', Math.abs(ghLive(0) - 1.0) < 1e-6 && Math.abs(ghLive(0.75) - 0.25) < 1e-6, ghLive(0) + ' / ' + ghLive(0.75));
+    let threw3 = false;
+    try { FBPhysics.load({ welt: base.welt, physik: Object.assign({}, physik, { greifen: Object.assign({}, grab, { greif_hoehe_in: -1 }) }) }); } catch (e) { threw3 = true; }
+    check('physik.greifen.greif_hoehe_in darf nicht negativ sein', threw3);
+    // SIM-42: Pin und Cup stecken in der Hand ineinander (Pin auf dem Cup, gleicher Fußpunkt in x/y), der Cup wird zuerst abgelegt
+    const nest = play(twoF, { 10: g1, 20: g1 }, 1, 1500);
+    const nc = nest.get('CUP_A').draw, np = nest.get('PIN_A').draw;
+    check('Livesim: Pin steckt auf dem Cup in der Hand (gleiches x/y, eine Stapelstufe höher)', Math.hypot(nc.bx_in - np.bx_in, nc.by_in - np.by_in) < 0.01 && Math.abs(np.z_in - nc.z_in - 4.0) < 0.05, JSON.stringify([nc, np]));
+    const nrel = play(twoF, { 10: g1, 20: g1, 1200: rel }, 1, 1500);
+    check('Livesim: Q legt zuerst den Cup ab, der Pin bleibt in der Hand', nrel.live.hand('stacker').join() === 'PIN_A', nrel.live.hand('stacker').join());
+    const pinZ = (live) => live.objects().filter((o) => o.id === 'PIN_A')[0].draw.z_in;
+    check('Livesim: nach dem Ablegen des Cups sinkt der Pin nicht in den Cup (bleibt auf seiner Höhe)', Math.abs(pinZ(nrel.live) - pinZ(nest.live)) < 0.05, pinZ(nrel.live) + ' / ' + pinZ(nest.live));
     // Zwei Teile übereinander: Pin + Cup halten, Lift auf Stufe 2, beide nacheinander ablegen
     const r4 = play(twoF, { 10: g1, 20: g1, 30: up, 40: up, 3000: rel, 3300: rel }, 1, 5000);
     const zs = ['PIN_A', 'CUP_A'].map((id) => r4.get(id).draw.z_in).sort((x, y) => x - y);
@@ -320,6 +335,32 @@ function runPhysicsTests(FBPhysics, FBLive) {
     check('Livesim: ohne aufricht_rad_s wird weder ein fernes noch ein liegendes Objekt gegriffen', far5.live.hand('stacker').length === 0 && far5.events.filter((e) => /GRAB/.test(e)).length === 0, far5.events.join(' | '));
     const lift = play(grabF, { 10: up, 20: up, 30: up, 40: up, 50: up, 60: up, 70: up }, 1, 1000, false);
     check('Livesim: Lift bleibt bei Stufe 5 stehen (Grenze)', lift.live.liftLevel('stacker') === 5);
+
+    // SIM-42: Greifen nur auf Höhe des Teils (SIM-41) und SG6 vor der Auswahl: ein nahes, abgelehntes Pin sperrt keinen ferneren Cup
+    const hi3 = play(grabF, { 10: up, 20: up, 30: up, 40: up, 800: g1 }, 1, 1000, false);
+    check('Livesim: Hand weit über dem Boden greift kein Teil vom Boden', hi3.live.hand('stacker').length === 0 && hi3.events.filter((e) => /GRAB/.test(e)).length === 0, hi3.events.join(' | '));
+    const sg6 = play(mkField({ pins: [{ id: 'PIN_NAH', x_in: -30, y_in: 0, lage: 'steht', ebene: 0, variante: 'yellow' }, { id: 'PIN_HAND', x_in: -30, y_in: 3.5, lage: 'steht', ebene: 0, variante: 'yellow' }],
+      cups: [{ id: 'CUP_FERN', x_in: -30, y_in: -5.5, lage: 'steht', ebene: 0 }] }), { 10: g1, 20: g1 }, 1, 200, false);
+    check('Livesim: SG6 filtert die Kandidaten: Pin in der Hand, nahes Pin abgelehnt, ferner Cup wird trotzdem gegriffen', sg6.live.hand('stacker').length === 2 && sg6.live.hand('stacker').some((id) => /CUP/.test(id)), sg6.live.hand('stacker').join() + ' | ' + sg6.events.join(' | '));
+    // SIM-42: Liftwinkel aus der Handhöhe (Basis + Hub · sin θ), damit das CAD-Modell dem Lift folgt und nie im Boden steht
+    const hh = (b, h) => Object.assign({}, gp, {
+      roboter: Object.assign({}, gp.roboter, { stacker: Object.assign({}, gp.roboter.stacker, { mechanismen: { lift: { min_deg: -40, max_deg: 45 } } }) }),
+      physik: Object.assign({}, gp.physik, { greifen: Object.assign({}, grab, { hand_hoehe: { stacker: { basis_in: b, hub_in: h } } }) }) });
+    const mkHH = (b, h) => FBLive.create(hh(b, h), grabF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: script({ 10: up, 20: up, 30: up, 40: up, 50: up, 60: up, 70: up, 80: up, 90: up, 100: up }) });
+    const lz = mkHH(20, 24), s0 = lz.liftDeg('stacker');
+    const zOf = (deg) => 20 + 24 * Math.sin(deg * Math.PI / 180);
+    check('Livesim: Liftwinkel beginnt bei min_deg', Math.abs(s0 - -40) < 1e-9, String(s0));
+    check('Livesim: ohne hand_hoehe ist liftDeg null (Altverhalten)', play(grabF, {}, 1, 10, false).live.liftDeg('stacker') === null);
+    let prevDeg = s0, mono = true, inRange = true;
+    for (let t = 0; t < 1500; t += 5) { lz.advance(0.005); const d = lz.liftDeg('stacker'); if (d < prevDeg - 1e-9) mono = false; if (d < -40 - 1e-9 || d > 45 + 1e-9) inRange = false; prevDeg = d; }
+    check('Livesim: Liftwinkel steigt monoton und bleibt zwischen min_deg und max_deg', mono && inRange && Math.abs(prevDeg - 45) < 1e-6, String(prevDeg));
+    check('Livesim: Handhöhe oben = Basis + Hub·sin(max_deg), unten = Basis + Hub·sin(min_deg)', Math.abs(lz.handZ('stacker') - zOf(45)) < 1e-6 && Math.abs(mkHH(20, 24).handZ('stacker') - zOf(-40)) < 1e-9, lz.handZ('stacker') + '');
+    check('Livesim: eine Stufe hebt die Hand um lift_stufe_in (wie eine Stapelebene), die oberste endet genau bei max_deg', (() => {
+      const l = FBLive.create(hh(20, 24), grabF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: script({ 10: up }) }); for (let t = 0; t < 1000; t += 10) l.advance(0.01);
+      return Math.abs(l.handZ('stacker') - (zOf(-40) + 4.0)) < 1e-6 && l.liftLevel('stacker') === 1 && Math.abs(lz.handZ('stacker') - zOf(45)) < 1e-6 && lz.liftLevel('stacker') === 9; })(), 'Stufen oben: ' + lz.liftLevel('stacker'));
+    let threw2 = false;
+    try { FBLive.create(hh(5, 24), grabF, { voltsAt: () => ({ left_V: 0, right_V: 0 }) }); } catch (e) { threw2 = true; }
+    check('Livesim: Hand unter dem Boden bei min_deg wird abgelehnt', threw2);
 
     // Reset: Hand und Lift leer, Objekte wie am Anfang
     r1.live.reset();
@@ -341,6 +382,15 @@ function runPhysicsTests(FBPhysics, FBLive) {
     w = lyingPin();
     const before = w.pose(0), b = w.bodies[0];
     check('hold auf ein liegendes Teil: gehalten, Fußpunkt und Höhe wie vorher gezeichnet (kein Sprung)', w.hold(0) && b.state === 'held' && (() => { const q = w.pose(0); return Math.hypot(q.bx_in - before.bx_in, q.by_in - before.by_in, q.z_in - before.z_in) < 1e-9 && q.tilt_deg === 90; })(), JSON.stringify([before, w.pose(0)]));
+    // SIM-42 (SIM-41-Fund): mitten im Aufrichten losgelassen landet das Teil senkrecht, ohne Restneigung
+    {
+      const w2 = lyingPin(), b2 = w2.bodies[0];
+      w2.hold(0); w2.moveHeld(0, 12, 6, 4, DT);
+      check('Vorbedingung: Teil ist beim Loslassen noch geneigt', b2.theta > 0.1, String(b2.theta));
+      w2.release(0);
+      for (let k = 0; k < 400; k++) w2.step(DT);
+      check('Loslassen mitten im Aufrichten: Teil steht senkrecht (theta = 0, omega = 0)', b2.state === 'standing' && b2.theta === 0 && b2.omega === 0 && w2.pose(0).tilt_deg === 0, b2.state + ' ' + b2.theta);
+    }
     let prevPose = w.pose(0), maxJump = 0, monotone = true, steps = 0, prevTilt = 90;
     while (!w.moveHeld(0, 12, 6, 4, DT) && steps < 5000) {
       steps++;
