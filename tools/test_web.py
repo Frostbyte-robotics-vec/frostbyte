@@ -185,8 +185,13 @@ class WebTest(unittest.TestCase):
             self.assertNotIn(f"assets/{datei}.jpg", h)
             self.assertFalse((WEB / "assets" / f"{datei}.jpg").exists(), datei)
         self.assertIn('id="teamfoto"', h)  # freier Platz, kein erfundenes Bild
-        for name in ("Máté Lechner", "David Čop", "Arved Janssen", "Stefan Leutenegger"):
-            self.assertIn(name, h)
+        self.assertIn("Stefan Leutenegger", h)
+        # Teamfoto-Tag: keine Namen der Gründer und keine "drei Ingenieure" auf den Hauptseiten
+        for name, seite in HTML.items():
+            if "imprint" in name or "impressum" in name:
+                continue
+            for verboten in ("Máté", "Lechner", "David", "Arved", "Janssen", "Drei Ingenieure", "Three engineers", "drei Maschinenbau", "three mechanical"):
+                self.assertNotIn(verboten, seite, name)
 
     def test_partnerwand_gross_auf_hauptseite_vor_dem_ziel(self):
         for name, h in HTML.items():
