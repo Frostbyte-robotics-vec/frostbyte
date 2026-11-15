@@ -2,7 +2,7 @@
 id: SIM-44
 phase: "5"
 titel: GPS-Fusion in der Simulation verdrahten (Odometrie springt bei Kontakt und wird nie zurückgezogen)
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-44
 depends: [SIM-26]
