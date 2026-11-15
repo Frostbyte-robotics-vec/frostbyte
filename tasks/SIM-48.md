@@ -24,8 +24,11 @@ lib/control/ (MotionController), sim/motion_adapter.hpp, ADR-017, D-12, D-14, SI
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Fertig, PR offen. Regler: Nachdrehen nahe am Ziel (`near_turn_deg`) + Mindestspannung `min_move_v` (config: 0,8 V, TODO(HW) kS).
+Messung vorher: 220/506 goto im Timeout (43 %), 54 s je Lauf; nachher 0/560, Score 70,0 → 78,75 (20 Läufe, Seed 1–20, Fusion an).
+Details in ADR-017 (Nachtrag SIM-48). Am Roboter prüfen: kS messen und `min_move_v` einstellen (D-07), kein Zittern am Ziel.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-15 · arjanssen (KI) · Ticket angelegt (aus KI-Review PR #127, Punkt 2) · –
+2026-11-15 · arjanssen (KI) · SIM-48: Regler-Fix, roter Test zuerst, Messung vorher/nachher, ADR-017-Nachtrag · –

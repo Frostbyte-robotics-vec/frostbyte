@@ -67,8 +67,8 @@ Pose to_pose(const sim::Pose& p) { return Pose{p.x_in, p.y_in, p.h_deg}; }
 
 // Regler alle 10 ms, Physik in 1-ms-Schritten, Pose aus dem Fahrmodell (Wahrheit).
 struct Rig {
-    explicit Rig(const sim::Pose& start, double kA = 0.04)
-        : lat(lateral_gains()), ang(angular_gains()), mc(test_config(), lat, ang), model(plant_params(kA), start) {}
+    explicit Rig(const sim::Pose& start, double kA = 0.04, const MotionConfig& cfg = test_config())
+        : lat(lateral_gains()), ang(angular_gains()), mc(cfg, lat, ang), model(plant_params(kA), start) {}
 
     // Läuft, bis der Befehl fertig ist (done/timeout/blocked) oder max_s vergangen sind.
     void run_until_finished(double max_s) {
@@ -247,6 +247,25 @@ TEST_CASE("Motion: Roboter steckt fest (Pose ändert sich nicht trotz Spannung) 
         o = mc.update(t + 0.01, Pose{0.0, 0.0, 0.0});
         CHECK(o.left_v == 0.0);
         CHECK(o.right_v == 0.0);
+    }
+}
+
+TEST_CASE("Motion: move_to mit Querversatz am Ziel (SIM-48) dreht nach und kommt in der Toleranz an") {
+    // Roboter steht 0,9 in seitlich vom Ziel, Kurs quer zum Fehlervektor: Ein Differentialantrieb muss
+    // zum Ziel drehen und ein Stück fahren, statt bis zum Timeout stehenzubleiben.
+    for (const double off_in : {0.9, 0.7, 2.0}) {
+        for (const double h_deg : {90.0, -90.0, 0.0, 180.0}) {
+            MotionConfig cfg = test_config();
+            cfg.move_tol_in = 0.5;
+            cfg.min_move_v = 0.8;
+            Rig r(sim::Pose{10.0, off_in, h_deg}, 0.04, cfg);
+            REQUIRE(r.mc.request(MotionCommand::move_to(10.0, 0.0, 5.0), 0.0));
+            r.run_until_finished(6.0);
+            INFO("Versatz " << off_in << " Kurs " << h_deg);
+            CHECK(r.mc.state() == MotionState::done);
+            CHECK(dist(r.model.pose(), 10.0, 0.0) <= 0.5);
+            CHECK(r.now_s() < 2.5);
+        }
     }
 }
 

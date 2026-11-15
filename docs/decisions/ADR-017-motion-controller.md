@@ -99,3 +99,15 @@ prüfen; LemLib-Adapter muss im Roboter-Build wirklich linken (geprüft: mit `mo
   und ferner als enge; ungültige Werte abgelehnt) und `test/test_sim_routes.cpp` (geparstes `tol_in` erreicht den Controller).
 - Rat des Advisors (Opus): durchreichen, wenn Routen `tol=` benutzen (tun sie); unterscheidendes Testpaar (weit/eng) statt
   „enger als Standard“, weil der Regler beim Ausrollen weiterfährt; zusätzlich Test auf Ausführer-Ebene.
+
+## Nachtrag SIM-48: Querversatz am Ziel
+- Befund (20 Läufe, Seed 1–20, Fusion an, Skills-Routen): 220 von 506 `goto` (43 %) liefen in den Timeout statt anzukommen,
+  zusammen 1088 s (54 s je Lauf, beide Roboter). Ursache: Näher als `near_in` lenkte `move_to` nicht mehr; stand der
+  Roboter dort außerhalb der Toleranz und quer zum Ziel, war der Fahranteil `d·cos(he)` ≈ 0. Dazu lag der P-Anteil kurz
+  vor dem Ziel unter der Haftreibung (kS) und der Roboter blieb 0,5–1 in vor dem Ziel stehen.
+- Entscheidung (Regler, nicht Toleranz oder Route): (1) Näher als `near_in`, aber außerhalb der Toleranz und mit
+  Lenkfehler > `near_turn_deg` (20°) wird nachgedreht. Innerhalb der Toleranz und bei kleinem Lenkfehler bleibt es beim
+  Nicht-Nachlenken (kein Kreiseln). (2) `min_move_v`: Mindestspannung zum Ziel, solange es außerhalb der Toleranz liegt und
+  der Roboter ausgerichtet ist. Standard 0 (aus); in `config/` 0,8 V, TODO(HW): kS messen (Schätzung 0,6 V).
+  Toleranz (D-12, 0,5 in) und Routen bleiben unverändert.
+- Nachher (gleiche 20 Läufe): 0 von 560 `goto` im Timeout, Teamscore im Mittel 70,0 → 78,75, keine Regelverstöße.
