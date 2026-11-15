@@ -259,8 +259,8 @@ function runPhysicsTests(FBPhysics, FBLive) {
   runG(w, 1.5);
   check('außerhalb des Fangradius: Boden, kein Stapel', w.bodies[0].z === 0 && w.bodies[0].x === 5 && w.bodies[0].state === 'standing');
 
-  // 16 Stapel: ein Teil auf dem anderen, Stufe aus den Parametern; mehr als zwei gehen auch
-  w = makeG([spec('A', 0, 0), spec('B', 0, 0), spec('C', 0, 0)], [{ x_in: 0, y_in: 0, z_in: 3.25 }]);
+  // 16 Stapel (SIM-43: Startplätze getrennt, sonst stapeln die Teile schon am Start und das Loslassen unterhalb der Auflage täuscht Höhen vor): ein Teil auf dem anderen, Stufe aus den Parametern; mehr als zwei gehen auch
+  w = makeG([spec('A', 30, 0), spec('B', 40, 0), spec('C', 50, 0)], [{ x_in: 0, y_in: 0, z_in: 3.25 }]);
   w.drop(0, 0, 0, 8); runG(w, 1.0);
   w.drop(1, 0.5, 0, 14); runG(w, 1.0);
   w.drop(2, -0.5, 0.5, 20); runG(w, 1.5);
@@ -345,7 +345,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const runF = { feld_in: 144, goals: [{ id: 'G1', typ: 'neutral', x_in: 0, y_in: 0, hoehe_in: 3.25 }],
       posen: [{ id: 'START_STACKER', x_in: 40, y_in: 60, h_deg: 180 }, { id: 'START_RUNNER', x_in: -9, y_in: 0, h_deg: 0 }],
       objekte_start: { pins: [{ id: 'PIN_R', x_in: -2, y_in: 0, lage: 'steht', ebene: 0, variante: 'yellow' }] } };
-    const runPlan = { 10: g1, 500: rel };
+    const runPlan = { 10: g1, 20: { type: 'lift', dir: 1 }, 500: rel };   // SIM-43: ohne Heben läge die Hand unter der Goal-Oberkante (3,25), dann fällt das Teil zum Boden statt aufs Goal
     const runLive = FBLive.create(gp, runF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: (n, t_ms) => (n === 'runner' && runPlan[t_ms]) || null });
     const runEv = [];
     for (let t = 0; t < 2000; t++) { runLive.advance(0.001); runLive.takeEvents().forEach((e) => runEv.push(e.robot + ' ' + e.text)); }
@@ -500,6 +500,95 @@ function runPhysicsTests(FBPhysics, FBLive) {
     check('Livesim: liegender Pin wird gegriffen (GRAB), richtet sich in der Hand auf (Winkel bei 100 ms > bei 150 ms > 0)', events.indexOf('GRAB:PIN_L') >= 0 && tilts[0] > tilts[1] && tilts[1] >= 0, tilts.join() + ' | ' + events.join(' '));
     check('Livesim: Aufrichten, Halten, Fahren, Ablegen ohne Sprung (< 0,5 in je ms)', maxJump < 0.5, maxJump);
     check('Livesim: der aufgerichtete Pin steht danach gestapelt auf dem Goal (3,25) in dessen Mitte', o.state === 'standing' && Math.abs(o.draw.z_in - 3.25) < 1e-9 && o.draw.tilt_deg === 0 && Math.hypot(o.x_in, o.y_in) < 0.01 && events.indexOf('STACK:PIN_L') >= 0, JSON.stringify(o) + events.join(' '));
+  }
+
+  // ---- SIM-43: Messwerte aus dem Prüfstand, je Punkt roter Test ----
+  {
+    // (1) Spitze von omega beim Anfahren: Der Roboter fährt mit v = 60 in/s, die Eindringtiefe springt im ersten Schritt auf 0,3 in
+    // (Drehen/Ersatzpose). omega darf nie über Fahrgeschwindigkeit / Berührhöhe (kick) hinaus erzwungen werden: 60 / 4 = 15 rad/s.
+    const wp = make([spec('P', 0, 0)]);
+    wp.pushStanding(0, 1, 0, 0.3, DT, 60);
+    check('SIM-43: Anfahr-Sprung der Eindringtiefe erzwingt omega nur bis v/Berührhöhe (<= 15 rad/s)', wp.bodies[0].omega_rad_s <= 60 / 4.0 + 1e-9, wp.bodies[0].omega_rad_s);
+    const wq = make([spec('P', 0, 0)]);
+    wq.pushStanding(0, 1, 0, 0.3, DT);
+    check('SIM-43: ohne Geschwindigkeitsangabe bleibt das Verhalten wie vorher (omega = Winkelsprung/dt)', wq.bodies[0].omega_rad_s > 60, wq.bodies[0].omega_rad_s);
+  }
+  {
+    // (2) Nach dem Umkippen keine Überlappung mit einem Nachbarn und nicht im Feldrand: Pin kippt in Richtung +x auf einen stehenden Cup zu.
+    const wo = make([spec('A', 0, 0), spec('N', 4.0, 0)], 144);
+    wo.pushStanding(0, 1, 0, 99, DT);
+    run(wo, 1.0);
+    const a = wo.bodies[0], n = wo.bodies[1];
+    check('SIM-43: gekippter Pin liegt, ohne in den Nachbarn zu ragen (Abstand >= r1 + r2)', a.state === 'lying' && Math.hypot(a.x - n.x, a.y - n.y) >= a.r + n.r - 1e-9, a.state + ' ' + Math.hypot(a.x - n.x, a.y - n.y));
+    const wf = make([spec('E', 70.0, 0)], 144);
+    wf.pushStanding(0, 1, 0, 99, DT);
+    run(wf, 1.0);
+    check('SIM-43: am Feldrand umgekippt liegt das Teil innerhalb des Felds', wf.bodies[0].x <= 72 - 1.5 + 1e-9, wf.bodies[0].x);
+  }
+  {
+    // (3) settle(): zwei gleich hoch deklarierte Teile am selben Ort tragen sich nicht gegenseitig
+    const ws = makeG([spec('U', 0, 0, { z_in: 4.0 }), spec('V', 0, 0, { z_in: 4.0 })]);
+    ws.settle();
+    check('SIM-43: settle: gleich hohe Teile zählen nicht als Unterlage (kein schwebender Stapel)', ws.bodies[0].z === 4.0 && ws.bodies[1].z === 4.0, ws.bodies.map((b) => b.z).join());
+    const wt = makeG([spec('B', 0, 0), spec('T', 0, 0, { z_in: 1.0 })]);
+    wt.settle();
+    check('SIM-43: settle: Teil über einem Bodenteil sinkt weiterhin auf dessen Stapelhöhe', wt.bodies[1].z === 4.0, wt.bodies[1].z);
+  }
+  {
+    // (4) Loslassen unterhalb der Auflage: Teil teleportiert nicht auf die Goal-Oberkante, sondern fällt zum Boden
+    const wr = makeG([spec('R', 0, 0)], [{ x_in: 0, y_in: 0, z_in: 3.25 }]);
+    const b = wr.bodies[0];
+    wr.hold(0); b.x = 0; b.y = 0; b.z = 1.0;
+    wr.release(0);
+    let maxZ = 0;
+    for (let t = 0; t < 600; t++) { wr.step(DT); maxZ = Math.max(maxZ, b.z); }
+    check('SIM-43: Loslassen unter der Goal-Oberkante: z springt nie nach oben (kein Teleport)', maxZ <= 1.0 + 1e-9, maxZ);
+  }
+
+  {
+    // (5) Teil über einem noch abprallenden Teil: landet am Ende darauf (Stufenhöhe), nicht darin
+    const wb = makeG([spec('U', 0, 0), spec('O', 20, 0)], [{ x_in: 0, y_in: 0, z_in: 3.25 }]);
+    wb.drop(0, 0, 0, 12);
+    let n = 0, bouncing = false;
+    for (let t = 0; t < 3000 && n < 1; t++) { wb.step(DT); if (wb.bodies[0].z <= 3.26 && wb.bodies[0].state === 'falling' && wb.bodies[0].vz > 0) { bouncing = true; n++; } }
+    check('SIM-43: Vorbedingung: das untere Teil prallt gerade ab (falling, steigt)', bouncing);
+    wb.drop(1, 0, 0, 9.0);   // aus der Hand über dem Teil losgelassen
+    const evb = [];
+    runG(wb, 2.0, evb);
+    const u = wb.bodies[0], o = wb.bodies[1];
+    check('SIM-43: Teil auf einem noch abprallenden Teil meldet genau ein stacked-landed (kein doppeltes STACK)', evb.filter((e) => e.type === 'landed' && e.id === 'O' && e.stacked).length === 1, JSON.stringify(evb));
+    check('SIM-43: Teil über dem noch abprallenden Teil endet darauf (z = Goal + Stufe), nicht darin', u.state === 'standing' && o.state === 'standing' && Math.abs(u.z - 3.25) < 1e-9 && Math.abs(o.z - (3.25 + 4.0)) < 1e-9, u.z + ' ' + o.z);
+  }
+  {
+    // (6) Das gekippte Teil springt nicht aus der Überlappung: Fußpunkt/Lage je ms höchstens 0,5 in über den Übergang kippend → liegend
+    const wj = make([spec('A', 0, 0), spec('N', 4.0, 0)], 144);   // Roboter mit 60 in/s drückt: omega höchstens 15 rad/s
+    wj.pushStanding(0, 1, 0, 99, DT, 60);
+    let prev = wj.pose(0), maxJ = 0;
+    for (let t = 0; t < 1500; t++) { wj.step(DT); const q = wj.pose(0); maxJ = Math.max(maxJ, Math.hypot(q.bx_in - prev.bx_in, q.by_in - prev.by_in, q.z_in - prev.z_in)); prev = q; }
+    check('SIM-43: Übergang kippend → liegend ohne Sprung (< 0,5 in je ms)', maxJ < 0.5, maxJ);
+    const a = wj.bodies[0], n = wj.bodies[1];
+    check('SIM-43: danach keine Überlappung mit dem Nachbarn', Math.hypot(a.x - n.x, a.y - n.y) >= a.r + n.r - 1e-6, Math.hypot(a.x - n.x, a.y - n.y));
+  }
+
+  {
+    // SIM-43 (Review #123): Pin kurz nach dem Cup abgelegt, der Cup prallt noch: je Teil höchstens ein STACK je Ablage
+    const mk = (objs) => ({ feld_in: 144, goals: [{ id: 'G1', typ: 'neutral', x_in: 0, y_in: 0, hoehe_in: 3.25 }],
+      posen: [{ id: 'START_STACKER', x_in: -40, y_in: 0, h_deg: 0 }, { id: 'START_RUNNER', x_in: 40, y_in: 60, h_deg: 180 }], objekte_start: objs });
+    const dr = (spur) => ({ kS_V: 1.0, kV_V_per_in_s: 0.2, kA_V_per_in_s2: 0.04, spurbreite_in: spur, mu: 1.0, motor_max_V: 11.5 });
+    const lp = { welt: base.welt, live: { langsam_faktor: 0.4, ersatzpose_in: { stacker: { x_in: 0, y_in: 0, h_deg: 0 }, runner: { x_in: 0, y_in: 0, h_deg: 0 } }, kollision: { radius_in: { goals: 4.0 } } },
+      roboter: { stacker: { antrieb: dr(12), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 12, breite: 12 } }, runner: { antrieb: dr(10), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 10, breite: 10 } } },
+      feldobjekte: { radius_in: { cup: 2.0, pin: 2.0 }, roboter_anteil: 0.5 }, physik: baseG.physik };
+    const f = mk({ cups: [{ id: 'CUP_A', x_in: -30, y_in: -3.5, lage: 'steht', ebene: 0 }], pins: [{ id: 'PIN_A', x_in: -30, y_in: 0, lage: 'steht', ebene: 0, variante: 'yellow' }] });
+    let worst = 0;
+    [0, 3, 8, 15, 30, 60].forEach((gap) => {
+      const plan = { 10: { type: 'grab' }, 20: { type: 'lift', dir: 1 }, 30: { type: 'lift', dir: 1 }, 3000: { type: 'release' } };
+      plan[3000 + gap + 1] = { type: 'release' };
+      const live = FBLive.create(lp, f, { voltsAt: (nm, t) => (nm === 'stacker' && t < 3000 ? { left_V: 6, right_V: 6 } : { left_V: 0, right_V: 0 }), cmdAt: (nm, t) => (nm === 'stacker' && plan[t]) || null });
+      const evs = [];
+      for (let t = 0; t < 5000; t++) { live.advance(0.001); live.takeEvents().forEach((e) => evs.push(e.text)); }
+      worst = Math.max(worst, evs.filter((e) => /^STACK:PIN_A/.test(e)).length);
+    });
+    check('SIM-43: Pin auf einem noch abprallenden Cup: höchstens ein STACK:PIN_A je Ablage', worst <= 1, worst);
   }
 
   return { ok, fail, msgs };
