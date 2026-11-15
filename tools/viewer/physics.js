@@ -305,9 +305,18 @@ var FBPhysics = (function () {
       },
       // Roboter schiebt ein liegendes Objekt in Richtung (nx, ny): die Geschwindigkeit entlang der Schubrichtung ist mindestens
       // v_in_s, quer dazu bleibt sie. Es gleitet danach mit Reibung aus.
-      pushLying: function (i, nx, ny, v_in_s) {
+      // Mit dt_s dreht sich das Teil dabei um die Hochachse zur Schubrichtung hin: wie ein Stab an einer flachen Wand stellt es sich
+      // quer (Achse senkrecht zu (nx, ny)); Rate = Schubtempo / (h/2) · sin(Abweichung), also keine eigene Modellzahl (SIM-43).
+      pushLying: function (i, nx, ny, v_in_s, dt_s) {
         var b = bodies[i];
         if (b.state !== 'lying') return;
+        if (dt_s > 0 && v_in_s > 0) {
+          var tx = -ny, ty = nx;
+          if (Math.cos(b.phi_rad) * tx + Math.sin(b.phi_rad) * ty < 0) { tx = -tx; ty = -ty; }   // die nähere der beiden Querrichtungen
+          var diff = Math.atan2(Math.sin(Math.atan2(ty, tx) - b.phi_rad), Math.cos(Math.atan2(ty, tx) - b.phi_rad));
+          var step = v_in_s / (b.h / 2) * Math.sin(Math.min(Math.abs(diff), HALF_PI)) * dt_s;
+          b.phi_rad += Math.sign(diff) * Math.min(Math.abs(diff), step);
+        }
         var vn = b.vx * nx + b.vy * ny;
         if (vn >= v_in_s) return;
         b.vx += (v_in_s - vn) * nx; b.vy += (v_in_s - vn) * ny;

@@ -340,7 +340,7 @@ var FBLive = (function () {
         // Überlappung, mindestens aber mit der Fahrgeschwindigkeit des Roboters; der Roboter weicht um seinen Anteil zurück.
         var px = -m.x / len, py = -m.y / len, tau = phys.cfg.evade_s;
         var hr = r.h_deg * DEG, vn = Math.max(0, (r.left.v + r.right.v) / 2 * (Math.cos(hr) * px + Math.sin(hr) * py));
-        phys.pushLying(i, px, py, vn + (1 - share) * len / tau);
+        phys.pushLying(i, px, py, vn + (1 - share) * len / tau, dt);
         var wall = (px > 0 && b.x >= half - b.r - 1e-9) || (px < 0 && b.x <= -half + b.r + 1e-9) || (py > 0 && b.y >= half - b.r - 1e-9) || (py < 0 && b.y <= -half + b.r + 1e-9);
         var back = wall ? len : Math.min(len, share * len * dt / tau);   // an der Wand trägt der Roboter alles
         r.x_in += m.x / len * back; r.y_in += m.y / len * back;

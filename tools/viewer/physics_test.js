@@ -210,7 +210,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
     check('Livesim: Cup liegt vor dem Roboter, auf Höhe r', cup.state === 'lying' && cup.standing === false && cup.x_in > -25 && cup.draw.z_in === 2.0, JSON.stringify(cup));
     check('Livesim: fernes Objekt steht unberührt', one.live.objects()[1].state === 'standing' && one.live.objects()[1].draw.z_in === 0);
     check('Livesim: Pin am Boden liegt von Anfang an', one.live.objects()[2].state === 'lying' && one.live.objects()[2].standing === false);
-    const sixteen = drive(16);
+    const sixteen = drive(15);   // SIM-43: 15 statt 16 ms, damit die Laufzeit (3000 ms) aufgeht; mit Drehen schiebt sich sonst der längere Lauf weiter
     check('Livesim: andere Bildrate, gleicher Zustand', JSON.stringify(sixteen.live.objects()) === JSON.stringify(one.live.objects()));
     one.live.reset();
     check('Livesim: Reset stellt Cup und Pin wieder auf', one.live.objects()[0].state === 'standing' && one.live.objects()[0].x_in === -25 && one.live.objects()[2].state === 'lying');
@@ -628,6 +628,24 @@ function runPhysicsTests(FBPhysics, FBLive) {
     run(wo, 1.0);
     const l = wo.bodies[0], q = wo.bodies[1];
     check('SIM-43: Pin fällt auf ein liegendes Teil: kein Verschmelzen (Abstand >= r1 + r2)', Math.hypot(l.x - q.x, l.y - q.y) >= l.r + q.r - 1e-6, Math.hypot(l.x - q.x, l.y - q.y) + ' ' + q.state);
+  }
+
+  {
+    // SIM-43 (Handtest): ein liegender Pin, den der Roboter schräg anschiebt, dreht sich um die Hochachse (stellt sich quer zur Schubrichtung)
+    const wy = make([spec('L', 0, 0, { standing: false, lie_dir_deg: 45 })], 144);
+    for (let t = 0; t < 800; t++) { wy.pushLying(0, 0, 1, 20, DT); wy.step(DT); }
+    const dir = wy.pose(0).dir_deg, off = Math.abs(((dir % 180) + 180) % 180 - 0);
+    check('SIM-43: liegender Pin, schräg geschoben (45°, Schub +y): dreht sich quer zur Schubrichtung (Achse ≈ 0°/180°)', Math.min(off, 180 - off) < 5, dir);
+    const wq = make([spec('L', 0, 0, { standing: false, lie_dir_deg: 0 })], 144);
+    for (let t = 0; t < 300; t++) { wq.pushLying(0, 0, 1, 20, DT); wq.step(DT); }
+    check('SIM-43: schon quer liegender Pin dreht sich beim Schieben nicht', Math.abs(wq.pose(0).dir_deg) < 1e-6, wq.pose(0).dir_deg);
+    const wm = make([spec('L', 0, 0, { standing: false, lie_dir_deg: 45 })], 144);
+    let maxStep = 0, last = wm.pose(0).dir_deg;
+    for (let t = 0; t < 300; t++) { wm.pushLying(0, 0, 1, 20, DT); wm.step(DT); const d = wm.pose(0).dir_deg; maxStep = Math.max(maxStep, Math.abs(d - last)); last = d; }
+    check('SIM-43: Drehen ohne Sprung (< 1° je ms) und höchstens die Kippgeschwindigkeit v/(h/2)', maxStep < 1.0, maxStep);
+    const wn = make([spec('L', 0, 0, { standing: false, lie_dir_deg: 45 })], 144);
+    for (let t = 0; t < 300; t++) { wn.pushLying(0, 0, 1, 20); wn.step(DT); }
+    check('SIM-43: pushLying ohne dt dreht nicht (altes Verhalten)', Math.abs(wn.pose(0).dir_deg - 45) < 1e-9, wn.pose(0).dir_deg);
   }
 
   return { ok, fail, msgs };
