@@ -361,7 +361,7 @@ TEST_CASE("field.json: Midfield-Posen zeigen auf das Goal, Vorderkante in plausi
     }
 }
 
-// SIM-45: Der Toggle sitzt an der Wand, der Roboter kann nicht auf ihn fahren. Zu jedem Toggle gibt es eine Anfahrpose
+// SIM-46: Der Toggle sitzt an der Wand, der Roboter kann nicht auf ihn fahren. Zu jedem Toggle gibt es eine Anfahrpose
 // APPROACH_<TOGGLE> senkrecht vor der Wand: der 15″-Runner (Umriss CAD-01) passt mit Abstand an die Wand (Innenmaß
 // Portable 140,4″, SIM-33) und der Toggle ist nah genug (Schätzgrenze; die echte Reichweite misst M-11).
 TEST_CASE("field.json: jeder Toggle hat eine Anfahrpose vor der Wand") {
