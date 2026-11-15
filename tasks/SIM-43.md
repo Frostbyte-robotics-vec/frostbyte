@@ -2,7 +2,7 @@
 id: SIM-43
 phase: "5"
 titel: Livesim-Physik: restliche Auffälligkeiten (Kippen, Überlappung, Stapel) mit Messwerten beheben
-status: blocked
+status: done
 owner: DAVIDCOPCOP
 branch: ticket/sim-43
 depends: [SIM-42]
