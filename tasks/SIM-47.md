@@ -2,7 +2,7 @@
 id: SIM-47
 phase: "5"
 titel: Viewer auf der Webseite: Lauf wählbar (Skills-Routen oder Demo), Teampunkte sichtbar
-status: review
+status: done
 owner: arjanssen
 branch: ticket/sim-47
 depends: []
