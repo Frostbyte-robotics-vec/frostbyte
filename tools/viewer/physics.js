@@ -19,6 +19,7 @@ var FBPhysics = (function () {
   var RAD = 180 / Math.PI;
   var KINDS = ['cup', 'pin'];
   var BISECT_STEPS = 40;
+  var TIP_HOLD = 0.5;   // ein Teil, das sich weniger als diesen Anteil seines Kippwinkels neigt, trägt ein Teil darauf weiter (Bauwert, kein Messwert)
   var GRAB_KEYS = ['reichweite_in', 'vorn_in', 'hand_z_in', 'lift_stufen', 'lift_stufe_in', 'lift_geschw_in_s', 'zieh_geschw_in_s', 'fangradius_in',
     'stapel_stufe_in', 'fang_zug_1_s', 'aufricht_rad_s', 'greif_toleranz_in', 'greif_hoehe_in', 'hand_hoehe', 'quelle'];
 
@@ -152,11 +153,28 @@ var FBPhysics = (function () {
         if (dx * dx + dy * dy <= f2 && goal.z_in > best.z && !(goal.z_in > max_top_in)) best = { z: goal.z_in, sx: goal.x_in, sy: goal.y_in };
       });
       bodies.forEach(function (o) {
-        if (o === self || (o.state !== 'standing' && !(o.state === 'falling' && self.state === 'falling')) || !(o.z < self.z - 1e-9) || (only && !only(o))) return;
+        if (o === self || (o.state !== 'standing' && !(o.state === 'falling' && self.state === 'falling') && !(o.state === 'tipping' && o.theta_rad < TIP_HOLD * o.crit_rad)) || !(o.z < self.z - 1e-9) || (only && !only(o))) return;
         var dx = o.x - self.x, dy = o.y - self.y, top = o.z + g.stack_step_in;
         if (dx * dx + dy * dy <= f2 && top > best.z + 1e-9 && !(top > max_top_in)) best = { z: top, sx: o.x, sy: o.y };
       });
       return best;
+    }
+
+    // Landung am Boden (SIM-43): mit Seitengeschwindigkeit stolpert das Teil und kippt in deren Richtung; liegt es in einem
+    // Nachbarn, kippt es von ihm weg (steht dann nicht aufrecht im anderen Teil). Senkrecht und frei: bleibt aufrecht.
+    function landSkew(b, vh) {
+      var ox = 0, oy = 0, worst = 0;
+      bodies.forEach(function (o) {
+        if (o === b || o.z > 0 || o.state === 'falling' || o.state === 'held') return;
+        var d = Math.hypot(b.x - o.x, b.y - o.y), min = b.r + o.r;
+        if (d < min && min - d > worst) { worst = min - d; ox = d > 0 ? (b.x - o.x) / d : 1; oy = d > 0 ? (b.y - o.y) / d : 0; }
+      });
+      if (vh >= cfg.rest_v_in_s) {
+        b.phi_rad = Math.atan2(b.vy, b.vx); b.omega_rad_s = cfg.kick * vh / Math.min(cfg.contact_h_in, b.h); b.theta_rad = 0;
+      } else if (worst > 0) {
+        b.phi_rad = Math.atan2(oy, ox); b.omega_rad_s = 0; b.theta_rad = 1.1 * b.crit_rad;   // aus dem Gleichgewicht: fällt vom Nachbarn weg
+      } else { b.vx = 0; b.vy = 0; return; }
+      b.vx = 0; b.vy = 0; b.state = 'tipping';
     }
 
     function integrate(b, dt, ev) {
@@ -187,6 +205,7 @@ var FBPhysics = (function () {
         b.vz -= G * dt;
         var zPrev = b.z;
         b.z += b.vz * dt;
+        if (b.vx !== 0 || b.vy !== 0) { b.x += b.vx * dt; b.y += b.vy * dt; clampField(b); }   // Seitengeschwindigkeit aus dem Absturz
         var sup = supportAt(b, null, zPrev + 1e-9);   // nur Unterlagen, die das Teil in diesem Schritt von oben erreicht
         if (sup.sx !== null) {   // über dem Goal oder Stapel: zur Mitte ziehen
           var k = Math.min(1, cfg.grab.snap_rate_1_s * dt);
@@ -197,12 +216,22 @@ var FBPhysics = (function () {
           b.z = sup.z;
           if (vIn < cfg.rest_v_in_s) {
             b.vz = 0; b.state = 'standing';
-            if (sup.sx !== null) { b.x = sup.sx; b.y = sup.sy; }
+            var vh = Math.sqrt(b.vx * b.vx + b.vy * b.vy), hasSup = sup.sx !== null;
+            if (hasSup) { b.x = sup.sx; b.y = sup.sy; b.vx = 0; b.vy = 0; }
+            else if (sup.z === 0) landSkew(b, vh);   // am Boden: mit Seitengeschwindigkeit oder in einem Nachbarn gelandet → stolpert und kippt
+            else { b.vx = 0; b.vy = 0; }
             ev.push({ type: 'landed', id: b.id, z_in: b.z, stacked: sup.z > 0 });
           } else b.vz = cfg.fall_bounce * vIn;
         }
       } else if (b.state === 'standing' && b.z > 0) {
-        if (supportAt(b).z < b.z - 1e-6) { b.state = 'falling'; b.vz = 0; }   // Stütze weg
+        if (supportAt(b).z < b.z - 1e-6) {   // Stütze weg
+          b.state = 'falling'; b.vz = 0;
+          bodies.forEach(function (o) {   // ein kippendes Teil darunter nimmt es seitlich mit: Geschwindigkeit der Stelle, auf der es stand
+            if (o.state !== 'tipping' || !(o.z < b.z - 1e-9) || Math.hypot(o.x - b.x, o.y - b.y) > (cfg.grab ? cfg.grab.fang_radius_in : 0)) return;
+            var v = Math.max(o.omega_rad_s, 0) * (b.z - o.z);
+            b.vx = v * Math.cos(o.phi_rad); b.vy = v * Math.sin(o.phi_rad);
+          });
+        }
       }
     }
 

@@ -273,7 +273,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
   check('der Cup hat etwas obendrauf: nicht frei', w.isFree(0) === false && w.isFree(1) === true);
   w.pushStanding(0, 1, 0, 1.5, DT);
   runG(w, 2.0);
-  check('Cup kippt weg: der Pin fällt auf den Boden und steht', w.bodies[1].z === 0 && w.bodies[1].state === 'standing', JSON.stringify([w.bodies[0].state, w.bodies[1].state, w.bodies[1].z]));
+  check('Cup kippt weg: der Pin fällt auf den Boden (SIM-43: nimmt den Schwung des Cups mit und liegt danach, steht nicht aufrecht)', w.bodies[1].z === 0 && w.bodies[1].state === 'lying', JSON.stringify([w.bodies[0].state, w.bodies[1].state, w.bodies[1].z]));
   w = makeG([spec('CUP', 0, 0, { kind: 'cup' }), spec('PIN', 0, 0, { z_in: 4 })]);
   w.hold(0);
   runG(w, 0.5);
@@ -589,6 +589,45 @@ function runPhysicsTests(FBPhysics, FBLive) {
       worst = Math.max(worst, evs.filter((e) => /^STACK:PIN_A/.test(e)).length);
     });
     check('SIM-43: Pin auf einem noch abprallenden Cup: höchstens ein STACK:PIN_A je Ablage', worst <= 1, worst);
+  }
+
+  {
+    // SIM-43 (Befund des Menschen, Handtest 2026-11-15): Pin auf einem Cup. Wird der Cup angefahren, darf der Pin nicht senkrecht
+    // durch ihn hindurch auf den Boden fallen und dort aufrecht im Cup stehen: er fällt mit dem Kippen mit und kippt selbst um.
+    const stackSpecs = () => [spec('C', 0, 0, { kind: 'cup' }), spec('P', 0, 0, { z_in: 4.0 })];
+    const ws = makeG(stackSpecs());
+    ws.settle();
+    check('SIM-43: Vorbedingung: Pin steht auf dem Cup (z = Stufe)', ws.bodies[1].z === 4.0, ws.bodies[1].z);
+    ws.pushStanding(0, 1, 0, 2.0, DT, 60);   // Eindringtiefe 2 in: der Cup neigt sich auf einmal um ca. 0,5 rad
+    let minZ = 1e9, prevT = 0, jump = 0;
+    const evs = [];
+    for (let t = 0; t < 3000; t++) { ws.step(DT).forEach((e) => evs.push(e)); minZ = Math.min(minZ, ws.bodies[1].z); }
+    const c = ws.bodies[0], p = ws.bodies[1];
+    check('SIM-43: Pin vom kippenden Cup: kippt selbst um und liegt (nicht aufrecht auf dem Boden)', p.state === 'lying', p.state + ' ' + p.theta_rad);
+    check('SIM-43: Pin und Cup verschmelzen nicht (Abstand >= r1 + r2)', Math.hypot(c.x - p.x, c.y - p.y) >= c.r + p.r - 1e-6, Math.hypot(c.x - p.x, c.y - p.y));
+    check('SIM-43: Pin nie unter dem Boden', minZ >= 0, minZ);
+    // Kleiner Stups: der Cup kippt nur wenig und richtet sich wieder auf, der Pin bleibt oben
+    const wk = makeG(stackSpecs());
+    wk.settle();
+    wk.bodies[0].state = 'tipping'; wk.bodies[0].phi_rad = 0; wk.bodies[0].theta_rad = 0.05; wk.bodies[0].omega_rad_s = 0;
+    for (let t = 0; t < 1500; t++) wk.step(DT);
+    check('SIM-43: sanfter Stups am Cup: beide stehen wieder, Pin noch oben', wk.bodies[0].state === 'standing' && wk.bodies[1].state === 'standing' && wk.bodies[1].z === 4.0, wk.bodies[0].state + ' ' + wk.bodies[1].state + ' ' + wk.bodies[1].z);
+  }
+  {
+    // Landung mit Seitengeschwindigkeit: das Teil stolpert und kippt, aufrechte Landung nur beim senkrechten Fall
+    const wl = makeG([spec('P', 0, 0)]);
+    wl.drop(0, 0, 0, 3.0); wl.bodies[0].vx = 30;
+    run(wl, 0.3);
+    check('SIM-43: fällt mit Seitengeschwindigkeit: landet nicht aufrecht ohne Kippen', wl.bodies[0].state === 'tipping' || wl.bodies[0].state === 'lying', wl.bodies[0].state);
+    const wv = makeG([spec('P', 0, 0)]);
+    wv.drop(0, 0, 0, 3.0);
+    run(wv, 0.5);
+    check('SIM-43: senkrechter Fall landet weiter aufrecht', wv.bodies[0].state === 'standing' && wv.bodies[0].x === 0, wv.bodies[0].state);
+    const wo = makeG([spec('L', 0, 0, { kind: 'cup', standing: false, lie_dir_deg: 0 }), spec('P', 0, 0)]);
+    wo.drop(1, 0, 0, 3.0);
+    run(wo, 1.0);
+    const l = wo.bodies[0], q = wo.bodies[1];
+    check('SIM-43: Pin fällt auf ein liegendes Teil: kein Verschmelzen (Abstand >= r1 + r2)', Math.hypot(l.x - q.x, l.y - q.y) >= l.r + q.r - 1e-6, Math.hypot(l.x - q.x, l.y - q.y) + ' ' + q.state);
   }
 
   return { ok, fail, msgs };
