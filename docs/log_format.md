@@ -10,7 +10,7 @@ Der Funk-Link-Test (L-01) schreibt ein eigenes, kleines Protokoll `frostbyte-lin
 | --- | --- | --- |
 | t_s | s | Matchzeit (0 … 60) |
 | robot | – | stacker oder runner |
-| x_in, y_in, h_deg | Zoll, Grad | Pose aus der Odometrie (Ursprung Feldmitte, 0° = rote → blaue Station) |
+| x_in, y_in, h_deg | Zoll, Grad | Pose, die der Roboter benutzt: Odometrie, mit GPS-Fusion korrigiert (Ursprung Feldmitte, 0° = rote → blaue Station) |
 | gx_in, gy_in, gh_deg, g_err_in | Zoll, Grad | GPS-Pose und Güte (leer, wenn keine) |
 | tx_in, ty_in, th_deg | Zoll, Grad | wahre Pose (nur Simulation, am Roboter leer) |
 | lift_deg, arm_deg, claw_in | Grad, Zoll | Ist-Werte der Mechanismen (arm_deg am Runner leer) |

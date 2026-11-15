@@ -19,7 +19,7 @@ Zu klären/zu tun:
 - ADR-Nachtrag (Sim-Pipeline: Odometrie → Fusion → Route).
 
 ## Fertig, wenn …
-- Roter Test zuerst: Kontaktsprung von mehreren Zoll in der Simulation wird mit Fixture-Parametern (nicht Platzhaltern aus sim_params.json) auf ≤ 1 in zurückgezogen; ohne GPS (Aussetzer) bleibt es bei Odometrie
+- Roter Test zuerst: Wegmesser-Drift (Test, 10 % Skalierungsfehler, rund 4 in) wird mit Fixture-Parametern (nicht Platzhaltern aus sim_params.json) auf ≤ 1 in zurückgezogen. Kontaktsprünge (mehrere Zoll auf einmal) sind nur in der 20-Läufe-Messung im ADR belegt (Endfehler 7,6 → 0,09 in), nicht als eigener Test: die Simulation erzeugt keinen reproduzierbaren Sprung ohne Route; ohne GPS (Aussetzer) bleibt es bei Odometrie
 - Gleicher Seed = byte-gleiches Ergebnis (Test), 20 Läufe vorher/nachher als Zahlen im ADR-Nachtrag (Odometriefehler am Ende, Punkte, Kontakte)
 - Laptop-Tests grün, beide Roboter bauen, `board.py validate` grün, clang-format ok
 
