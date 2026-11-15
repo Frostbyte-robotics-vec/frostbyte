@@ -27,7 +27,10 @@ tasks/SIM-44.md, docs/decisions/ADR-016-gps-fusion.md (Nachtrag), ADR-031/034, r
 
 ## Übergabe
 (aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand 2026-11-15 (fertig, PR offen): gestapelt auf ticket/sim-44 (PR #125 noch offen; die Fusion ist die Voraussetzung, die Abhängigkeit wurde bewusst übersprungen und beim Merge der Reihenfolge nach #125 zuerst). Rote Tests zuerst: `field.json: jeder Toggle hat eine Anfahrpose vor der Wand` (Pose senkrecht vor dem Toggle, passt mit ≥ 1 in Abstand an die Wand (Innenmaß 70,2, Runner 14,88 lang), ≤ 11 in vom Toggle, Blick zur Wand). Vier Posen `APPROACH_TOGGLE_*` in field.json, `routes/skills_runner.route` fährt sie an. Messung (20 Läufe, Seed 1–20, Fusion an, realistic): Runner-Toggle (beide) 20/20 ausgelöst (vorher in keinem Lauf), Punkte-Median 16 → 68,5, P10 61 ≥ `target_p10 40`. Alle Tests, beide Roboter, validate grün.
+Nicht erledigt: Der Stacker bleibt bei `goto NEUTRAL_R1` ca. 0,9 in seitlich stehen (Differentialantrieb korrigiert quer nicht, läuft in den Timeout, fährt aber weiter) → Regler/D-12, kein Teil dieses Tickets. Die Anfahrposen und `toggle_reichweite_in` sind Schätzwerte (TODO(HW), M-11). Rollenverteilung der Roboter (Mensch 2026-11-15: Runner = klein, Matchloads; Stacker = Boden-Intake): Routen noch nicht darauf angepasst, erst wenn die Mechanik feststeht.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-15 · arjanssen (KI) · Ticket angelegt (Befund aus SIM-44) · –
+2026-11-15 · arjanssen (KI) · Anfahrposen am Toggle, Runner-Route, Test, Messung 20 Läufe · –

@@ -205,7 +205,7 @@ TEST_CASE(
     CHECK(n.goals.size() == 9);
     CHECK(n.loaders.size() == 4);
     CHECK(n.toggles.size() == 4);
-    CHECK(n.poses.size() == 4);
+    CHECK(n.poses.size() == 8);
     for (const char* f : {"skills_stacker.route", "skills_runner.route", "test_square.route"}) {
         std::ifstream in(std::string(FB_ROOT_DIR) + "/routes/" + f, std::ios::binary);
         REQUIRE(in);
