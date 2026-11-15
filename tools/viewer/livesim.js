@@ -332,7 +332,8 @@ var FBLive = (function () {
         var len = Math.sqrt(m.x * m.x + m.y * m.y);
         if (!(len > 0)) return;   // Überlappungsvektor 0: keine Richtung zum Wegschieben (sonst NaN)
         if (b.state !== 'lying') {
-          phys.pushStanding(i, -m.x / len, -m.y / len, len, dt);
+          var hs = r.h_deg * DEG, vs = Math.max(0, (r.left.v + r.right.v) / 2 * (Math.cos(hs) * -m.x / len + Math.sin(hs) * -m.y / len));
+          phys.pushStanding(i, -m.x / len, -m.y / len, len, dt, vs);   // SIM-43: Winkelgeschwindigkeit höchstens aus dem Fahrtempo
           return;
         }
         // Weicht über physik.ausweich_s aus (Geschwindigkeit statt Sprung): das Objekt mit dem Anteil (1 − roboter_anteil) der

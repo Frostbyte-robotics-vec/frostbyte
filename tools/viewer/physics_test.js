@@ -215,8 +215,8 @@ function runPhysicsTests(FBPhysics, FBLive) {
   runG(w, 1.5);
   check('außerhalb des Fangradius: Boden, kein Stapel', w.bodies[0].z === 0 && w.bodies[0].x === 5 && w.bodies[0].state === 'standing');
 
-  // 16 Stapel: ein Teil auf dem anderen, Stufe aus den Parametern; mehr als zwei gehen auch
-  w = makeG([spec('A', 0, 0), spec('B', 0, 0), spec('C', 0, 0)], [{ x_in: 0, y_in: 0, z_in: 3.25 }]);
+  // 16 Stapel (SIM-43: Startplätze getrennt, sonst stapeln die Teile schon am Start und das Loslassen unterhalb der Auflage täuscht Höhen vor): ein Teil auf dem anderen, Stufe aus den Parametern; mehr als zwei gehen auch
+  w = makeG([spec('A', 30, 0), spec('B', 40, 0), spec('C', 50, 0)], [{ x_in: 0, y_in: 0, z_in: 3.25 }]);
   w.drop(0, 0, 0, 8); runG(w, 1.0);
   w.drop(1, 0.5, 0, 14); runG(w, 1.0);
   w.drop(2, -0.5, 0.5, 20); runG(w, 1.5);
@@ -432,6 +432,49 @@ function runPhysicsTests(FBPhysics, FBLive) {
     check('Livesim: liegender Pin wird gegriffen (GRAB), richtet sich in der Hand auf (Winkel bei 100 ms > bei 150 ms > 0)', events.indexOf('GRAB:PIN_L') >= 0 && tilts[0] > tilts[1] && tilts[1] >= 0, tilts.join() + ' | ' + events.join(' '));
     check('Livesim: Aufrichten, Halten, Fahren, Ablegen ohne Sprung (< 0,5 in je ms)', maxJump < 0.5, maxJump);
     check('Livesim: der aufgerichtete Pin steht danach gestapelt auf dem Goal (3,25) in dessen Mitte', o.state === 'standing' && Math.abs(o.draw.z_in - 3.25) < 1e-9 && o.draw.tilt_deg === 0 && Math.hypot(o.x_in, o.y_in) < 0.01 && events.indexOf('STACK:PIN_L') >= 0, JSON.stringify(o) + events.join(' '));
+  }
+
+  // ---- SIM-43: Messwerte aus dem Prüfstand, je Punkt roter Test ----
+  {
+    // (1) Spitze von omega beim Anfahren: Der Roboter fährt mit v = 60 in/s, die Eindringtiefe springt im ersten Schritt auf 0,3 in
+    // (Drehen/Ersatzpose). omega darf nie über Fahrgeschwindigkeit / Berührhöhe (kick) hinaus erzwungen werden: 60 / 4 = 15 rad/s.
+    const wp = make([spec('P', 0, 0)]);
+    wp.pushStanding(0, 1, 0, 0.3, DT, 60);
+    check('SIM-43: Anfahr-Sprung der Eindringtiefe erzwingt omega nur bis v/Berührhöhe (<= 15 rad/s)', wp.bodies[0].omega <= 60 / 4.0 + 1e-9, wp.bodies[0].omega);
+    const wq = make([spec('P', 0, 0)]);
+    wq.pushStanding(0, 1, 0, 0.3, DT);
+    check('SIM-43: ohne Geschwindigkeitsangabe bleibt das Verhalten wie vorher (omega = Winkelsprung/dt)', wq.bodies[0].omega > 60, wq.bodies[0].omega);
+  }
+  {
+    // (2) Nach dem Umkippen keine Überlappung mit einem Nachbarn und nicht im Feldrand: Pin kippt in Richtung +x auf einen stehenden Cup zu.
+    const wo = make([spec('A', 0, 0), spec('N', 4.0, 0)], 144);
+    wo.pushStanding(0, 1, 0, 99, DT);
+    run(wo, 1.0);
+    const a = wo.bodies[0], n = wo.bodies[1];
+    check('SIM-43: gekippter Pin liegt, ohne in den Nachbarn zu ragen (Abstand >= r1 + r2)', a.state === 'lying' && Math.hypot(a.x - n.x, a.y - n.y) >= a.r + n.r - 1e-9, a.state + ' ' + Math.hypot(a.x - n.x, a.y - n.y));
+    const wf = make([spec('E', 70.0, 0)], 144);
+    wf.pushStanding(0, 1, 0, 99, DT);
+    run(wf, 1.0);
+    check('SIM-43: am Feldrand umgekippt liegt das Teil innerhalb des Felds', wf.bodies[0].x <= 72 - 1.5 + 1e-9, wf.bodies[0].x);
+  }
+  {
+    // (3) settle(): zwei gleich hoch deklarierte Teile am selben Ort tragen sich nicht gegenseitig
+    const ws = makeG([spec('U', 0, 0, { z_in: 4.0 }), spec('V', 0, 0, { z_in: 4.0 })]);
+    ws.settle();
+    check('SIM-43: settle: gleich hohe Teile zählen nicht als Unterlage (kein schwebender Stapel)', ws.bodies[0].z === 4.0 && ws.bodies[1].z === 4.0, ws.bodies.map((b) => b.z).join());
+    const wt = makeG([spec('B', 0, 0), spec('T', 0, 0, { z_in: 1.0 })]);
+    wt.settle();
+    check('SIM-43: settle: Teil über einem Bodenteil sinkt weiterhin auf dessen Stapelhöhe', wt.bodies[1].z === 4.0, wt.bodies[1].z);
+  }
+  {
+    // (4) Loslassen unterhalb der Auflage: Teil teleportiert nicht auf die Goal-Oberkante, sondern fällt zum Boden
+    const wr = makeG([spec('R', 0, 0)], [{ x_in: 0, y_in: 0, z_in: 3.25 }]);
+    const b = wr.bodies[0];
+    wr.hold(0); b.x = 0; b.y = 0; b.z = 1.0;
+    wr.release(0);
+    let maxZ = 0;
+    for (let t = 0; t < 600; t++) { wr.step(DT); maxZ = Math.max(maxZ, b.z); }
+    check('SIM-43: Loslassen unter der Goal-Oberkante: z springt nie nach oben (kein Teleport)', maxZ <= 1.0 + 1e-9, maxZ);
   }
 
   return { ok, fail, msgs };

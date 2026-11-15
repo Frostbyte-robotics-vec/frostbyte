@@ -108,21 +108,35 @@ var FBPhysics = (function () {
       b.x += (b.r + b.c) * dx; b.y += (b.r + b.c) * dy;
       b.state = 'lying'; b.theta = HALF_PI; b.omega = 0; b.vx = 0; b.vy = 0;
       clampField(b);
+      // SIM-43: Überlappung mit Nachbarn auflösen (das gekippte Teil weicht aus; Feldrand zuletzt, ein paar Durchgänge)
+      for (var pass = 0; pass < 4; pass++) {
+        var moved = false;
+        bodies.forEach(function (o) {
+          if (o === b || o.z > 0 || b.z > 0 || o.state === 'falling' || o.state === 'held') return;
+          var ox = b.x - o.x, oy = b.y - o.y, d = Math.sqrt(ox * ox + oy * oy), min = b.r + o.r;
+          if (d >= min) return;
+          var ux = d > 0 ? ox / d : dx, uy = d > 0 ? oy / d : dy;
+          b.x += ux * (min - d); b.y += uy * (min - d); moved = true;
+        });
+        clampField(b);
+        if (!moved) break;
+      }
     }
 
     // Höhe der Stützfläche unter b und, wenn es eine Mitte gibt, zu der das Teil hingezogen wird (Goal oder Teil darunter).
-    function supportAt(self) {
+    // only(o): optionaler Filter, welche Teile als Unterlage gelten (settle); max_top: nur Unterlagen mit Oberkante bis dahin (SIM-43: kein Teleport nach oben).
+    function supportAt(self, only, max_top) {
       var best = { z: 0, sx: null, sy: null }, g = cfg.grab;
       if (!g) return best;
       var f2 = g.fang_radius_in * g.fang_radius_in;
       goals.forEach(function (goal) {
         var dx = goal.x_in - self.x, dy = goal.y_in - self.y;
-        if (dx * dx + dy * dy <= f2 && goal.z_in > best.z) best = { z: goal.z_in, sx: goal.x_in, sy: goal.y_in };
+        if (dx * dx + dy * dy <= f2 && goal.z_in > best.z && !(goal.z_in > max_top)) best = { z: goal.z_in, sx: goal.x_in, sy: goal.y_in };
       });
       bodies.forEach(function (o) {
-        if (o === self || o.state !== 'standing' || !(o.z < self.z - 1e-9)) return;
+        if (o === self || o.state !== 'standing' || !(o.z < self.z - 1e-9) || (only && !only(o))) return;
         var dx = o.x - self.x, dy = o.y - self.y, top = o.z + g.stack_step_in;
-        if (dx * dx + dy * dy <= f2 && top > best.z + 1e-9) best = { z: top, sx: o.x, sy: o.y };
+        if (dx * dx + dy * dy <= f2 && top > best.z + 1e-9 && !(top > max_top)) best = { z: top, sx: o.x, sy: o.y };
       });
       return best;
     }
@@ -152,8 +166,9 @@ var FBPhysics = (function () {
         }
       } else if (b.state === 'falling') {
         b.vz -= G * dt;
+        var zPrev = b.z;
         b.z += b.vz * dt;
-        var sup = supportAt(b);
+        var sup = supportAt(b, null, zPrev + 1e-9);   // nur Unterlagen, die das Teil in diesem Schritt von oben erreicht
         if (sup.sx !== null) {   // über dem Goal oder Stapel: zur Mitte ziehen
           var k = Math.min(1, cfg.grab.snap_rate_1_s * dt);
           b.x += (sup.sx - b.x) * k; b.y += (sup.sy - b.y) * k;
@@ -220,14 +235,18 @@ var FBPhysics = (function () {
       },
       // Roboter drückt von der Seite: (nx, ny) = Schubrichtung (Roboter → Objekt, Länge 1), depth_in = Eindringtiefe in den
       // Standkreis. Das Objekt neigt sich mindestens so weit, wie der Roboter es erzwingt, mit dessen Geschwindigkeit.
-      pushStanding: function (i, nx, ny, depth_in, dt_s) {
+      // v_in_s (optional): Fahrgeschwindigkeit des Roboters entlang der Schubrichtung; mit ihr erzwingt er höchstens
+      // omega = kick · v / Berührhöhe (SIM-43: ein Sprung der Eindringtiefe darf keine Winkelgeschwindigkeit weit über dem Fahrtempo erzeugen).
+      pushStanding: function (i, nx, ny, depth_in, dt_s, v_in_s) {
         var b = bodies[i];
         if (b.z > 0 || (b.state !== 'standing' && b.state !== 'tipping')) return;
         if (b.state === 'tipping' && Math.cos(b.phi) * nx + Math.sin(b.phi) * ny <= 0) return;   // gegen die Kipprichtung
         var want = forcedAngle(depth_in, Math.min(cfg.contact_h_in, b.h), b.r);
         if (want <= b.theta) return;
         if (b.state === 'standing') { b.state = 'tipping'; b.phi = Math.atan2(ny, nx); }
-        b.omega = Math.max(b.omega, (want - b.theta) / dt_s);
+        var w = (want - b.theta) / dt_s;
+        if (v_in_s !== undefined) w = Math.min(w, cfg.kick * Math.max(v_in_s, 0) / Math.min(cfg.contact_h_in, b.h));
+        b.omega = Math.max(b.omega, w);
         b.theta = want;
       },
       // Liegendes Objekt bekommt die Geschwindigkeit (Roboter schiebt es an); es gleitet danach mit Reibung aus.
@@ -254,11 +273,14 @@ var FBPhysics = (function () {
       setGoals: function (list) { goals = list.slice(); },
       // Setzt Teile, die über dem Boden beginnen (spec.z_in > 0), von unten nach oben auf ihre Stützfläche; ohne Stütze bleibt z.
       settle: function () {
+        var done = [], declaredOf = [];
         bodies.filter(function (b) { return b.state === 'standing' && b.z > 0; }).sort(function (a, b) { return a.z - b.z; }).forEach(function (b) {
           var declared = b.z;
+          // Unterlage: Boden, Goal, ein Bodenteil oder ein schon gesetztes Teil; gleich hohe, noch nicht gesetzte zählen nicht (SIM-43)
           b.z = Infinity;
-          var sup = supportAt(b);
+          var sup = supportAt(b, function (o) { var k = done.indexOf(o); return !(o.z > 0) || (k >= 0 && declaredOf[k] < declared - 1e-9); });
           b.z = sup.z > 0 ? sup.z : declared;
+          done.push(b); declaredOf.push(declared);
         });
       },
       // Ein stehendes Teil hat nichts obendrauf (nur dann ist es greifbar).
