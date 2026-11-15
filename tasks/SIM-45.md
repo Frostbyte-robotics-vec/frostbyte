@@ -2,9 +2,9 @@
 id: SIM-45
 phase: "5"
 titel: Livesim: Roboter fährt durch Pins/Cups (Räder/Antrieb außerhalb der Kollisionsform?) klären und beheben
-status: todo
-owner:
-branch:
+status: in_progress
+owner: DAVIDCOPCOP
+branch: ticket/sim-45
 depends: [SIM-43]
 hw: nein
 ---
