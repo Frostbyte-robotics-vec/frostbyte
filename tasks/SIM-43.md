@@ -29,7 +29,10 @@ tools/viewer/physics.js, tools/viewer/livesim.js, ADR-051, SIM-41, SIM-42
 ## Übergabe
 (aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
 
+KI-Review PR #123 (arjanssen, 2026-11-15): Empfehlung ändern. (1) `sepV` → `sep_v_in_s`, `max_top` → `max_top_in`. (2) Nach Merge von #124 rebasen und neue Zeilen auf `*_rad` umstellen (`grep` leer). (3) Doppeltes STACK-Ereignis bei Landung auf abprallendem Teil verhindern oder im ADR festhalten. Details im PR-Kommentar.
+
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt (Rest aus SIM-42, Punkt 3) · –
 2026-11-15 · matelechner01 (KI) · Review PR #123: Empfehlung ändern (Punkte siehe PR-Kommentar: sepV-Name, doppeltes STACK, Punkt 5 messen, Mensch bestätigt Aussehen) · –
+2026-11-15 · arjanssen (KI) · KI-Review PR #123: Empfehlung ändern · –
