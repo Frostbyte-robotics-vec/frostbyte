@@ -2,7 +2,7 @@
 id: SIM-41
 phase: "5"
 titel: Befunde aus dem KI-Review der PRs #114–#116 (Livesim-Physik, Greifen, Aufrichten) abarbeiten
-status: in_progress
+status: done
 owner: arjanssen
 branch: ticket/sim-41
 depends: [SIM-40]
@@ -42,10 +42,31 @@ tasks/SIM-38.md, SIM-39.md, SIM-40.md, ADR-051, tools/viewer/physics.js, tools/v
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand 2026-11-15 (Branch ticket/sim-41): alle Funde bearbeitet (erledigt, SIM-43 oder Fehlalarm), PR offen. Zeilennummern im Ticket sind veraltet, Code nach Funktionsnamen suchen (physics.js hat 323 Zeilen).
 
-Hinweis (SIM-42, PR #119): schon erledigt, nicht doppelt machen: Modellzahlen `0,5` (→ `greif_toleranz_in`) und `±0,3` (entfällt, Pin steckt auf dem Cup), zweiseitige Greifhöhe, SG6 filtert vor der Auswahl, `release()` setzt `theta`/`omega` zurück. Der Rest der Physik-Funde → SIM-43.
+Testen ohne node (fehlt auf diesem Mac): Attrappe `node` in den PATH, die die JS-Datei in `chrome --headless=new --dump-dom` ausführt (siehe docs/notes.md, 2026-11-15); dann `python3 -m unittest test_livesim` in tools/viewer (6 Tests inkl. C++-Abgleich). Die Attrappe liegt nur im Scratchpad der Sitzung und muss neu gebaut werden. Stand: Livesim 80 ok, Physik 114 ok, test_livesim OK, Format ok.
+
+Triage (Rat des Advisors: jeder Fund bekommt ein Etikett)
+- [x] Einheiten: Radiant intern ist Ausnahme (ADR-051 Nachtrag), Felder `theta_rad`, `omega_rad_s`, `phi_rad`, `crit_rad`
+- [x] Ereignisse STACK/TOPPLED über `lastTouch`: Greifen/Loslassen setzen es, kein Ersatz durch den Stacker mehr (Test mit Runner, vorher rot)
+- [x] schon in SIM-42 (#119): Modellzahlen 0,5/±0,3, SG6 vor Auswahl, zweiseitige Greifhöhe, `release()` setzt theta/omega zurück
+- [ ] → SIM-43 (nicht hier): `pushStanding` ω-Spitze, `toLying` Überlappung, `settle()` gleich hohe Teile, Loslassen unter Auflage teleportiert
+- [x] liegende Teile: Reichweite/Abstand/Nächstes aus dem Fußpunkt (`pose`), `isFree` für liegende Teile immer frei (beide Tests vorher rot)
+- [x] Livesim gegen C++ bei aktiver `physik`: die C++-Sim kennt den Block nicht (`grep physik sim/` trifft nur einen Kommentar in objects.hpp), der Abgleichtest nutzt deshalb zu Recht eine Fixture ohne `physik`. Ein Abgleich wäre neue Arbeit, kein Fund; dokumentierte Abweichung (ADR-051: Physik gibt es nur im Browser-Livesim)
+- [x] Tests gestärkt: Tautologie `=== -1 || …` → `&&`; tote Variablen (`tMove`, `far`, `gp2`) entfernt; neu: entferntes liegendes Teil mit Aufrichten, SG6 für liegendes Pin. Mutationsprobe SG6-Prüfung abgeschaltet → 3 Tests rot, zurück → grün. Nicht umgesetzt: test_livesim.py „Reichweite nur frontal, ein Wert für beide Roboter“ (Erweiterung, kein Fehler)
+- [x] Schalter: ein Tippfehler in `physik.greifen` (z. B. `aufricht_rad`) wird jetzt abgelehnt statt still abzuschalten (Schlüsselliste in physics.js `GRAB_KEYS`; neuer Schlüssel in sim_params.json → dort ergänzen). sim_params.json selbst unverändert
+- [x] Aufräumen: `setSupport` gibt es nicht mehr (Fehlalarm). `kick`, `drop`, `impact` haben keinen Aufrufer im Livesim, aber Tests und die API (SIM-39) benutzen sie: bewusst belassen. Greif-Bedingung doppelt in `doGrab`/`hold()`: belassen (beide Orte prüfen Verschiedenes: Auswahl vs. Zustandswechsel)
+
+Geprüft: ctest 2/2 grün, Format ok, board.py validate ok, test_livesim 6 Tests (mit Chrome-Attrappe) ok. Roboter-Builds nicht gelaufen (nur JS/Doku geändert). Am Roboter nichts zu prüfen; im Browser prüfen: Cmd+R/Cmd+V im Livesim, Backspace-Reset mit liegendem Pin (gelbe Seite wie im Feldplan).
+
+KI-Review (PR #124) abgearbeitet: `toLying` im Zweig „langsamer Aufschlag“ meldet jetzt toppled, wenn das Teil noch nicht als gefallen galt (Test 7b2). Zur Kenntnis: `GRAB_KEYS` in physics.js ist eine feste Liste, jeder neue Schlüssel in `physik.greifen` muss dort ergänzt werden. PR #123 (SIM-43) nutzt noch die alten Feldnamen (`theta`, `omega`, `phi`); wer zweiter merged, rebased und stellt auf `_rad` um.
+
+Review-Hinweis (KI-Review PR #124, 2026-11-15, Empfehlung: ändern): `integrate` → `toLying` (Aufschlag mit `wIn < ruhe_omega_rad_s`) meldet kein `toppled`, wenn das Teil nie über dem Kippwinkel einen Schritt beendet hat; Test 7b prüft nur den Rückprall-Zweig. `toppled` auch dort melden (`!fallen`) mit Test bei kleinem omega, oder als Fehlalarm begründen. Merge-Reihenfolge: PR #123 (SIM-43) nutzt die alten Feldnamen in physics.js; wer zweiter merged, rebased.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt aus /code-review high auf #114–#116 (unbestätigt) · –
+2026-11-15 · arjanssen (KI) · Einheiten-Ausnahme (ADR-051), lastTouch bei Greifen/Loslassen, Triage in Übergabe · ticket/sim-41
+2026-11-15 · arjanssen (KI) · fallen/pristine in physics.js, Tasten und Reset in index.html · ticket/sim-41
+2026-11-15 · arjanssen (KI) · Fußpunkt-Reichweite, Tests gestärkt, Tippfehler-Schutz, Triage abgeschlossen · ticket/sim-41
+2026-11-15 · arjanssen (KI) · Review-Punkt toppled bei langsamem Aufschlag behoben, Test 7b2 · siehe Branch

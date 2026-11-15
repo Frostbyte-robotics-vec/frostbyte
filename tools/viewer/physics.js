@@ -2,11 +2,11 @@
    Schwerkraft, schlagen auf, prallen zurück, gleiten aus und kommen zur Ruhe. Kein DOM, keine Zeit-Funktionen, keine
    Bibliothek; läuft im Browser und unter Node. Feste Schritte: derselbe Aufruf mit demselben dt ergibt denselben Zustand.
    Alle Modellzahlen aus sim/sim_params.json (physik, welt.g_in_s2, feldobjekte.radius_in), nichts davon steht hier.
-   Einheiten: Zoll, Grad (nur an der Schnittstelle), Radiant und Sekunden (intern).
+   Einheiten: Zoll, Sekunden; Grad nur an der Schnittstelle (tilt_deg, dir_deg, setLieDir). Intern Radiant (theta_rad, omega_rad_s, phi_rad, crit_rad): bewusste Ausnahme von „intern Grad“, ADR-051.
 
    Modell eines Körpers (Zylinder mit Radius r, Höhe h, Schwerpunkt c über dem Boden):
    - standing: steht auf dem Boden (Kreis um x, y).
-   - tipping: dreht sich um die Bodenkante P = (x, y) + r·(cos phi, sin phi) um den Winkel theta (0 = aufrecht, 90° = liegt).
+   - tipping: dreht sich um die Bodenkante P = (x, y) + r·(cos phi_rad, sin phi_rad) um den Winkel theta_rad (0 = aufrecht, 90° = liegt).
      Drehmoment der Schwerkraft m·g·(c·sin θ − r·cos θ): über dem Kippwinkel atan(r/c) fällt er um, darunter richtet er sich auf.
    - lying: liegt, Kreis um den Schwerpunkt (x, y), gleitet mit Reibung aus.
    - falling: freier Fall in z (Ablegen, SIM-39), Landung auf der Stützfläche.
@@ -19,6 +19,8 @@ var FBPhysics = (function () {
   var RAD = 180 / Math.PI;
   var KINDS = ['cup', 'pin'];
   var BISECT_STEPS = 40;
+  var GRAB_KEYS = ['reichweite_in', 'vorn_in', 'hand_z_in', 'lift_stufen', 'lift_stufe_in', 'lift_geschw_in_s', 'zieh_geschw_in_s', 'fangradius_in',
+    'stapel_stufe_in', 'fang_zug_1_s', 'aufricht_rad_s', 'greif_toleranz_in', 'greif_hoehe_in', 'hand_hoehe', 'quelle'];
 
   function need(obj, key, where, positive) {
     var v = obj && obj[key];
@@ -50,6 +52,10 @@ var FBPhysics = (function () {
     cfg.evade_s = need(p, 'ausweich_s', 'physik', true);
     // Greifen und Stapeln (SIM-39): optional; ohne Block gibt es keine Hand, keine Stapel und keine Stützflächen.
     var g = p.greifen;
+    // Ein Tippfehler im Schlüssel dürfte nichts still abschalten (aufricht_rad_s fehlt = liegende Teile werden nicht gegriffen)
+    if (g) Object.keys(g).forEach(function (k) {
+      if (GRAB_KEYS.indexOf(k) < 0) throw new Error('sim_params physik.greifen.' + k + ' ist unbekannt (Tippfehler?)');
+    });
     cfg.grab = !g ? null : {
       reach_in: need(g, 'reichweite_in', 'physik.greifen', true), front_in: need(g, 'vorn_in', 'physik.greifen'),
       hand_z_in: need(g, 'hand_z_in', 'physik.greifen'), grab_tol_in: need(g, 'greif_toleranz_in', 'physik.greifen', true), grip_in: need(g, 'greif_hoehe_in', 'physik.greifen'), lift_levels: need(g, 'lift_stufen', 'physik.greifen', true),
@@ -91,9 +97,9 @@ var FBPhysics = (function () {
     var bodies = specs.map(function (s) {
       var h = cfg.height_in[s.kind], c = cfg.cg[s.kind] * h, r = s.r_in;
       var k2 = r * r / 4 + h * h / 12;   // Massenträgheit je Masse um die Querachse durch den Schwerpunkt (Vollzylinder)
-      return { id: s.id, kind: s.kind, x: s.x_in, y: s.y_in, r: r, h: h, c: c, ieff: k2 + r * r + c * c, crit: Math.atan2(r, c),
-        state: s.standing ? 'standing' : 'lying', theta: s.standing ? 0 : HALF_PI, omega: 0, phi: (s.lie_dir_deg || 0) / RAD,
-        vx: 0, vy: 0, sepV: 0, z: s.z_in || 0, vz: 0, fallen: false, pristine: !s.standing };
+      return { id: s.id, kind: s.kind, x: s.x_in, y: s.y_in, r: r, h: h, c: c, ieff: k2 + r * r + c * c, crit_rad: Math.atan2(r, c),
+        state: s.standing ? 'standing' : 'lying', theta_rad: s.standing ? 0 : HALF_PI, omega_rad_s: 0, phi_rad: (s.lie_dir_deg || 0) / RAD,
+        vx: 0, vy: 0, sep_v_in_s: 0, z: s.z_in || 0, vz: 0, fallen: false, pristine: !s.standing };
     });
 
     function clampField(b) {
@@ -104,11 +110,11 @@ var FBPhysics = (function () {
 
     // Aufgeschlagen: der Schwerpunkt liegt jetzt c vor dem Drehpunkt; der Kreis zieht vom Standkreis dorthin.
     function toLying(b) {
-      var dx = Math.cos(b.phi), dy = Math.sin(b.phi);
+      var dx = Math.cos(b.phi_rad), dy = Math.sin(b.phi_rad);
       b.x += (b.r + b.c) * dx; b.y += (b.r + b.c) * dy;
-      b.state = 'lying'; b.theta = HALF_PI; b.omega = 0; b.vx = 0; b.vy = 0;
+      b.state = 'lying'; b.theta_rad = HALF_PI; b.omega_rad_s = 0; b.vx = 0; b.vy = 0;
       clampField(b);
-      b.sepV = overlapDepth(b) / cfg.evade_s;   // SIM-43: Überlappung mit Nachbarn weicht über ausweich_s (Geschwindigkeit, kein Sprung)
+      b.sep_v_in_s = overlapDepth(b) / cfg.evade_s;   // SIM-43: Überlappung mit Nachbarn weicht über ausweich_s (Geschwindigkeit, kein Sprung)
     }
 
     // Größte Überlappung des liegenden b mit einem anderen Teil am Boden (in)
@@ -121,55 +127,55 @@ var FBPhysics = (function () {
       });
       return worst;
     }
-    // Ein Schritt des Auseinanderrückens: jeder Nachbar schiebt b höchstens sepV·dt aus der Überlappung
+    // Ein Schritt des Auseinanderrückens: jeder Nachbar schiebt b höchstens sep_v_in_s·dt aus der Überlappung
     function separate(b, dt) {
       var moved = false;
       bodies.forEach(function (o) {
         if (o === b || o.z > 0 || b.z > 0 || o.state === 'falling' || o.state === 'held') return;
         var ox = b.x - o.x, oy = b.y - o.y, d = Math.sqrt(ox * ox + oy * oy), min = b.r + o.r;
         if (d >= min) return;
-        var ux = d > 0 ? ox / d : Math.cos(b.phi), uy = d > 0 ? oy / d : Math.sin(b.phi), k = Math.min(min - d, b.sepV * dt);
+        var ux = d > 0 ? ox / d : Math.cos(b.phi_rad), uy = d > 0 ? oy / d : Math.sin(b.phi_rad), k = Math.min(min - d, b.sep_v_in_s * dt);
         b.x += ux * k; b.y += uy * k; moved = true;
       });
       clampField(b);
-      if (!moved) b.sepV = 0;
+      if (!moved) b.sep_v_in_s = 0;
     }
 
     // Höhe der Stützfläche unter b und, wenn es eine Mitte gibt, zu der das Teil hingezogen wird (Goal oder Teil darunter).
-    // only(o): optionaler Filter, welche Teile als Unterlage gelten (settle); max_top: nur Unterlagen mit Oberkante bis dahin (SIM-43: kein Teleport nach oben).
-    function supportAt(self, only, max_top) {
+    // only(o): optionaler Filter, welche Teile als Unterlage gelten (settle); max_top_in: nur Unterlagen mit Oberkante bis dahin (SIM-43: kein Teleport nach oben).
+    function supportAt(self, only, max_top_in) {
       var best = { z: 0, sx: null, sy: null }, g = cfg.grab;
       if (!g) return best;
       var f2 = g.fang_radius_in * g.fang_radius_in;
       goals.forEach(function (goal) {
         var dx = goal.x_in - self.x, dy = goal.y_in - self.y;
-        if (dx * dx + dy * dy <= f2 && goal.z_in > best.z && !(goal.z_in > max_top)) best = { z: goal.z_in, sx: goal.x_in, sy: goal.y_in };
+        if (dx * dx + dy * dy <= f2 && goal.z_in > best.z && !(goal.z_in > max_top_in)) best = { z: goal.z_in, sx: goal.x_in, sy: goal.y_in };
       });
       bodies.forEach(function (o) {
         if (o === self || (o.state !== 'standing' && !(o.state === 'falling' && self.state === 'falling')) || !(o.z < self.z - 1e-9) || (only && !only(o))) return;
         var dx = o.x - self.x, dy = o.y - self.y, top = o.z + g.stack_step_in;
-        if (dx * dx + dy * dy <= f2 && top > best.z + 1e-9 && !(top > max_top)) best = { z: top, sx: o.x, sy: o.y };
+        if (dx * dx + dy * dy <= f2 && top > best.z + 1e-9 && !(top > max_top_in)) best = { z: top, sx: o.x, sy: o.y };
       });
       return best;
     }
 
     function integrate(b, dt, ev) {
       if (b.state === 'tipping') {
-        b.omega += G * (b.c * Math.sin(b.theta) - b.r * Math.cos(b.theta)) / b.ieff * dt;
-        var next = b.theta + b.omega * dt;
+        b.omega_rad_s += G * (b.c * Math.sin(b.theta_rad) - b.r * Math.cos(b.theta_rad)) / b.ieff * dt;
+        var next = b.theta_rad + b.omega_rad_s * dt;
         if (next >= HALF_PI) {
-          var wIn = Math.max(b.omega, 0);
+          var wIn = Math.max(b.omega_rad_s, 0);
           ev.push({ type: 'impact', id: b.id, omega_rad_s: wIn });
-          b.theta = HALF_PI;
-          if (wIn < cfg.rest_omega_rad_s) toLying(b); else b.omega = -cfg.bounce * wIn;
+          b.theta_rad = HALF_PI;
+          if (wIn < cfg.rest_omega_rad_s) { toLying(b); if (!b.fallen) { b.fallen = true; ev.push({ type: 'toppled', id: b.id }); } } else b.omega_rad_s = -cfg.bounce * wIn;
         } else if (next <= 0) {
-          var wUp = Math.max(-b.omega, 0);
-          b.theta = 0;
-          if (wUp < cfg.rest_omega_rad_s) { b.state = 'standing'; b.omega = 0; } else b.omega = cfg.bounce * wUp;
-        } else b.theta = next;
-        if (b.state === 'tipping' && !b.fallen && b.theta > b.crit) { b.fallen = true; ev.push({ type: 'toppled', id: b.id }); }
+          var wUp = Math.max(-b.omega_rad_s, 0);
+          b.theta_rad = 0;
+          if (wUp < cfg.rest_omega_rad_s) { b.state = 'standing'; b.omega_rad_s = 0; b.fallen = false; } else b.omega_rad_s = cfg.bounce * wUp;
+        } else b.theta_rad = next;
+        if (b.state === 'tipping' && !b.fallen && b.theta_rad > b.crit_rad) { b.fallen = true; ev.push({ type: 'toppled', id: b.id }); }
       } else if (b.state === 'lying') {
-        if (b.sepV > 0) separate(b, dt);
+        if (b.sep_v_in_s > 0) separate(b, dt);
         var sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
         if (sp > 0) {
           var s2 = Math.max(0, sp - cfg.friction * G * dt);
@@ -222,8 +228,8 @@ var FBPhysics = (function () {
       a.x -= nx * over; a.y -= ny * over;
       var s = a.vx * nx + a.vy * ny;
       if (s <= 0) { clampField(a); return; }
-      if (b.state === 'standing') { b.state = 'tipping'; b.phi = Math.atan2(ny, nx); }
-      if (Math.cos(b.phi) * nx + Math.sin(b.phi) * ny > 0) b.omega = Math.max(b.omega, cfg.kick * s / Math.min(cfg.contact_h_in, b.h));
+      if (b.state === 'standing') { b.state = 'tipping'; b.phi_rad = Math.atan2(ny, nx); }
+      if (Math.cos(b.phi_rad) * nx + Math.sin(b.phi_rad) * ny > 0) b.omega_rad_s = Math.max(b.omega_rad_s, cfg.kick * s / Math.min(cfg.contact_h_in, b.h));
       a.vx -= (1 + cfg.stoss_bounce) * s * nx; a.vy -= (1 + cfg.stoss_bounce) * s * ny;
       clampField(a);
     }
@@ -234,7 +240,7 @@ var FBPhysics = (function () {
       // Ein Schritt dt_s; liefert die Ereignisse {type: 'toppled' | 'impact', id}.
       step: function (dt_s) {
         var ev = [];
-        bodies.forEach(function (b) { integrate(b, dt_s, ev); });
+        bodies.forEach(function (b) { integrate(b, dt_s, ev); if (b.pristine && (b.state !== 'lying' || moving(b))) b.pristine = false; });
         for (var i = 0; i < bodies.length; i++) {
           var a = bodies[i];
           if (!moving(a)) continue;
@@ -253,14 +259,14 @@ var FBPhysics = (function () {
       pushStanding: function (i, nx, ny, depth_in, dt_s, v_in_s) {
         var b = bodies[i];
         if (b.z > 0 || (b.state !== 'standing' && b.state !== 'tipping')) return;
-        if (b.state === 'tipping' && Math.cos(b.phi) * nx + Math.sin(b.phi) * ny <= 0) return;   // gegen die Kipprichtung
+        if (b.state === 'tipping' && Math.cos(b.phi_rad) * nx + Math.sin(b.phi_rad) * ny <= 0) return;   // gegen die Kipprichtung
         var want = forcedAngle(depth_in, Math.min(cfg.contact_h_in, b.h), b.r);
-        if (want <= b.theta) return;
-        if (b.state === 'standing') { b.state = 'tipping'; b.phi = Math.atan2(ny, nx); }
-        var w = (want - b.theta) / dt_s;
+        if (want <= b.theta_rad) return;
+        if (b.state === 'standing') { b.state = 'tipping'; b.phi_rad = Math.atan2(ny, nx); }
+        var w = (want - b.theta_rad) / dt_s;
         if (v_in_s !== undefined) w = Math.min(w, cfg.kick * Math.max(v_in_s, 0) / Math.min(cfg.contact_h_in, b.h));
-        b.omega = Math.max(b.omega, w);
-        b.theta = want;
+        b.omega_rad_s = Math.max(b.omega_rad_s, w);
+        b.theta_rad = want;
       },
       // Liegendes Objekt bekommt die Geschwindigkeit (Roboter schiebt es an); es gleitet danach mit Reibung aus.
       kick: function (i, vx_in_s, vy_in_s) {
@@ -280,7 +286,7 @@ var FBPhysics = (function () {
       // Objekt fällt aus Höhe z_in an (x, y), aufrecht, auf die Stützfläche darunter (Boden, Goal, Teil).
       drop: function (i, x_in, y_in, z_in) {
         var b = bodies[i];
-        b.x = x_in; b.y = y_in; b.z = z_in; b.vz = 0; b.vx = 0; b.vy = 0; b.theta = 0; b.omega = 0; b.state = 'falling';
+        b.x = x_in; b.y = y_in; b.z = z_in; b.vz = 0; b.vx = 0; b.vy = 0; b.theta_rad = 0; b.omega_rad_s = 0; b.fallen = false; b.state = 'falling';
       },
       // Goals als Stützflächen: [{x_in, y_in, z_in (Oberkante)}]
       setGoals: function (list) { goals = list.slice(); },
@@ -299,22 +305,23 @@ var FBPhysics = (function () {
       // Ein stehendes Teil hat nichts obendrauf (nur dann ist es greifbar).
       isFree: function (i) {
         var b = bodies[i], g = cfg.grab, f2 = g ? g.fang_radius_in * g.fang_radius_in : 0;
+        if (b.state === 'lying') return true;   // auf einem liegenden Teil steht nichts
         return !bodies.some(function (o) {
           var dx = o.x - b.x, dy = o.y - b.y;
           return o !== b && o.state === 'standing' && o.z > b.z + 1e-9 && dx * dx + dy * dy <= f2;
         });
       },
       // Roboter nimmt ein stehendes Teil (mit physik.greifen.aufricht_rad_s auch ein liegendes) in die Hand; es bleibt, wo es ist,
-      // bis moveHeld es zur Hand zieht. Ein gehaltenes Teil wird über seinen Fußpunkt (x, y, z) und die Neigung theta geführt.
+      // bis moveHeld es zur Hand zieht. Ein gehaltenes Teil wird über seinen Fußpunkt (x, y, z) und die Neigung theta_rad geführt.
       hold: function (i) {
         var b = bodies[i];
         if (b.state === 'lying' && cfg.grab && cfg.grab.rise_rad_s !== null) {
-          b.x -= b.c * Math.cos(b.phi); b.y -= b.c * Math.sin(b.phi); b.z = b.r;   // Schwerpunkt → Fußpunkt, wie pose() es zeichnet
-          b.state = 'held'; b.vx = 0; b.vy = 0; b.vz = 0; b.theta = HALF_PI; b.omega = 0;
+          b.x -= b.c * Math.cos(b.phi_rad); b.y -= b.c * Math.sin(b.phi_rad); b.z = b.r;   // Schwerpunkt → Fußpunkt, wie pose() es zeichnet
+          b.state = 'held'; b.vx = 0; b.vy = 0; b.vz = 0; b.theta_rad = HALF_PI; b.omega_rad_s = 0; b.fallen = false;
           return true;
         }
         if (b.state !== 'standing') return false;
-        b.state = 'held'; b.vx = 0; b.vy = 0; b.vz = 0; b.theta = 0; b.omega = 0;
+        b.state = 'held'; b.vx = 0; b.vy = 0; b.vz = 0; b.theta_rad = 0; b.omega_rad_s = 0; b.fallen = false;
         return true;
       },
       // Zieht ein gehaltenes Teil mit höchstens speed_in_s (Standard: physik.greifen.zieh_geschw_in_s) zum Ziel und richtet es mit
@@ -322,8 +329,8 @@ var FBPhysics = (function () {
       moveHeld: function (i, tx, ty, tz, dt_s, speed_in_s) {
         var b = bodies[i], dx = tx - b.x, dy = ty - b.y, dz = tz - b.z, d = Math.sqrt(dx * dx + dy * dy + dz * dz);
         var step = (speed_in_s === undefined ? cfg.grab.pull_in_s : speed_in_s) * dt_s;
-        if (b.theta > 0) b.theta = Math.max(0, b.theta - (cfg.grab.rise_rad_s || 0) * dt_s);
-        if (d <= step) { b.x = tx; b.y = ty; b.z = tz; return b.theta === 0; }
+        if (b.theta_rad > 0) b.theta_rad = Math.max(0, b.theta_rad - (cfg.grab.rise_rad_s || 0) * dt_s);
+        if (d <= step) { b.x = tx; b.y = ty; b.z = tz; return b.theta_rad === 0; }
         b.x += dx / d * step; b.y += dy / d * step; b.z += dz / d * step;
         return false;
       },
@@ -331,23 +338,23 @@ var FBPhysics = (function () {
       release: function (i) {
         var b = bodies[i];
         if (b.state !== 'held') return false;
-        b.state = 'falling'; b.vz = 0; b.theta = 0; b.omega = 0;   // eine Restneigung aus dem Aufrichten gilt nicht für den Fall
+        b.state = 'falling'; b.vz = 0; b.theta_rad = 0; b.omega_rad_s = 0; b.fallen = false;   // eine Restneigung aus dem Aufrichten gilt nicht für den Fall
         return true;
       },
       // Richtung (Feld, Grad) des oberen Endes eines Objekts, das von Anfang an liegt und noch nie berührt wurde.
       setLieDir: function (i, deg) {
         var b = bodies[i];
-        if (b.pristine && b.state === 'lying') b.phi = deg / RAD;
+        if (b.pristine && b.state === 'lying' && !moving(b)) b.phi_rad = deg / RAD;
       },
       // Lage zum Zeichnen: Fußpunkt (bx, by, z), Neigung tilt_deg aus der Senkrechten in Richtung dir_deg (Feld).
       pose: function (i) {
-        var b = bodies[i], dx = Math.cos(b.phi), dy = Math.sin(b.phi);
+        var b = bodies[i], dx = Math.cos(b.phi_rad), dy = Math.sin(b.phi_rad);
         if (b.state === 'tipping') {
-          var shift = b.r * (1 - Math.cos(b.theta));
-          return { bx_in: b.x + shift * dx, by_in: b.y + shift * dy, z_in: b.z + b.r * Math.sin(b.theta), tilt_deg: b.theta * RAD, dir_deg: b.phi * RAD };
+          var shift = b.r * (1 - Math.cos(b.theta_rad));
+          return { bx_in: b.x + shift * dx, by_in: b.y + shift * dy, z_in: b.z + b.r * Math.sin(b.theta_rad), tilt_deg: b.theta_rad * RAD, dir_deg: b.phi_rad * RAD };
         }
-        if (b.state === 'lying') return { bx_in: b.x - b.c * dx, by_in: b.y - b.c * dy, z_in: b.r, tilt_deg: 90, dir_deg: b.phi * RAD };
-        return { bx_in: b.x, by_in: b.y, z_in: b.z, tilt_deg: b.state === 'held' ? b.theta * RAD : 0, dir_deg: b.phi * RAD };
+        if (b.state === 'lying') return { bx_in: b.x - b.c * dx, by_in: b.y - b.c * dy, z_in: b.r, tilt_deg: 90, dir_deg: b.phi_rad * RAD };
+        return { bx_in: b.x, by_in: b.y, z_in: b.z, tilt_deg: b.state === 'held' ? b.theta_rad * RAD : 0, dir_deg: b.phi_rad * RAD };
       }
     };
     return world;

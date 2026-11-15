@@ -27,7 +27,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
 
   // 2 Kippwinkel atan(2r/h) bei Schwerpunkt in halber Höhe
   let w = make([spec('P', 0, 0)]);
-  check('Kippwinkel = atan(2r/h)', Math.abs(w.bodies[0].crit - Math.atan(2 * 1.5 / 6.5)) < 1e-12, w.bodies[0].crit);
+  check('Kippwinkel = atan(2r/h)', Math.abs(w.bodies[0].crit_rad - Math.atan(2 * 1.5 / 6.5)) < 1e-12, w.bodies[0].crit_rad);
 
   // 3 Erzwungener Kippwinkel: Umkehrung von f(θ) = hc·sin θ + 2r·(1 − cos θ)
   [0.1, 0.4, 1.0, 1.4].forEach((th) => {
@@ -54,7 +54,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const wd = make([spec('P', 0, 0)]);
     const depth = 4.0 * Math.sin(th0) + 3.0 * (1 - Math.cos(th0));
     wd.pushStanding(0, Math.cos(dir), Math.sin(dir), depth, DT);
-    wd.bodies[0].omega = 0;
+    wd.bodies[0].omega_rad_s = 0;
     return wd;
   };
   const th0 = 0.7;
@@ -66,7 +66,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
   const wExpect = Math.sqrt(2 * G * (b0.r * Math.sin(th0) + b0.c * Math.cos(th0) - b0.r) / b0.ieff);
   check('Aufschlag-Winkelgeschwindigkeit aus der Energiebilanz (±3 %)', imp && Math.abs(imp.omega_rad_s - wExpect) / wExpect < 0.03, imp && imp.omega_rad_s + ' vs ' + wExpect);
   check('genau ein Ereignis toppled', evs.filter((e) => e.type === 'toppled').length === 1 && evs.filter((e) => e.type === 'toppled')[0].id === 'P');
-  check('liegt am Ende, ohne Geschwindigkeit', b0.state === 'lying' && b0.vx === 0 && b0.vy === 0 && b0.theta === Math.PI / 2, b0.state);
+  check('liegt am Ende, ohne Geschwindigkeit', b0.state === 'lying' && b0.vx === 0 && b0.vy === 0 && b0.theta_rad === Math.PI / 2, b0.state);
   check('Schwerpunkt liegt (r + c) vor dem Standkreis in Kipprichtung', Math.abs(b0.x - (b0.r + b0.c)) < 1e-9 && Math.abs(b0.y) < 1e-9, b0.x + ',' + b0.y);
   let pose = w.pose(0);
   check('liegend: Fuß am Drehpunkt, Höhe r, 90°', Math.abs(pose.bx_in - b0.r) < 1e-9 && pose.z_in === b0.r && pose.tilt_deg === 90, JSON.stringify(pose));
@@ -90,9 +90,39 @@ function runPhysicsTests(FBPhysics, FBLive) {
   const evs2 = [];
   let minZ2 = 1e9;
   for (let t = 0; t < 2000; t++) { w.step(DT).forEach((e) => evs2.push(e)); minZ2 = Math.min(minZ2, w.pose(0).z_in); }
-  check('sanft angekippt: steht wieder', w.bodies[0].state === 'standing' && w.bodies[0].theta === 0 && w.bodies[0].omega === 0, w.bodies[0].state);
+  check('sanft angekippt: steht wieder', w.bodies[0].state === 'standing' && w.bodies[0].theta_rad === 0 && w.bodies[0].omega_rad_s === 0, w.bodies[0].state);
   check('sanft angekippt: kein toppled', evs2.filter((e) => e.type === 'toppled').length === 0);
   check('nie unter dem Boden', minZ2 >= 0, minZ2);
+
+  // 7b SIM-41: sehr schneller Schlag zum Boden meldet toppled (sonst fehlt das Ereignis, wenn kein Schritt über dem Kippwinkel endet)
+  w = make([spec('P', 0, 0)]);
+  w.bodies[0].state = 'tipping'; w.bodies[0].theta_rad = 0.1; w.bodies[0].omega_rad_s = 1e4;
+  const evs7b = [];
+  run(w, 0.01, evs7b);
+  check('Schlag direkt zum Boden: genau ein toppled', evs7b.filter((e) => e.type === 'toppled').length === 1, JSON.stringify(evs7b));
+  // 7b2 SIM-41-Review: langsamer Aufschlag (omega < Ruhegrenze) direkt aus dem Winkel unter dem Kippwinkel meldet ebenfalls toppled
+  w = make([spec('P', 0, 0)]);
+  w.bodies[0].state = 'tipping'; w.bodies[0].theta_rad = Math.PI / 2 - 0.0001; w.bodies[0].omega_rad_s = 0.3; w.bodies[0].fallen = false;
+  const evs7b2 = [];
+  run(w, 0.05, evs7b2);
+  check('langsamer Aufschlag: liegt und meldet genau ein toppled', w.bodies[0].state === 'lying' && evs7b2.filter((e) => e.type === 'toppled').length === 1, w.bodies[0].state + ' ' + JSON.stringify(evs7b2));
+  // 7c SIM-41: richtet sich ein umgekipptes Teil wieder auf, gilt es danach als nicht gefallen (nächstes Umkippen meldet wieder)
+  w = make([spec('P', 0, 0)]);
+  w.bodies[0].state = 'tipping'; w.bodies[0].theta_rad = 0.05; w.bodies[0].omega_rad_s = -1; w.bodies[0].fallen = true;
+  run(w, 0.5);
+  check('aufgerichtet: steht und gilt nicht mehr als gefallen', w.bodies[0].state === 'standing' && w.bodies[0].fallen === false, w.bodies[0].state + ' ' + w.bodies[0].fallen);
+  w.bodies[0].state = 'tipping'; w.bodies[0].theta_rad = 0.1; w.bodies[0].omega_rad_s = 20;
+  const evs7c = [];
+  run(w, 0.3, evs7c);
+  check('zweites Umkippen meldet wieder toppled', evs7c.filter((e) => e.type === 'toppled').length === 1, JSON.stringify(evs7c));
+  // 7d SIM-41: Richtung eines von Anfang an liegenden Teils lässt sich nur setzen, solange es unberührt ist
+  w = make([spec('L', 0, 0, { standing: false, lie_dir_deg: 0 }), spec('M', 20, 0, { standing: false, lie_dir_deg: 0 })]);
+  w.setLieDir(0, 90);
+  check('unberührt liegend: Richtung wird gesetzt', Math.abs(w.pose(0).dir_deg - 90) < 1e-9, w.pose(0).dir_deg);
+  w.pushLying(1, 1, 0, 5); run(w, 2.0);
+  const stopped = w.bodies[1].vx === 0 && w.bodies[1].vy === 0;
+  w.setLieDir(1, 90);
+  check('geschoben und wieder still: Richtung bleibt', stopped && Math.abs(w.pose(1).dir_deg) < 1e-9, w.pose(1).dir_deg + ' ' + stopped);
 
   // 8 Ruhe: nach dem Ausschwingen ändert sich nichts mehr (kein Zittern)
   w = tipFrom(th0, 0);
@@ -135,11 +165,11 @@ function runPhysicsTests(FBPhysics, FBLive) {
   // 12 Roboter von der Seite: gegen die Kipprichtung wirkt nichts, mit ihr wächst der Winkel
   w = make([spec('P', 0, 0)]);
   w.pushStanding(0, 1, 0, 1.0, DT);
-  const th1 = w.bodies[0].theta;
+  const th1 = w.bodies[0].theta_rad;
   w.pushStanding(0, -1, 0, 2.5, DT);
-  check('Schub gegen die Kipprichtung ändert nichts', w.bodies[0].theta === th1 && w.bodies[0].phi === 0);
+  check('Schub gegen die Kipprichtung ändert nichts', w.bodies[0].theta_rad === th1 && w.bodies[0].phi_rad === 0);
   w.pushStanding(0, 1, 0, 2.5, DT);
-  check('mehr Eindringtiefe: größerer Winkel', w.bodies[0].theta > th1);
+  check('mehr Eindringtiefe: größerer Winkel', w.bodies[0].theta_rad > th1);
 
   // 13 Determinismus
   const trace = () => { const wd = tipFrom(th0, 0.4); run(wd, 2.0); return JSON.stringify([wd.bodies, wd.pose(0)]); };
@@ -197,8 +227,22 @@ function runPhysicsTests(FBPhysics, FBLive) {
   threw = false;
   try { FBPhysics.load({ welt: base.welt, physik: Object.assign({}, physik, { greifen: Object.assign({}, grab, { fangradius_in: 0 }) }) }); } catch (e) { threw = true; }
   check('Fangradius 0 wird abgelehnt', threw);
+  threw = false;
+  try { FBPhysics.load({ welt: base.welt, physik: Object.assign({}, physik, { greifen: Object.assign({}, grab, { aufricht_rad: 6.0 }) }) }); } catch (e) { threw = /unbekannt/.test(e.message); }
+  check('unbekannter Schlüssel in physik.greifen (Tippfehler) wird abgelehnt', threw);
   const makeG = (specs, goals) => { const wd = FBPhysics.create(cfgG, specs, {}); wd.setGoals(goals || []); return wd; };
   const runG = (wd, seconds, evs) => { for (let t = 0; t < Math.round(seconds / DT); t++) { const e = wd.step(DT); if (evs) e.forEach((x) => evs.push(x)); } };
+
+  // 14b SIM-41: ein gegriffenes und wieder abgelegtes Teil gilt nicht mehr als gefallen (nächstes Umkippen meldet wieder toppled)
+  w = makeG([spec('P', 0, 0, { standing: false })]);
+  w.bodies[0].fallen = true;
+  check('Vorbedingung: Teil liegt und gilt als gefallen', w.hold(0) === true && w.bodies[0].fallen === false, String(w.bodies[0].fallen));
+  w.bodies[0].fallen = true;   // Altlast wie nach einem Umkippen vor dem Greifen
+  w.release(0); runG(w, 1.0);
+  w.bodies[0].state = 'tipping'; w.bodies[0].theta_rad = 0.1; w.bodies[0].omega_rad_s = 20;
+  const evs14b = [];
+  runG(w, 0.3, evs14b);
+  check('nach Loslassen: Umkippen meldet wieder toppled', evs14b.filter((e) => e.type === 'toppled').length === 1, JSON.stringify(evs14b));
 
   // 15 Fall auf ein Goal: landet nach √(2Δh/g) auf hoehe_in, wird zur Goal-Mitte gezogen, bleibt stehen
   w = makeG([spec('P', 1.5, 1.0)], [{ x_in: 0, y_in: 0, z_in: 3.25 }]);
@@ -238,8 +282,8 @@ function runPhysicsTests(FBPhysics, FBLive) {
   // 18 Halten: moveHeld zieht mit endlicher Geschwindigkeit, kein Sprung
   w = makeG([spec('P', 0, 0)]);
   w.hold(0);
-  let far = 0, steps = 0;
-  while (!w.moveHeld(0, 8, 0, 3, DT) && steps < 5000) { steps++; far = Math.max(far, 0); }
+  let steps = 0;
+  while (!w.moveHeld(0, 8, 0, 3, DT) && steps < 5000) steps++;
   check('moveHeld erreicht das Ziel mit Zieh-Geschwindigkeit (|Ziel|/v = 8,54/80 s ± 3 ms)', Math.abs(steps * DT - Math.hypot(8, 3) / 80) < 0.003, steps);
   check('gehalten: Zustand held, Position am Ziel', w.bodies[0].state === 'held' && w.bodies[0].x === 8 && w.bodies[0].z === 3);
   w.release(0);
@@ -297,6 +341,17 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const r16 = play(oneF, { 10: g1, 20: up, 3000: rel }, 16, 4500);
     check('Livesim: andere Bildrate, gleicher Zustand', JSON.stringify(r16.live.objects()) === JSON.stringify(r1.live.objects()));
 
+    // SIM-41: Ereignisse gehören dem Roboter, der greift und ablegt (nicht dem Stacker als Ersatz)
+    const runF = { feld_in: 144, goals: [{ id: 'G1', typ: 'neutral', x_in: 0, y_in: 0, hoehe_in: 3.25 }],
+      posen: [{ id: 'START_STACKER', x_in: 40, y_in: 60, h_deg: 180 }, { id: 'START_RUNNER', x_in: -9, y_in: 0, h_deg: 0 }],
+      objekte_start: { pins: [{ id: 'PIN_R', x_in: -2, y_in: 0, lage: 'steht', ebene: 0, variante: 'yellow' }] } };
+    const runPlan = { 10: g1, 20: { type: 'lift', dir: 1 }, 500: rel };   // SIM-43: ohne Heben läge die Hand unter der Goal-Oberkante (3,25), dann fällt das Teil zum Boden statt aufs Goal
+    const runLive = FBLive.create(gp, runF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: (n, t_ms) => (n === 'runner' && runPlan[t_ms]) || null });
+    const runEv = [];
+    for (let t = 0; t < 2000; t++) { runLive.advance(0.001); runLive.takeEvents().forEach((e) => runEv.push(e.robot + ' ' + e.text)); }
+    check('Livesim: der Runner greift und legt ab (GRAB, DROP)', runEv.indexOf('runner GRAB:PIN_R') >= 0 && runEv.indexOf('runner DROP:PIN_R') >= 0, runEv.join(' | '));
+    check('Livesim: STACK geht an den Runner, nicht an den Stacker', runEv.indexOf('runner STACK:PIN_R') >= 0 && !runEv.some((e) => /^stacker (GRAB|DROP|STACK|TOPPLED)/.test(e)), runEv.join(' | '));
+
     // Ablegen weit weg vom Goal: Boden, kein STACK
     const r2 = play(oneF, { 10: g1, 500: rel }, 1, 3000, false);   // Roboter steht: das abgelegte Teil wird nicht überfahren
     check('Livesim: Ablegen fern vom Goal landet auf dem Boden ohne STACK', r2.get('PIN_A').draw.z_in === 0 && r2.get('PIN_A').state === 'standing' && !r2.events.some((e) => /STACK:/.test(e)), r2.events.join(' | '));
@@ -305,7 +360,13 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const r3 = play(grabF, { 10: g1, 20: g1, 30: g1 }, 1, 200, false);
     check('Livesim: SG6: zweiter Pin wird abgelehnt (RULE:SG6), Cup wird gegriffen', r3.events.indexOf('stacker RULE:SG6') >= 0 && r3.live.hand('stacker').sort().join() === 'CUP_A,PIN_A' && r3.get('PIN_B').state === 'standing', r3.live.hand('stacker').join() + ' | ' + r3.events.join(' | '));
     const r3b = play(grabF, { 10: g1, 20: g1 }, 1, 200, false);
-    check('Livesim: Pin und Cup in der Hand sind kein Verstoß', r3b.events.indexOf('stacker RULE:SG6') === -1 || r3b.live.hand('stacker').length === 2, r3b.events.join(' | '));
+    check('Livesim: Pin und Cup in der Hand sind kein Verstoß', r3b.events.indexOf('stacker RULE:SG6') === -1 && r3b.live.hand('stacker').length === 2, r3b.events.join(' | '));
+
+    // SIM-41: auch mit Aufrichten (aufricht_rad_s) greift die Hand kein entferntes liegendes Teil, und SG6 gilt für liegende Teile
+    const farL = play(mkField({ pins: [{ id: 'PIN_FERN_L', x_in: -10, y_in: 30, lage: 'liegt', ebene: 0 }] }), { 10: g1 }, 1, 200, false);
+    check('Livesim: entferntes liegendes Teil wird auch mit Aufrichten nicht gegriffen', farL.live.hand('stacker').length === 0 && !farL.events.some((e) => /GRAB/.test(e)), farL.events.join(' | '));
+    const sgL = play(mkField({ pins: [{ id: 'PIN_ST', x_in: -31, y_in: 0, lage: 'steht', ebene: 0 }, { id: 'PIN_LA', x_in: -26, y_in: 0, lage: 'liegt', ebene: 0 }] }), { 10: g1, 20: g1 }, 1, 200, false);
+    check('Livesim: SG6 gilt auch für ein liegendes Pin (RULE:SG6, bleibt liegen)', sgL.events.indexOf('stacker GRAB:PIN_ST') >= 0 && sgL.events.indexOf('stacker RULE:SG6') >= 0 && sgL.get('PIN_LA').state === 'lying' && sgL.live.hand('stacker').join() === 'PIN_ST', sgL.events.join(' | ') + ' / ' + sgL.live.hand('stacker').join());
 
     // SIM-42: die Hand fasst das Teil greif_hoehe_in über dem Fußpunkt; ein Bodenteil springt beim Greifen auf Stufe 0 nicht um die ganze Handhöhe
     const gh = (n) => Object.assign({}, gp, { physik: Object.assign({}, gp.physik, { greifen: Object.assign({}, grab, { greif_hoehe_in: n }) }) });
@@ -386,10 +447,10 @@ function runPhysicsTests(FBPhysics, FBLive) {
     {
       const w2 = lyingPin(), b2 = w2.bodies[0];
       w2.hold(0); w2.moveHeld(0, 12, 6, 4, DT);
-      check('Vorbedingung: Teil ist beim Loslassen noch geneigt', b2.theta > 0.1, String(b2.theta));
+      check('Vorbedingung: Teil ist beim Loslassen noch geneigt', b2.theta_rad > 0.1, String(b2.theta_rad));
       w2.release(0);
       for (let k = 0; k < 400; k++) w2.step(DT);
-      check('Loslassen mitten im Aufrichten: Teil steht senkrecht (theta = 0, omega = 0)', b2.state === 'standing' && b2.theta === 0 && b2.omega === 0 && w2.pose(0).tilt_deg === 0, b2.state + ' ' + b2.theta);
+      check('Loslassen mitten im Aufrichten: Teil steht senkrecht (theta_rad = 0, omega_rad_s = 0)', b2.state === 'standing' && b2.theta_rad === 0 && b2.omega_rad_s === 0 && w2.pose(0).tilt_deg === 0, b2.state + ' ' + b2.theta_rad);
     }
     let prevPose = w.pose(0), maxJump = 0, monotone = true, steps = 0, prevTilt = 90;
     while (!w.moveHeld(0, 12, 6, 4, DT) && steps < 5000) {
@@ -399,16 +460,14 @@ function runPhysicsTests(FBPhysics, FBLive) {
       if (q.tilt_deg > prevTilt + 1e-9) monotone = false;
       prevTilt = q.tilt_deg; prevPose = q;
     }
-    const tUp = (Math.PI / 2) / 6.0, tMove = Math.hypot(12 - w.pose(0).bx_in + 0, 0) * 0;   // Zielzeit unten aus der Ausgangslage
+    const tUp = (Math.PI / 2) / 6.0;
     check('Aufrichten dauert (π/2)/ω = 0,262 s (±4 ms), der Weg zur Hand ist kürzer', Math.abs(steps * DT - tUp) < 0.004, steps);
     check('Aufrichten: Winkel nimmt monoton ab, Fußpunkt springt nie (< 0,15 in je ms)', monotone && maxJump < 0.15, maxJump);
-    check('am Ende senkrecht in der Hand am Ziel', b.theta === 0 && b.x === 12 && b.y === 6 && b.z === 4 && w.pose(0).tilt_deg === 0);
+    check('am Ende senkrecht in der Hand am Ziel', b.theta_rad === 0 && b.x === 12 && b.y === 6 && b.z === 4 && w.pose(0).tilt_deg === 0);
     w.release(0); runG(w, 1.0);
-    check('losgelassen: steht senkrecht auf dem Boden', b.state === 'standing' && b.z === 0 && b.theta === 0);
+    check('losgelassen: steht senkrecht auf dem Boden', b.state === 'standing' && b.z === 0 && b.theta_rad === 0);
   }
   {
-    const gp2 = { welt: base.welt, physik: baseG.physik };
-    void gp2;
     const lieF = { feld_in: 144, goals: [{ id: 'G1', typ: 'neutral', x_in: 0, y_in: 0, hoehe_in: 3.25 }],
       posen: [{ id: 'START_STACKER', x_in: -40, y_in: 0, h_deg: 0 }, { id: 'START_RUNNER', x_in: 40, y_in: 60, h_deg: 180 }],
       objekte_start: { pins: [{ id: 'PIN_L', x_in: -30, y_in: 0, lage: 'liegt', ebene: 0, gelb_deg: 0 }] } };
@@ -416,6 +475,15 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const lp = { welt: base.welt, live: { langsam_faktor: 0.4, ersatzpose_in: { stacker: { x_in: 0, y_in: 0, h_deg: 0 }, runner: { x_in: 0, y_in: 0, h_deg: 0 } }, kollision: { radius_in: { goals: 4.0 } } },
       roboter: { stacker: { antrieb: dr(12), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 12, breite: 12 } }, runner: { antrieb: dr(10), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 10, breite: 10 } } },
       feldobjekte: { radius_in: { cup: 2.0, pin: 2.0 }, roboter_anteil: 0.5 }, physik: baseG.physik };
+    // SIM-41: Reichweite und Abstand gelten für den Fußpunkt des liegenden Teils (Schwerpunkt − c), nicht für dessen Mitte
+    const nearFoot = Object.assign({}, lieF, { objekte_start: { pins: [{ id: 'PIN_L', x_in: -28, y_in: 0, lage: 'liegt', ebene: 0 }] } });   // Mitte 6 in vor der Front (> Reichweite + r = 5), Fußpunkt 2,75 in
+    const liveF = FBLive.create(lp, nearFoot, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: (n, t) => (n === 'stacker' && t === 10 ? { type: 'grab' } : null) });
+    const evF = [];
+    for (let t = 0; t < 50; t++) { liveF.advance(0.001); liveF.takeEvents().forEach((e) => evF.push(e.text)); }
+    check('Livesim: liegendes Teil mit Fußpunkt in Reichweite (Mitte außerhalb) wird gegriffen', evF.indexOf('GRAB:PIN_L') >= 0, evF.join(' | '));
+    // ein liegendes Teil hat nichts obendrauf, auch wenn ein erhöhtes stehendes Teil in seiner Nähe steht
+    const wl = makeG([spec('L', 0, 0, { standing: false }), spec('S', 1, 1, { z_in: 4 })]);
+    check('liegendes Teil ist frei, auch mit einem erhöhten stehenden Teil in der Nähe', wl.isFree(0) === true);
     const plan = { 10: { type: 'grab' }, 20: { type: 'lift', dir: 1 }, 3000: { type: 'release' } };
     const volts = (n, t_ms) => (n === 'stacker' && t_ms < 3000 ? { left_V: 6, right_V: 6 } : { left_V: 0, right_V: 0 });
     const live = FBLive.create(lp, lieF, { voltsAt: volts, cmdAt: (n, t) => (n === 'stacker' && plan[t]) || null });
@@ -440,10 +508,10 @@ function runPhysicsTests(FBPhysics, FBLive) {
     // (Drehen/Ersatzpose). omega darf nie über Fahrgeschwindigkeit / Berührhöhe (kick) hinaus erzwungen werden: 60 / 4 = 15 rad/s.
     const wp = make([spec('P', 0, 0)]);
     wp.pushStanding(0, 1, 0, 0.3, DT, 60);
-    check('SIM-43: Anfahr-Sprung der Eindringtiefe erzwingt omega nur bis v/Berührhöhe (<= 15 rad/s)', wp.bodies[0].omega <= 60 / 4.0 + 1e-9, wp.bodies[0].omega);
+    check('SIM-43: Anfahr-Sprung der Eindringtiefe erzwingt omega nur bis v/Berührhöhe (<= 15 rad/s)', wp.bodies[0].omega_rad_s <= 60 / 4.0 + 1e-9, wp.bodies[0].omega_rad_s);
     const wq = make([spec('P', 0, 0)]);
     wq.pushStanding(0, 1, 0, 0.3, DT);
-    check('SIM-43: ohne Geschwindigkeitsangabe bleibt das Verhalten wie vorher (omega = Winkelsprung/dt)', wq.bodies[0].omega > 60, wq.bodies[0].omega);
+    check('SIM-43: ohne Geschwindigkeitsangabe bleibt das Verhalten wie vorher (omega = Winkelsprung/dt)', wq.bodies[0].omega_rad_s > 60, wq.bodies[0].omega_rad_s);
   }
   {
     // (2) Nach dem Umkippen keine Überlappung mit einem Nachbarn und nicht im Feldrand: Pin kippt in Richtung +x auf einen stehenden Cup zu.
@@ -485,8 +553,10 @@ function runPhysicsTests(FBPhysics, FBLive) {
     for (let t = 0; t < 3000 && n < 1; t++) { wb.step(DT); if (wb.bodies[0].z <= 3.26 && wb.bodies[0].state === 'falling' && wb.bodies[0].vz > 0) { bouncing = true; n++; } }
     check('SIM-43: Vorbedingung: das untere Teil prallt gerade ab (falling, steigt)', bouncing);
     wb.drop(1, 0, 0, 9.0);   // aus der Hand über dem Teil losgelassen
-    runG(wb, 2.0);
+    const evb = [];
+    runG(wb, 2.0, evb);
     const u = wb.bodies[0], o = wb.bodies[1];
+    check('SIM-43: Teil auf einem noch abprallenden Teil meldet genau ein stacked-landed (kein doppeltes STACK)', evb.filter((e) => e.type === 'landed' && e.id === 'O' && e.stacked).length === 1, JSON.stringify(evb));
     check('SIM-43: Teil über dem noch abprallenden Teil endet darauf (z = Goal + Stufe), nicht darin', u.state === 'standing' && o.state === 'standing' && Math.abs(u.z - 3.25) < 1e-9 && Math.abs(o.z - (3.25 + 4.0)) < 1e-9, u.z + ' ' + o.z);
   }
   {
@@ -498,6 +568,27 @@ function runPhysicsTests(FBPhysics, FBLive) {
     check('SIM-43: Übergang kippend → liegend ohne Sprung (< 0,5 in je ms)', maxJ < 0.5, maxJ);
     const a = wj.bodies[0], n = wj.bodies[1];
     check('SIM-43: danach keine Überlappung mit dem Nachbarn', Math.hypot(a.x - n.x, a.y - n.y) >= a.r + n.r - 1e-6, Math.hypot(a.x - n.x, a.y - n.y));
+  }
+
+  {
+    // SIM-43 (Review #123): Pin kurz nach dem Cup abgelegt, der Cup prallt noch: je Teil höchstens ein STACK je Ablage
+    const mk = (objs) => ({ feld_in: 144, goals: [{ id: 'G1', typ: 'neutral', x_in: 0, y_in: 0, hoehe_in: 3.25 }],
+      posen: [{ id: 'START_STACKER', x_in: -40, y_in: 0, h_deg: 0 }, { id: 'START_RUNNER', x_in: 40, y_in: 60, h_deg: 180 }], objekte_start: objs });
+    const dr = (spur) => ({ kS_V: 1.0, kV_V_per_in_s: 0.2, kA_V_per_in_s2: 0.04, spurbreite_in: spur, mu: 1.0, motor_max_V: 11.5 });
+    const lp = { welt: base.welt, live: { langsam_faktor: 0.4, ersatzpose_in: { stacker: { x_in: 0, y_in: 0, h_deg: 0 }, runner: { x_in: 0, y_in: 0, h_deg: 0 } }, kollision: { radius_in: { goals: 4.0 } } },
+      roboter: { stacker: { antrieb: dr(12), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 12, breite: 12 } }, runner: { antrieb: dr(10), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 10, breite: 10 } } },
+      feldobjekte: { radius_in: { cup: 2.0, pin: 2.0 }, roboter_anteil: 0.5 }, physik: baseG.physik };
+    const f = mk({ cups: [{ id: 'CUP_A', x_in: -30, y_in: -3.5, lage: 'steht', ebene: 0 }], pins: [{ id: 'PIN_A', x_in: -30, y_in: 0, lage: 'steht', ebene: 0, variante: 'yellow' }] });
+    let worst = 0;
+    [0, 3, 8, 15, 30, 60].forEach((gap) => {
+      const plan = { 10: { type: 'grab' }, 20: { type: 'lift', dir: 1 }, 30: { type: 'lift', dir: 1 }, 3000: { type: 'release' } };
+      plan[3000 + gap + 1] = { type: 'release' };
+      const live = FBLive.create(lp, f, { voltsAt: (nm, t) => (nm === 'stacker' && t < 3000 ? { left_V: 6, right_V: 6 } : { left_V: 0, right_V: 0 }), cmdAt: (nm, t) => (nm === 'stacker' && plan[t]) || null });
+      const evs = [];
+      for (let t = 0; t < 5000; t++) { live.advance(0.001); live.takeEvents().forEach((e) => evs.push(e.text)); }
+      worst = Math.max(worst, evs.filter((e) => /^STACK:PIN_A/.test(e)).length);
+    });
+    check('SIM-43: Pin auf einem noch abprallenden Cup: höchstens ein STACK:PIN_A je Ablage', worst <= 1, worst);
   }
 
   return { ok, fail, msgs };

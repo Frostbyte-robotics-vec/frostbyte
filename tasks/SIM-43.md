@@ -38,10 +38,14 @@ Rat des Advisors (vor /finish): nicht `review`, sondern `blocked`, weil „Ausse
 **Frage an den Menschen:** Was genau sieht im Livesim (tools/viewer/index.html) noch falsch aus: Rückprall zu stark/schwach, Gleitweg, Kippdauer, Teile durch Roboter, Stapel? Bitte Szene beschreiben. Danach Werte in `physik` (sim_params.json, alles Schätzungen) anpassen und im Browser bestätigen lassen; dann kann das Ticket auf review.
 Test: `py -3 -m unittest discover -s tools/viewer -p "test_*.py"`. clang-format war auf diesem Rechner nicht installiert (nur JS geändert).
 
-Nach dem Merge von #124 (SIM-41, benennt Felder um): rebase und auf `theta_rad`/`omega_rad_s`/`phi_rad` umstellen. Die Tests lesen `.omega` und fallen auf; `separate()` nutzt `Math.cos(b.phi)` (wird sonst NaN, fällt in den Tests nicht auf). Bekannte Lücke: das Fahrtempo `vs` in livesim.js nimmt nur die mittlere Radgeschwindigkeit; beim Drehen auf der Stelle ist es 0, ein tiefes Eindringen kippt dann ohne Schwung (Kontaktpunktgeschwindigkeit = linear + ω·Hebelarm wäre richtig). Dazu: `toLying` meldet kein `toppled` (siehe Review #124).
+Stand 2026-11-15 nach den KI-Reviews zu PR #123: Branch mit main (inkl. #124) zusammengeführt, neue Zeilen auf `*_rad` umgestellt (`grep -nE "\.(theta|omega|phi|crit)" tools/viewer/*.js` leer), `sepV` → `sep_v_in_s`, `max_top` → `max_top_in`. Doppeltes STACK: nicht reproduzierbar, gemessen (Physik: ein Teil auf einem abprallenden Teil meldet genau ein `landed` mit `stacked`; Livesim: Cup und Pin 0–60 ms nacheinander abgelegt, höchstens ein `STACK:PIN_A`), beides als Test festgehalten, kein Dedupe nötig. Der Runner-STACK-Test aus #124 braucht jetzt einen Liftbefehl (ohne Heben liegt die Hand unter der Goal-Oberkante 3,25, das Teil fällt dann zum Boden: gewollt, kein Teleport mehr). Bekannt, nicht gelöst: `vs` = Mittelpunktstempo, bei reiner Drehung 0 (Kontaktpunktgeschwindigkeit wäre richtig); `toLying` meldet kein `toppled` (Review #124). Roboter gegen liegendes Teil weiter nicht neu gemessen.
+**Offen (Mensch):** was im Livesim noch falsch aussieht (Rückprall, Gleitweg, Kippdauer, Teile durch Roboter, Stapel?) und Bestätigung im Browser; danach Draft-PR aus dem Entwurf nehmen und Ticket auf review.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt (Rest aus SIM-42, Punkt 3) · –
 2026-11-15 · DAVIDCOPCOP (KI) · vier Physikpunkte mit rotem Test behoben, Feldrand Fehlalarm, Aussehen offen · –
 2026-11-15 · DAVIDCOPCOP (KI) · Stapel-Regression und Sprung beim Umkippen nach Advisor behoben (rote Tests), blocked wegen Aussehen · –
+2026-11-15 · matelechner01 (KI) · Review PR #123: Empfehlung ändern (Punkte siehe PR-Kommentar: sepV-Name, doppeltes STACK, Punkt 5 messen, Mensch bestätigt Aussehen) · –
+2026-11-15 · arjanssen (KI) · KI-Review PR #123: Empfehlung ändern · –
+2026-11-15 · DAVIDCOPCOP (KI) · Review-Punkte #123 abgearbeitet: Merge main, Umbenennungen, Tests für abprallendes Teil · –
