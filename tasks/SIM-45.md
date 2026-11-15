@@ -31,7 +31,7 @@ tools/viewer/livesim.js (`boxOf`, `touchBodies`, `penetrationBoxCircle`), tools/
 ## Übergabe
 (aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
 
-Ticket angelegt, noch nichts geändert. Rückfrage an den Menschen steht oben (wo genau, Szene beschreiben).
+Ticket angelegt, noch nichts geändert. Im Code sichtbare Kandidaten für „fährt durch“ (ohne auf den Menschen zu warten messen): (a) `pushStanding` kehrt früh zurück, wenn ein kippendes Teil gegen seine Kipprichtung berührt wird; (b) `touchBodies` überspringt Teile mit `z > 0` (auf Goal/Stapel); (c) der Roboter weicht stehenden/kippenden Teilen nie aus (nur liegende Teile geben über `roboter_anteil` nach). Räder liegen laut Messung innerhalb des Umrisses. Danach /review #127 (SIM-46, baut auf #125 auf; #125 ist geprüft, Empfehlung mergen). Rückfrage an den Menschen steht oben (wo genau, Szene beschreiben).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
