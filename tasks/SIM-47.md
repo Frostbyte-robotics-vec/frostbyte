@@ -29,7 +29,9 @@ Der Mensch (2026-11-15) sieht unter /viewer/ nur den Demo-Lauf (`frostbyte_sim -
 
 ## Übergabe
 (aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand 2026-11-15 (fertig, PR offen): `tools/viewer/laeufe.json` (Skills-Routen als Standard, Demo), Auswahl „Lauf“ und Anzeige „Punkte“ (Teamsumme) über der Zeitleiste in `tools/viewer/index.html` (`?lauf=<id>` wählt einen Lauf), `dashboard.yml` erzeugt `site/viewer/lauf/skills/` aus den Skills-Routen (Seed 1) und kopiert `laeufe.json`. Test `tools/viewer/test_runs.py` (4 Tests, zuerst rot). Im Browser geprüft (lokaler Server, Headless-Chrome): Skills-Lauf bei t = 55 s: 56 Punkte (Stand main ohne #125/#127); Demo bei t = 30 s: 20 Punkte. Ohne `laeufe.json` (CI-Artefakt viewer-demo, lokal) fällt der Viewer auf die Demo zurück. Der Skills-Lauf zeigt nach dem Merge von #125/#127 automatisch die neuen Werte (Fusion, Anfahrposen). Nach dem Merge auf der Veröffentlichung gegenprüfen (Mensch). Grenzen: nur Seed 1, kein Seed-Wähler; Viewer-JS-Tests (node) hier nicht gelaufen.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-15 · arjanssen (KI) · Ticket angelegt (Wunsch des Menschen) · –
+2026-11-15 · arjanssen (KI) · Lauf-Auswahl, Teampunkte, Workflow, Test, Browser-Prüfung · –
