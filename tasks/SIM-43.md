@@ -32,3 +32,4 @@ tools/viewer/physics.js, tools/viewer/livesim.js, ADR-051, SIM-41, SIM-42
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt (Rest aus SIM-42, Punkt 3) · –
+2026-11-15 · matelechner01 (KI) · Review PR #123: Empfehlung ändern (Punkte siehe PR-Kommentar: sepV-Name, doppeltes STACK, Punkt 5 messen, Mensch bestätigt Aussehen) · –
