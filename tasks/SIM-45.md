@@ -2,7 +2,7 @@
 id: SIM-45
 phase: "5"
 titel: Skills-Routen: Anfahrposen statt Wandpunkte (Runner erreicht den Toggle nicht mit ehrlicher Pose)
-status: in_progress
+status: review
 owner: arjanssen
 branch: ticket/sim-45
 depends: [SIM-44]
