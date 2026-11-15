@@ -28,6 +28,8 @@ tasks/SIM-44.md, docs/decisions/ADR-016-gps-fusion.md (Nachtrag), ADR-031/034, r
 ## Übergabe
 (aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
 
+KI-Review PR #127 (Empfehlung: ändern): (1) Zahlen ins Ticket übernehmen (Toggle 0/20 → 20/20, Median 16 → 68,5, P10 61, target_p10 40 bleibt; stehen bisher nur in ADR-016:23 und im PR-Text) und Verlauf-Zeile für die Arbeit anhängen; (2) „goto bleibt bei 0,5–1 in Seitenversatz stehen“ behandeln oder per neuem Ticket abspalten und hier vermerken. Code und Tests ohne Befund.
+
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-15 · arjanssen (KI) · Ticket angelegt (Befund aus SIM-44) · –
