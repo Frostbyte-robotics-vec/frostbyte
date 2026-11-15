@@ -206,6 +206,15 @@ class WebTest(unittest.TestCase):
             self.assertIn("height=", fig, name)
             self.assertNotIn("dashed", fig, name)
 
+    def test_teamfoto_volle_breite_mit_abstand(self):
+        # W-20: Foto nutzt die Inhaltsbreite und klebt nicht an Professor-Karte und Fusszeile
+        css = (WEB / "assets" / "style.css").read_text(encoding="utf-8")
+        regel = css[css.index(".teamfoto.filled img{"):]
+        regel = regel[: regel.index("}")]
+        self.assertIn("max-width:1100px", regel)
+        self.assertIn("box-shadow", regel)
+        self.assertRegex(css, r"\.teamfoto\.filled\{[^}]*margin-bottom:\s*(3[2-9]|[4-9]\d)px")
+
     def test_partnerwand_gross_auf_hauptseite_vor_dem_ziel(self):
         for name, h in HTML.items():
             self.assertIn('id="partner"', h, name)
