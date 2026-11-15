@@ -19,6 +19,8 @@ var FBPhysics = (function () {
   var RAD = 180 / Math.PI;
   var KINDS = ['cup', 'pin'];
   var BISECT_STEPS = 40;
+  var GRAB_KEYS = ['reichweite_in', 'vorn_in', 'hand_z_in', 'lift_stufen', 'lift_stufe_in', 'lift_geschw_in_s', 'zieh_geschw_in_s', 'fangradius_in',
+    'stapel_stufe_in', 'fang_zug_1_s', 'aufricht_rad_s', 'greif_toleranz_in', 'greif_hoehe_in', 'hand_hoehe', 'quelle'];
 
   function need(obj, key, where, positive) {
     var v = obj && obj[key];
@@ -50,6 +52,10 @@ var FBPhysics = (function () {
     cfg.evade_s = need(p, 'ausweich_s', 'physik', true);
     // Greifen und Stapeln (SIM-39): optional; ohne Block gibt es keine Hand, keine Stapel und keine Stützflächen.
     var g = p.greifen;
+    // Ein Tippfehler im Schlüssel dürfte nichts still abschalten (aufricht_rad_s fehlt = liegende Teile werden nicht gegriffen)
+    if (g) Object.keys(g).forEach(function (k) {
+      if (GRAB_KEYS.indexOf(k) < 0) throw new Error('sim_params physik.greifen.' + k + ' ist unbekannt (Tippfehler?)');
+    });
     cfg.grab = !g ? null : {
       reach_in: need(g, 'reichweite_in', 'physik.greifen', true), front_in: need(g, 'vorn_in', 'physik.greifen'),
       hand_z_in: need(g, 'hand_z_in', 'physik.greifen'), grab_tol_in: need(g, 'greif_toleranz_in', 'physik.greifen', true), grip_in: need(g, 'greif_hoehe_in', 'physik.greifen'), lift_levels: need(g, 'lift_stufen', 'physik.greifen', true),

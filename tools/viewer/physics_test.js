@@ -221,6 +221,9 @@ function runPhysicsTests(FBPhysics, FBLive) {
   threw = false;
   try { FBPhysics.load({ welt: base.welt, physik: Object.assign({}, physik, { greifen: Object.assign({}, grab, { fangradius_in: 0 }) }) }); } catch (e) { threw = true; }
   check('Fangradius 0 wird abgelehnt', threw);
+  threw = false;
+  try { FBPhysics.load({ welt: base.welt, physik: Object.assign({}, physik, { greifen: Object.assign({}, grab, { aufricht_rad: 6.0 }) }) }); } catch (e) { threw = /unbekannt/.test(e.message); }
+  check('unbekannter Schlüssel in physik.greifen (Tippfehler) wird abgelehnt', threw);
   const makeG = (specs, goals) => { const wd = FBPhysics.create(cfgG, specs, {}); wd.setGoals(goals || []); return wd; };
   const runG = (wd, seconds, evs) => { for (let t = 0; t < Math.round(seconds / DT); t++) { const e = wd.step(DT); if (evs) e.forEach((x) => evs.push(x)); } };
 
@@ -273,8 +276,8 @@ function runPhysicsTests(FBPhysics, FBLive) {
   // 18 Halten: moveHeld zieht mit endlicher Geschwindigkeit, kein Sprung
   w = makeG([spec('P', 0, 0)]);
   w.hold(0);
-  let far = 0, steps = 0;
-  while (!w.moveHeld(0, 8, 0, 3, DT) && steps < 5000) { steps++; far = Math.max(far, 0); }
+  let steps = 0;
+  while (!w.moveHeld(0, 8, 0, 3, DT) && steps < 5000) steps++;
   check('moveHeld erreicht das Ziel mit Zieh-Geschwindigkeit (|Ziel|/v = 8,54/80 s ± 3 ms)', Math.abs(steps * DT - Math.hypot(8, 3) / 80) < 0.003, steps);
   check('gehalten: Zustand held, Position am Ziel', w.bodies[0].state === 'held' && w.bodies[0].x === 8 && w.bodies[0].z === 3);
   w.release(0);
@@ -351,7 +354,13 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const r3 = play(grabF, { 10: g1, 20: g1, 30: g1 }, 1, 200, false);
     check('Livesim: SG6: zweiter Pin wird abgelehnt (RULE:SG6), Cup wird gegriffen', r3.events.indexOf('stacker RULE:SG6') >= 0 && r3.live.hand('stacker').sort().join() === 'CUP_A,PIN_A' && r3.get('PIN_B').state === 'standing', r3.live.hand('stacker').join() + ' | ' + r3.events.join(' | '));
     const r3b = play(grabF, { 10: g1, 20: g1 }, 1, 200, false);
-    check('Livesim: Pin und Cup in der Hand sind kein Verstoß', r3b.events.indexOf('stacker RULE:SG6') === -1 || r3b.live.hand('stacker').length === 2, r3b.events.join(' | '));
+    check('Livesim: Pin und Cup in der Hand sind kein Verstoß', r3b.events.indexOf('stacker RULE:SG6') === -1 && r3b.live.hand('stacker').length === 2, r3b.events.join(' | '));
+
+    // SIM-41: auch mit Aufrichten (aufricht_rad_s) greift die Hand kein entferntes liegendes Teil, und SG6 gilt für liegende Teile
+    const farL = play(mkField({ pins: [{ id: 'PIN_FERN_L', x_in: -10, y_in: 30, lage: 'liegt', ebene: 0 }] }), { 10: g1 }, 1, 200, false);
+    check('Livesim: entferntes liegendes Teil wird auch mit Aufrichten nicht gegriffen', farL.live.hand('stacker').length === 0 && !farL.events.some((e) => /GRAB/.test(e)), farL.events.join(' | '));
+    const sgL = play(mkField({ pins: [{ id: 'PIN_ST', x_in: -31, y_in: 0, lage: 'steht', ebene: 0 }, { id: 'PIN_LA', x_in: -26, y_in: 0, lage: 'liegt', ebene: 0 }] }), { 10: g1, 20: g1 }, 1, 200, false);
+    check('Livesim: SG6 gilt auch für ein liegendes Pin (RULE:SG6, bleibt liegen)', sgL.events.indexOf('stacker GRAB:PIN_ST') >= 0 && sgL.events.indexOf('stacker RULE:SG6') >= 0 && sgL.get('PIN_LA').state === 'lying' && sgL.live.hand('stacker').join() === 'PIN_ST', sgL.events.join(' | ') + ' / ' + sgL.live.hand('stacker').join());
 
     // SIM-42: die Hand fasst das Teil greif_hoehe_in über dem Fußpunkt; ein Bodenteil springt beim Greifen auf Stufe 0 nicht um die ganze Handhöhe
     const gh = (n) => Object.assign({}, gp, { physik: Object.assign({}, gp.physik, { greifen: Object.assign({}, grab, { greif_hoehe_in: n }) }) });
@@ -445,7 +454,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
       if (q.tilt_deg > prevTilt + 1e-9) monotone = false;
       prevTilt = q.tilt_deg; prevPose = q;
     }
-    const tUp = (Math.PI / 2) / 6.0, tMove = Math.hypot(12 - w.pose(0).bx_in + 0, 0) * 0;   // Zielzeit unten aus der Ausgangslage
+    const tUp = (Math.PI / 2) / 6.0;
     check('Aufrichten dauert (π/2)/ω = 0,262 s (±4 ms), der Weg zur Hand ist kürzer', Math.abs(steps * DT - tUp) < 0.004, steps);
     check('Aufrichten: Winkel nimmt monoton ab, Fußpunkt springt nie (< 0,15 in je ms)', monotone && maxJump < 0.15, maxJump);
     check('am Ende senkrecht in der Hand am Ziel', b.theta_rad === 0 && b.x === 12 && b.y === 6 && b.z === 4 && w.pose(0).tilt_deg === 0);
