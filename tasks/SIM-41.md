@@ -2,9 +2,9 @@
 id: SIM-41
 phase: "5"
 titel: Befunde aus dem KI-Review der PRs #114–#116 (Livesim-Physik, Greifen, Aufrichten) abarbeiten
-status: todo
-owner:
-branch:
+status: in_progress
+owner: arjanssen
+branch: ticket/sim-41
 depends: [SIM-40]
 hw: nein
 ---
