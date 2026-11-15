@@ -27,7 +27,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
 
   // 2 Kippwinkel atan(2r/h) bei Schwerpunkt in halber Höhe
   let w = make([spec('P', 0, 0)]);
-  check('Kippwinkel = atan(2r/h)', Math.abs(w.bodies[0].crit - Math.atan(2 * 1.5 / 6.5)) < 1e-12, w.bodies[0].crit);
+  check('Kippwinkel = atan(2r/h)', Math.abs(w.bodies[0].crit_rad - Math.atan(2 * 1.5 / 6.5)) < 1e-12, w.bodies[0].crit_rad);
 
   // 3 Erzwungener Kippwinkel: Umkehrung von f(θ) = hc·sin θ + 2r·(1 − cos θ)
   [0.1, 0.4, 1.0, 1.4].forEach((th) => {
@@ -54,7 +54,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const wd = make([spec('P', 0, 0)]);
     const depth = 4.0 * Math.sin(th0) + 3.0 * (1 - Math.cos(th0));
     wd.pushStanding(0, Math.cos(dir), Math.sin(dir), depth, DT);
-    wd.bodies[0].omega = 0;
+    wd.bodies[0].omega_rad_s = 0;
     return wd;
   };
   const th0 = 0.7;
@@ -66,7 +66,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
   const wExpect = Math.sqrt(2 * G * (b0.r * Math.sin(th0) + b0.c * Math.cos(th0) - b0.r) / b0.ieff);
   check('Aufschlag-Winkelgeschwindigkeit aus der Energiebilanz (±3 %)', imp && Math.abs(imp.omega_rad_s - wExpect) / wExpect < 0.03, imp && imp.omega_rad_s + ' vs ' + wExpect);
   check('genau ein Ereignis toppled', evs.filter((e) => e.type === 'toppled').length === 1 && evs.filter((e) => e.type === 'toppled')[0].id === 'P');
-  check('liegt am Ende, ohne Geschwindigkeit', b0.state === 'lying' && b0.vx === 0 && b0.vy === 0 && b0.theta === Math.PI / 2, b0.state);
+  check('liegt am Ende, ohne Geschwindigkeit', b0.state === 'lying' && b0.vx === 0 && b0.vy === 0 && b0.theta_rad === Math.PI / 2, b0.state);
   check('Schwerpunkt liegt (r + c) vor dem Standkreis in Kipprichtung', Math.abs(b0.x - (b0.r + b0.c)) < 1e-9 && Math.abs(b0.y) < 1e-9, b0.x + ',' + b0.y);
   let pose = w.pose(0);
   check('liegend: Fuß am Drehpunkt, Höhe r, 90°', Math.abs(pose.bx_in - b0.r) < 1e-9 && pose.z_in === b0.r && pose.tilt_deg === 90, JSON.stringify(pose));
@@ -90,7 +90,7 @@ function runPhysicsTests(FBPhysics, FBLive) {
   const evs2 = [];
   let minZ2 = 1e9;
   for (let t = 0; t < 2000; t++) { w.step(DT).forEach((e) => evs2.push(e)); minZ2 = Math.min(minZ2, w.pose(0).z_in); }
-  check('sanft angekippt: steht wieder', w.bodies[0].state === 'standing' && w.bodies[0].theta === 0 && w.bodies[0].omega === 0, w.bodies[0].state);
+  check('sanft angekippt: steht wieder', w.bodies[0].state === 'standing' && w.bodies[0].theta_rad === 0 && w.bodies[0].omega_rad_s === 0, w.bodies[0].state);
   check('sanft angekippt: kein toppled', evs2.filter((e) => e.type === 'toppled').length === 0);
   check('nie unter dem Boden', minZ2 >= 0, minZ2);
 
@@ -135,11 +135,11 @@ function runPhysicsTests(FBPhysics, FBLive) {
   // 12 Roboter von der Seite: gegen die Kipprichtung wirkt nichts, mit ihr wächst der Winkel
   w = make([spec('P', 0, 0)]);
   w.pushStanding(0, 1, 0, 1.0, DT);
-  const th1 = w.bodies[0].theta;
+  const th1 = w.bodies[0].theta_rad;
   w.pushStanding(0, -1, 0, 2.5, DT);
-  check('Schub gegen die Kipprichtung ändert nichts', w.bodies[0].theta === th1 && w.bodies[0].phi === 0);
+  check('Schub gegen die Kipprichtung ändert nichts', w.bodies[0].theta_rad === th1 && w.bodies[0].phi_rad === 0);
   w.pushStanding(0, 1, 0, 2.5, DT);
-  check('mehr Eindringtiefe: größerer Winkel', w.bodies[0].theta > th1);
+  check('mehr Eindringtiefe: größerer Winkel', w.bodies[0].theta_rad > th1);
 
   // 13 Determinismus
   const trace = () => { const wd = tipFrom(th0, 0.4); run(wd, 2.0); return JSON.stringify([wd.bodies, wd.pose(0)]); };
@@ -386,10 +386,10 @@ function runPhysicsTests(FBPhysics, FBLive) {
     {
       const w2 = lyingPin(), b2 = w2.bodies[0];
       w2.hold(0); w2.moveHeld(0, 12, 6, 4, DT);
-      check('Vorbedingung: Teil ist beim Loslassen noch geneigt', b2.theta > 0.1, String(b2.theta));
+      check('Vorbedingung: Teil ist beim Loslassen noch geneigt', b2.theta_rad > 0.1, String(b2.theta_rad));
       w2.release(0);
       for (let k = 0; k < 400; k++) w2.step(DT);
-      check('Loslassen mitten im Aufrichten: Teil steht senkrecht (theta = 0, omega = 0)', b2.state === 'standing' && b2.theta === 0 && b2.omega === 0 && w2.pose(0).tilt_deg === 0, b2.state + ' ' + b2.theta);
+      check('Loslassen mitten im Aufrichten: Teil steht senkrecht (theta_rad = 0, omega_rad_s = 0)', b2.state === 'standing' && b2.theta_rad === 0 && b2.omega_rad_s === 0 && w2.pose(0).tilt_deg === 0, b2.state + ' ' + b2.theta_rad);
     }
     let prevPose = w.pose(0), maxJump = 0, monotone = true, steps = 0, prevTilt = 90;
     while (!w.moveHeld(0, 12, 6, 4, DT) && steps < 5000) {
@@ -402,9 +402,9 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const tUp = (Math.PI / 2) / 6.0, tMove = Math.hypot(12 - w.pose(0).bx_in + 0, 0) * 0;   // Zielzeit unten aus der Ausgangslage
     check('Aufrichten dauert (π/2)/ω = 0,262 s (±4 ms), der Weg zur Hand ist kürzer', Math.abs(steps * DT - tUp) < 0.004, steps);
     check('Aufrichten: Winkel nimmt monoton ab, Fußpunkt springt nie (< 0,15 in je ms)', monotone && maxJump < 0.15, maxJump);
-    check('am Ende senkrecht in der Hand am Ziel', b.theta === 0 && b.x === 12 && b.y === 6 && b.z === 4 && w.pose(0).tilt_deg === 0);
+    check('am Ende senkrecht in der Hand am Ziel', b.theta_rad === 0 && b.x === 12 && b.y === 6 && b.z === 4 && w.pose(0).tilt_deg === 0);
     w.release(0); runG(w, 1.0);
-    check('losgelassen: steht senkrecht auf dem Boden', b.state === 'standing' && b.z === 0 && b.theta === 0);
+    check('losgelassen: steht senkrecht auf dem Boden', b.state === 'standing' && b.z === 0 && b.theta_rad === 0);
   }
   {
     const gp2 = { welt: base.welt, physik: baseG.physik };
