@@ -94,6 +94,30 @@ function runPhysicsTests(FBPhysics, FBLive) {
   check('sanft angekippt: kein toppled', evs2.filter((e) => e.type === 'toppled').length === 0);
   check('nie unter dem Boden', minZ2 >= 0, minZ2);
 
+  // 7b SIM-41: sehr schneller Schlag zum Boden meldet toppled (sonst fehlt das Ereignis, wenn kein Schritt über dem Kippwinkel endet)
+  w = make([spec('P', 0, 0)]);
+  w.bodies[0].state = 'tipping'; w.bodies[0].theta_rad = 0.1; w.bodies[0].omega_rad_s = 1e4;
+  const evs7b = [];
+  run(w, 0.01, evs7b);
+  check('Schlag direkt zum Boden: genau ein toppled', evs7b.filter((e) => e.type === 'toppled').length === 1, JSON.stringify(evs7b));
+  // 7c SIM-41: richtet sich ein umgekipptes Teil wieder auf, gilt es danach als nicht gefallen (nächstes Umkippen meldet wieder)
+  w = make([spec('P', 0, 0)]);
+  w.bodies[0].state = 'tipping'; w.bodies[0].theta_rad = 0.05; w.bodies[0].omega_rad_s = -1; w.bodies[0].fallen = true;
+  run(w, 0.5);
+  check('aufgerichtet: steht und gilt nicht mehr als gefallen', w.bodies[0].state === 'standing' && w.bodies[0].fallen === false, w.bodies[0].state + ' ' + w.bodies[0].fallen);
+  w.bodies[0].state = 'tipping'; w.bodies[0].theta_rad = 0.1; w.bodies[0].omega_rad_s = 20;
+  const evs7c = [];
+  run(w, 0.3, evs7c);
+  check('zweites Umkippen meldet wieder toppled', evs7c.filter((e) => e.type === 'toppled').length === 1, JSON.stringify(evs7c));
+  // 7d SIM-41: Richtung eines von Anfang an liegenden Teils lässt sich nur setzen, solange es unberührt ist
+  w = make([spec('L', 0, 0, { standing: false, lie_dir_deg: 0 }), spec('M', 20, 0, { standing: false, lie_dir_deg: 0 })]);
+  w.setLieDir(0, 90);
+  check('unberührt liegend: Richtung wird gesetzt', Math.abs(w.pose(0).dir_deg - 90) < 1e-9, w.pose(0).dir_deg);
+  w.pushLying(1, 1, 0, 5); run(w, 2.0);
+  const stopped = w.bodies[1].vx === 0 && w.bodies[1].vy === 0;
+  w.setLieDir(1, 90);
+  check('geschoben und wieder still: Richtung bleibt', stopped && Math.abs(w.pose(1).dir_deg) < 1e-9, w.pose(1).dir_deg + ' ' + stopped);
+
   // 8 Ruhe: nach dem Ausschwingen ändert sich nichts mehr (kein Zittern)
   w = tipFrom(th0, 0);
   run(w, 3.0);
@@ -199,6 +223,17 @@ function runPhysicsTests(FBPhysics, FBLive) {
   check('Fangradius 0 wird abgelehnt', threw);
   const makeG = (specs, goals) => { const wd = FBPhysics.create(cfgG, specs, {}); wd.setGoals(goals || []); return wd; };
   const runG = (wd, seconds, evs) => { for (let t = 0; t < Math.round(seconds / DT); t++) { const e = wd.step(DT); if (evs) e.forEach((x) => evs.push(x)); } };
+
+  // 14b SIM-41: ein gegriffenes und wieder abgelegtes Teil gilt nicht mehr als gefallen (nächstes Umkippen meldet wieder toppled)
+  w = makeG([spec('P', 0, 0, { standing: false })]);
+  w.bodies[0].fallen = true;
+  check('Vorbedingung: Teil liegt und gilt als gefallen', w.hold(0) === true && w.bodies[0].fallen === false, String(w.bodies[0].fallen));
+  w.bodies[0].fallen = true;   // Altlast wie nach einem Umkippen vor dem Greifen
+  w.release(0); runG(w, 1.0);
+  w.bodies[0].state = 'tipping'; w.bodies[0].theta_rad = 0.1; w.bodies[0].omega_rad_s = 20;
+  const evs14b = [];
+  runG(w, 0.3, evs14b);
+  check('nach Loslassen: Umkippen meldet wieder toppled', evs14b.filter((e) => e.type === 'toppled').length === 1, JSON.stringify(evs14b));
 
   // 15 Fall auf ein Goal: landet nach √(2Δh/g) auf hoehe_in, wird zur Goal-Mitte gezogen, bleibt stehen
   w = makeG([spec('P', 1.5, 1.0)], [{ x_in: 0, y_in: 0, z_in: 3.25 }]);

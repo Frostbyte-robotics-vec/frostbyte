@@ -139,7 +139,7 @@ var FBPhysics = (function () {
         } else if (next <= 0) {
           var wUp = Math.max(-b.omega_rad_s, 0);
           b.theta_rad = 0;
-          if (wUp < cfg.rest_omega_rad_s) { b.state = 'standing'; b.omega_rad_s = 0; } else b.omega_rad_s = cfg.bounce * wUp;
+          if (wUp < cfg.rest_omega_rad_s) { b.state = 'standing'; b.omega_rad_s = 0; b.fallen = false; } else b.omega_rad_s = cfg.bounce * wUp;
         } else b.theta_rad = next;
         if (b.state === 'tipping' && !b.fallen && b.theta_rad > b.crit_rad) { b.fallen = true; ev.push({ type: 'toppled', id: b.id }); }
       } else if (b.state === 'lying') {
@@ -206,7 +206,7 @@ var FBPhysics = (function () {
       // Ein Schritt dt_s; liefert die Ereignisse {type: 'toppled' | 'impact', id}.
       step: function (dt_s) {
         var ev = [];
-        bodies.forEach(function (b) { integrate(b, dt_s, ev); });
+        bodies.forEach(function (b) { integrate(b, dt_s, ev); if (b.pristine && (b.state !== 'lying' || moving(b))) b.pristine = false; });
         for (var i = 0; i < bodies.length; i++) {
           var a = bodies[i];
           if (!moving(a)) continue;
@@ -248,7 +248,7 @@ var FBPhysics = (function () {
       // Objekt fällt aus Höhe z_in an (x, y), aufrecht, auf die Stützfläche darunter (Boden, Goal, Teil).
       drop: function (i, x_in, y_in, z_in) {
         var b = bodies[i];
-        b.x = x_in; b.y = y_in; b.z = z_in; b.vz = 0; b.vx = 0; b.vy = 0; b.theta_rad = 0; b.omega_rad_s = 0; b.state = 'falling';
+        b.x = x_in; b.y = y_in; b.z = z_in; b.vz = 0; b.vx = 0; b.vy = 0; b.theta_rad = 0; b.omega_rad_s = 0; b.fallen = false; b.state = 'falling';
       },
       // Goals als Stützflächen: [{x_in, y_in, z_in (Oberkante)}]
       setGoals: function (list) { goals = list.slice(); },
@@ -275,11 +275,11 @@ var FBPhysics = (function () {
         var b = bodies[i];
         if (b.state === 'lying' && cfg.grab && cfg.grab.rise_rad_s !== null) {
           b.x -= b.c * Math.cos(b.phi_rad); b.y -= b.c * Math.sin(b.phi_rad); b.z = b.r;   // Schwerpunkt → Fußpunkt, wie pose() es zeichnet
-          b.state = 'held'; b.vx = 0; b.vy = 0; b.vz = 0; b.theta_rad = HALF_PI; b.omega_rad_s = 0;
+          b.state = 'held'; b.vx = 0; b.vy = 0; b.vz = 0; b.theta_rad = HALF_PI; b.omega_rad_s = 0; b.fallen = false;
           return true;
         }
         if (b.state !== 'standing') return false;
-        b.state = 'held'; b.vx = 0; b.vy = 0; b.vz = 0; b.theta_rad = 0; b.omega_rad_s = 0;
+        b.state = 'held'; b.vx = 0; b.vy = 0; b.vz = 0; b.theta_rad = 0; b.omega_rad_s = 0; b.fallen = false;
         return true;
       },
       // Zieht ein gehaltenes Teil mit höchstens speed_in_s (Standard: physik.greifen.zieh_geschw_in_s) zum Ziel und richtet es mit
@@ -296,13 +296,13 @@ var FBPhysics = (function () {
       release: function (i) {
         var b = bodies[i];
         if (b.state !== 'held') return false;
-        b.state = 'falling'; b.vz = 0; b.theta_rad = 0; b.omega_rad_s = 0;   // eine Restneigung aus dem Aufrichten gilt nicht für den Fall
+        b.state = 'falling'; b.vz = 0; b.theta_rad = 0; b.omega_rad_s = 0; b.fallen = false;   // eine Restneigung aus dem Aufrichten gilt nicht für den Fall
         return true;
       },
       // Richtung (Feld, Grad) des oberen Endes eines Objekts, das von Anfang an liegt und noch nie berührt wurde.
       setLieDir: function (i, deg) {
         var b = bodies[i];
-        if (b.pristine && b.state === 'lying') b.phi_rad = deg / RAD;
+        if (b.pristine && b.state === 'lying' && !moving(b)) b.phi_rad = deg / RAD;
       },
       // Lage zum Zeichnen: Fußpunkt (bx, by, z), Neigung tilt_deg aus der Senkrechten in Richtung dir_deg (Feld).
       pose: function (i) {

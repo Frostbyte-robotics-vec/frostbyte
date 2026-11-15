@@ -797,9 +797,10 @@ $('bLogCsv').onclick = () => {
 };
 window.addEventListener('keydown', e => {
   if (!S.live || e.target.tagName === 'INPUT' && !['range', 'checkbox'].includes(e.target.type) || e.target.tagName === 'SELECT') return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;   // Strg/Cmd/Alt+Taste gehört dem Browser (Cmd+V, Cmd+R, …), nicht dem Livesim
   if (e.code in LIVE_KEYS) { liveHeld[LIVE_KEYS[e.code]] = true; e.preventDefault(); }
   else if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) S.live.sim.toggle(); }
-  else if (e.code === 'Backspace') { e.preventDefault(); if (!e.repeat) { S.live.sim.reset(); S.live.log.length = 0; S.live.entries.length = 0; liveSeed(); renderLiveEvents(); } }
+  else if (e.code === 'Backspace') { e.preventDefault(); if (!e.repeat) { S.live.sim.reset(); S.live.objects.forEach(m => { if (m) m.userData.liegeRichtung = false; }); S.live.log.length = 0; S.live.entries.length = 0; liveSeed(); renderLiveEvents(); } }
   else if (e.code === 'KeyC') { if (!e.repeat) S.live.showOutline = !S.live.showOutline; }
   else if (e.code in LIVE_CMDS) { if (!e.repeat) S.live.sim.command(S.live.sim.active(), LIVE_CMDS[e.code]); }   // greifen, ablegen, Lift (SIM-39)
   liveHeld.shift = e.shiftKey; liveSend();
