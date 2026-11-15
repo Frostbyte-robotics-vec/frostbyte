@@ -93,7 +93,7 @@ var FBPhysics = (function () {
       var k2 = r * r / 4 + h * h / 12;   // Massenträgheit je Masse um die Querachse durch den Schwerpunkt (Vollzylinder)
       return { id: s.id, kind: s.kind, x: s.x_in, y: s.y_in, r: r, h: h, c: c, ieff: k2 + r * r + c * c, crit: Math.atan2(r, c),
         state: s.standing ? 'standing' : 'lying', theta: s.standing ? 0 : HALF_PI, omega: 0, phi: (s.lie_dir_deg || 0) / RAD,
-        vx: 0, vy: 0, z: s.z_in || 0, vz: 0, fallen: false, pristine: !s.standing };
+        vx: 0, vy: 0, sepV: 0, z: s.z_in || 0, vz: 0, fallen: false, pristine: !s.standing };
     });
 
     function clampField(b) {
@@ -108,19 +108,31 @@ var FBPhysics = (function () {
       b.x += (b.r + b.c) * dx; b.y += (b.r + b.c) * dy;
       b.state = 'lying'; b.theta = HALF_PI; b.omega = 0; b.vx = 0; b.vy = 0;
       clampField(b);
-      // SIM-43: Überlappung mit Nachbarn auflösen (das gekippte Teil weicht aus; Feldrand zuletzt, ein paar Durchgänge)
-      for (var pass = 0; pass < 4; pass++) {
-        var moved = false;
-        bodies.forEach(function (o) {
-          if (o === b || o.z > 0 || b.z > 0 || o.state === 'falling' || o.state === 'held') return;
-          var ox = b.x - o.x, oy = b.y - o.y, d = Math.sqrt(ox * ox + oy * oy), min = b.r + o.r;
-          if (d >= min) return;
-          var ux = d > 0 ? ox / d : dx, uy = d > 0 ? oy / d : dy;
-          b.x += ux * (min - d); b.y += uy * (min - d); moved = true;
-        });
-        clampField(b);
-        if (!moved) break;
-      }
+      b.sepV = overlapDepth(b) / cfg.evade_s;   // SIM-43: Überlappung mit Nachbarn weicht über ausweich_s (Geschwindigkeit, kein Sprung)
+    }
+
+    // Größte Überlappung des liegenden b mit einem anderen Teil am Boden (in)
+    function overlapDepth(b) {
+      var worst = 0;
+      bodies.forEach(function (o) {
+        if (o === b || o.z > 0 || b.z > 0 || o.state === 'falling' || o.state === 'held') return;
+        var d = Math.hypot(b.x - o.x, b.y - o.y), min = b.r + o.r;
+        if (d < min) worst = Math.max(worst, min - d);
+      });
+      return worst;
+    }
+    // Ein Schritt des Auseinanderrückens: jeder Nachbar schiebt b höchstens sepV·dt aus der Überlappung
+    function separate(b, dt) {
+      var moved = false;
+      bodies.forEach(function (o) {
+        if (o === b || o.z > 0 || b.z > 0 || o.state === 'falling' || o.state === 'held') return;
+        var ox = b.x - o.x, oy = b.y - o.y, d = Math.sqrt(ox * ox + oy * oy), min = b.r + o.r;
+        if (d >= min) return;
+        var ux = d > 0 ? ox / d : Math.cos(b.phi), uy = d > 0 ? oy / d : Math.sin(b.phi), k = Math.min(min - d, b.sepV * dt);
+        b.x += ux * k; b.y += uy * k; moved = true;
+      });
+      clampField(b);
+      if (!moved) b.sepV = 0;
     }
 
     // Höhe der Stützfläche unter b und, wenn es eine Mitte gibt, zu der das Teil hingezogen wird (Goal oder Teil darunter).
@@ -134,7 +146,7 @@ var FBPhysics = (function () {
         if (dx * dx + dy * dy <= f2 && goal.z_in > best.z && !(goal.z_in > max_top)) best = { z: goal.z_in, sx: goal.x_in, sy: goal.y_in };
       });
       bodies.forEach(function (o) {
-        if (o === self || o.state !== 'standing' || !(o.z < self.z - 1e-9) || (only && !only(o))) return;
+        if (o === self || (o.state !== 'standing' && !(o.state === 'falling' && self.state === 'falling')) || !(o.z < self.z - 1e-9) || (only && !only(o))) return;
         var dx = o.x - self.x, dy = o.y - self.y, top = o.z + g.stack_step_in;
         if (dx * dx + dy * dy <= f2 && top > best.z + 1e-9 && !(top > max_top)) best = { z: top, sx: o.x, sy: o.y };
       });
@@ -157,6 +169,7 @@ var FBPhysics = (function () {
         } else b.theta = next;
         if (b.state === 'tipping' && !b.fallen && b.theta > b.crit) { b.fallen = true; ev.push({ type: 'toppled', id: b.id }); }
       } else if (b.state === 'lying') {
+        if (b.sepV > 0) separate(b, dt);
         var sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
         if (sp > 0) {
           var s2 = Math.max(0, sp - cfg.friction * G * dt);

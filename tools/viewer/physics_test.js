@@ -477,6 +477,29 @@ function runPhysicsTests(FBPhysics, FBLive) {
     check('SIM-43: Loslassen unter der Goal-Oberkante: z springt nie nach oben (kein Teleport)', maxZ <= 1.0 + 1e-9, maxZ);
   }
 
+  {
+    // (5) Teil über einem noch abprallenden Teil: landet am Ende darauf (Stufenhöhe), nicht darin
+    const wb = makeG([spec('U', 0, 0), spec('O', 20, 0)], [{ x_in: 0, y_in: 0, z_in: 3.25 }]);
+    wb.drop(0, 0, 0, 12);
+    let n = 0, bouncing = false;
+    for (let t = 0; t < 3000 && n < 1; t++) { wb.step(DT); if (wb.bodies[0].z <= 3.26 && wb.bodies[0].state === 'falling' && wb.bodies[0].vz > 0) { bouncing = true; n++; } }
+    check('SIM-43: Vorbedingung: das untere Teil prallt gerade ab (falling, steigt)', bouncing);
+    wb.drop(1, 0, 0, 9.0);   // aus der Hand über dem Teil losgelassen
+    runG(wb, 2.0);
+    const u = wb.bodies[0], o = wb.bodies[1];
+    check('SIM-43: Teil über dem noch abprallenden Teil endet darauf (z = Goal + Stufe), nicht darin', u.state === 'standing' && o.state === 'standing' && Math.abs(u.z - 3.25) < 1e-9 && Math.abs(o.z - (3.25 + 4.0)) < 1e-9, u.z + ' ' + o.z);
+  }
+  {
+    // (6) Das gekippte Teil springt nicht aus der Überlappung: Fußpunkt/Lage je ms höchstens 0,5 in über den Übergang kippend → liegend
+    const wj = make([spec('A', 0, 0), spec('N', 4.0, 0)], 144);   // Roboter mit 60 in/s drückt: omega höchstens 15 rad/s
+    wj.pushStanding(0, 1, 0, 99, DT, 60);
+    let prev = wj.pose(0), maxJ = 0;
+    for (let t = 0; t < 1500; t++) { wj.step(DT); const q = wj.pose(0); maxJ = Math.max(maxJ, Math.hypot(q.bx_in - prev.bx_in, q.by_in - prev.by_in, q.z_in - prev.z_in)); prev = q; }
+    check('SIM-43: Übergang kippend → liegend ohne Sprung (< 0,5 in je ms)', maxJ < 0.5, maxJ);
+    const a = wj.bodies[0], n = wj.bodies[1];
+    check('SIM-43: danach keine Überlappung mit dem Nachbarn', Math.hypot(a.x - n.x, a.y - n.y) >= a.r + n.r - 1e-6, Math.hypot(a.x - n.x, a.y - n.y));
+  }
+
   return { ok, fail, msgs };
 }
 if (typeof module !== 'undefined') module.exports = runPhysicsTests;
