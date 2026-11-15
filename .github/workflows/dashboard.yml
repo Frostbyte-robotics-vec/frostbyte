@@ -28,6 +28,7 @@ jobs:
           cmake -S test -B build-test -DCMAKE_BUILD_TYPE=Release
           cmake --build build-test --target frostbyte_sim
           ./build-test/frostbyte_sim --demo --seed 1 --out site/viewer/demo
+          ./build-test/frostbyte_sim --stacker routes/skills_stacker.route --runner routes/skills_runner.route --seed 1 --out site/viewer/lauf/skills
           ./build-test/frostbyte_sim --demo --runs 100 --seed 1 --out out/sim
           python3 tools/sim_report.py out/sim --html site/viewer/report.html
       - name: Viewer in die Seite legen
@@ -36,6 +37,7 @@ jobs:
           cp -r tools/viewer/models site/viewer/models
           cp sim/sim_params.json site/viewer/sim_params.json
           cp field/field.json site/viewer/field.json
+          cp tools/viewer/laeufe.json site/viewer/laeufe.json
       - name: Simulationsseite /sim/ aus dem Viewer erzeugen
         run: python3 tools/sim_page.py tools/viewer/index.html site/sim/index.html
       - uses: actions/configure-pages@v5

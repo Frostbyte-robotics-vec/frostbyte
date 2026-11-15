@@ -44,6 +44,8 @@ select,input[type=number]{font:500 13px var(--f-mono);border:1px solid var(--lin
 .fieldinfo{position:absolute;left:12px;top:10px;font:12px var(--f-mono);color:var(--muted);pointer-events:none}
 .time{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
 .time output{font:500 15px var(--f-mono);min-width:7.5em;font-variant-numeric:tabular-nums}
+.runbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.runbar output{font:700 15px var(--f-mono);font-variant-numeric:tabular-nums}
 .track{position:relative}
 .track input{width:100%;accent-color:var(--accent);margin:0}
 #evstrip{display:block;width:100%;height:10px;margin-top:2px}
@@ -138,6 +140,10 @@ body[data-ansicht="sim"] #livectl{display:flex}
         <div class="stats" id="stats" hidden></div>
         <div class="liveinfo" id="liveinfo" hidden></div>
         <div class="livebar"><button class="btn" id="bLive" aria-pressed="false" title="Roboter mit der Tastatur fahren: W/S vor/zurück, A/D drehen, Shift langsam, Tab Roboter wechseln, Rücktaste zurücksetzen, R Kamera zurück; E greifen, Q ablegen, F/V Lift">Live</button></div>
+      </div>
+      <div class="runbar">
+        <select id="runSel" aria-label="Lauf" hidden></select>
+        <output id="teamScore" title="Teamsumme aus der Spalte score (ADR-026)" hidden>Punkte –</output>
       </div>
       <div class="time">
         <button class="btn" id="bPlay" aria-label="Abspielen">▶</button>
@@ -479,9 +485,21 @@ function setTime(t){
   $('tIn').value = S.t;
   S.dirty = true;
 }
+// Teamsumme: die Spalte score trägt in beiden Logs dieselbe Summe (ADR-026); null, wenn kein Log einen Punktestand hat.
+function teamScore(t){
+  let best = null;
+  S.logs.forEach(L => Object.values(L.tracks).forEach(k => {
+    const v = FBLog.sample(k.tr, 'score', t - L.offset);
+    if (!Number.isNaN(v) && v !== null && (best === null || v > best)) best = v;
+  }));
+  return best;
+}
 function kindOf(e){ return EV_KINDS.includes(e.kind) ? e.kind : 'andere'; }
 function update(){
   $('tOut').textContent = fmt(S.t, 2) + ' s';
+  const score = teamScore(S.t);
+  $('teamScore').hidden = score === null;
+  if (score !== null) $('teamScore').textContent = 'Punkte ' + fmt(score, 0);
   const live = !!S.live;
   if (live) updateLive();
   S.logs.forEach((L, li) => {
@@ -824,13 +842,32 @@ const autoLive = () => { if (SIM) startLive().catch(e => console.warn('Live-Auto
 if (location.protocol !== 'file:') {
   // Lokal liegt das Feld zwei Ordner höher, auf der Veröffentlichung (Pages) neben dem Viewer.
   fetchText(q.get('field') || '../../field/field.json').catch(() => fetchText('field.json')).then(t => loadField(t, 'field.json')).catch(() => {}).then(autoLive);
-  // Ohne ?log=… lädt die Veröffentlichung die Demo (demo/run000_*.csv, falls vorhanden).
-  const logUrls = q.getAll('log').length ? q.getAll('log') : (SIM || q.has('nodemo') ? [] : ['demo/run000_stacker.csv', 'demo/run000_runner.csv']);
-  Promise.all(logUrls.map(u => fetchText(u).then(t => [u, t]))).then(list => {
-    list.forEach(([u, t]) => addLog(t, u.split('/').pop()));
-    if (q.has('t')) setTime(+q.get('t'));
-    document.body.dataset.ready = '1';
-  }).catch(e => { document.body.dataset.ready = q.getAll('log').length ? 'fehler ' + e.message : '1'; });
+  // Läufe (SIM-47): laeufe.json nennt die Läufe der Veröffentlichung (Ordner mit run000_stacker.csv/run000_runner.csv). Der erste
+  // ist der Standard, ?lauf=<id> wählt einen anderen. Mit ?log=… oder ?nodemo und auf /sim/ wird nichts geladen.
+  const loadUrls = urls => Promise.all(urls.map(u => fetchText(u).then(t => [u, t])))
+    .then(list => { list.forEach(([u, t]) => addLog(t, u.split('/').pop())); });
+  const setRun = run => {
+    S.logs.slice().forEach(removeLog);
+    return loadUrls(['stacker', 'runner'].map(r => run.dir + '/run000_' + r + '.csv')).then(() => setTime(0));
+  };
+  const sel = $('runSel');
+  if (q.getAll('log').length || SIM || q.has('nodemo')) {
+    Promise.all(q.getAll('log').map(u => fetchText(u).then(t => [u, t]))).then(list => {
+      list.forEach(([u, t]) => addLog(t, u.split('/').pop()));
+      if (q.has('t')) setTime(+q.get('t'));
+      document.body.dataset.ready = '1';
+    }).catch(e => { document.body.dataset.ready = 'fehler ' + e.message; });
+  } else {
+    fetchText('laeufe.json').then(t => JSON.parse(t).laeufe).catch(() => [{ id: 'demo', name: 'Demo', dir: 'demo' }]).then(runs => {
+      runs.forEach(r => sel.add(new Option(r.name, r.id)));
+      sel.hidden = runs.length < 2;
+      sel.onchange = () => setRun(runs.find(r => r.id === sel.value)).catch(e => alert('Lauf nicht geladen: ' + e.message));
+      const first = runs.find(r => r.id === q.get('lauf')) || runs[0];
+      sel.value = first.id;
+      return setRun(first);
+    }).then(() => { if (q.has('t')) setTime(+q.get('t')); document.body.dataset.ready = '1'; })
+      .catch(e => { document.body.dataset.ready = '1'; console.warn('Lauf: ' + e.message); });
+  }
 } else { document.body.dataset.ready = '1'; autoLive(); }
 if (q.has('selftest')) {
   const showTest = (name, r) => {

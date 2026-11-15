@@ -1,0 +1,6 @@
+{
+  "laeufe": [
+    { "id": "skills", "name": "Skills-Routen (Stacker + Runner, Seed 1)", "dir": "lauf/skills" },
+    { "id": "demo", "name": "Demo (Platzhalter-Zyklen)", "dir": "demo" }
+  ]
+}
