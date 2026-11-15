@@ -60,6 +60,16 @@ SensorParams load_sensor_params(const Json& params, const std::string& robot, co
     out.gps.quality_loss_per_in_s = non_negative(g, "guete_verlust_pro_in_s");
     if (out.gps.dropout_fraction * out.noise_scale > 1.0)
         throw std::runtime_error("sim_params gps: aussetzer_anteil mal Rauschskala liegt über 1");
+
+    if (const Json* f = s.find("fusion")) {
+        out.fusion.enabled = f->at("aktiv").as_bool();
+        out.fusion.params.max_error_in = non_negative(*f, "max_guete_in");
+        out.fusion.params.max_speed_in_s = non_negative(*f, "max_tempo_in_s");
+        out.fusion.params.gate_in = non_negative(*f, "tor_in");
+        out.fusion.params.position_gain = non_negative(*f, "gewinn_position");
+        out.fusion.params.heading_gain = non_negative(*f, "gewinn_heading");
+        out.fusion.params.resync_samples = static_cast<int>(non_negative(*f, "resync_messungen"));
+    }
     return out;
 }
 

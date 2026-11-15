@@ -33,6 +33,7 @@ Die Fusionswerte sind Platzhalter; am echten Roboter müssen sie aus GPS-Logs ab
 
 ## Übergabe
 (aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand 2026-11-15: Fusion in sim/world.cpp verdrahtet (SensorParams.fusion, Block sensoren.fusion in sim_params.json, Schalter aktiv), test/test_sim_fusion.cpp (4 Tests, grün), alle Laptop-Tests grün. Odometriefehler am Ende (Median, 20 Läufe) Runner 7,63 → 0,09 in, Stacker 2,44 → 0,09 in. Punkte Median 46 → 16 (Skills-Routen): Ursache in Untersuchung (Vermutung: Runner-Toggle erreicht mit ehrlicher Pose die Reichweite nicht; vorher durch Odometrie-Drift scheinbar erreicht).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
