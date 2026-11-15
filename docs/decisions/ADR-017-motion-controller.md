@@ -111,3 +111,10 @@ prüfen; LemLib-Adapter muss im Roboter-Build wirklich linken (geprüft: mit `mo
   der Roboter ausgerichtet ist. Standard 0 (aus); in `config/` 0,8 V, TODO(HW): kS messen (Schätzung 0,6 V).
   Toleranz (D-12, 0,5 in) und Routen bleiben unverändert.
 - Nachher (gleiche 20 Läufe): 0 von 560 `goto` im Timeout, Teamscore im Mittel 70,0 → 78,75, keine Regelverstöße.
+- Zeit je Zyklus (Abstand der Starts von `goto LOADER_RED_2` bzw. `goto RED_ALLIANCE_2`, 20 Läufe): Stacker 9,5 s (5,1–12,2) →
+  6,9 s (4,2–8,7); Runner 7,7 s (5,1–10,0) → 5,7 s (4,5–7,0), Runner 86 → 120 Runden.
+- Endabstand der wahren Pose zum Zielpunkt am Schrittende (Stacker `NEUTRAL_R1`: Mittel 1,36 → 0,31 in, max 2,31 → 1,07;
+  Runner `RED_ALLIANCE_2`: 1,93 → 0,31 in). Das Log enthält keine TIMEOUT-/BLOCKED-Ereignisse; „Timeout“ heißt hier: Schritt
+  dauerte so lange wie sein Timeout. D-12-Prüfungen (`test_sim_routes`) und alle 650 Laptop-Tests grün.
+- Am Roboter: bleibt er knapp vor dem Ziel stehen, `min_move_v` auf gemessenes kS plus Reserve setzen; auf Pendeln an der
+  Toleranzgrenze achten (0,8 V kann nach dem Überfahren Vor und Zurück auslösen).
