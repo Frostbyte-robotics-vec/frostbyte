@@ -297,6 +297,17 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const r16 = play(oneF, { 10: g1, 20: up, 3000: rel }, 16, 4500);
     check('Livesim: andere Bildrate, gleicher Zustand', JSON.stringify(r16.live.objects()) === JSON.stringify(r1.live.objects()));
 
+    // SIM-41: Ereignisse gehören dem Roboter, der greift und ablegt (nicht dem Stacker als Ersatz)
+    const runF = { feld_in: 144, goals: [{ id: 'G1', typ: 'neutral', x_in: 0, y_in: 0, hoehe_in: 3.25 }],
+      posen: [{ id: 'START_STACKER', x_in: 40, y_in: 60, h_deg: 180 }, { id: 'START_RUNNER', x_in: -9, y_in: 0, h_deg: 0 }],
+      objekte_start: { pins: [{ id: 'PIN_R', x_in: -2, y_in: 0, lage: 'steht', ebene: 0, variante: 'yellow' }] } };
+    const runPlan = { 10: g1, 500: rel };
+    const runLive = FBLive.create(gp, runF, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: (n, t_ms) => (n === 'runner' && runPlan[t_ms]) || null });
+    const runEv = [];
+    for (let t = 0; t < 2000; t++) { runLive.advance(0.001); runLive.takeEvents().forEach((e) => runEv.push(e.robot + ' ' + e.text)); }
+    check('Livesim: der Runner greift und legt ab (GRAB, DROP)', runEv.indexOf('runner GRAB:PIN_R') >= 0 && runEv.indexOf('runner DROP:PIN_R') >= 0, runEv.join(' | '));
+    check('Livesim: STACK geht an den Runner, nicht an den Stacker', runEv.indexOf('runner STACK:PIN_R') >= 0 && !runEv.some((e) => /^stacker (GRAB|DROP|STACK|TOPPLED)/.test(e)), runEv.join(' | '));
+
     // Ablegen weit weg vom Goal: Boden, kein STACK
     const r2 = play(oneF, { 10: g1, 500: rel }, 1, 3000, false);   // Roboter steht: das abgelegte Teil wird nicht überfahren
     check('Livesim: Ablegen fern vom Goal landet auf dem Boden ohne STACK', r2.get('PIN_A').draw.z_in === 0 && r2.get('PIN_A').state === 'standing' && !r2.events.some((e) => /STACK:/.test(e)), r2.events.join(' | '));

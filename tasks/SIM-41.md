@@ -42,10 +42,26 @@ tasks/SIM-38.md, SIM-39.md, SIM-40.md, ADR-051, tools/viewer/physics.js, tools/v
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
+Stand 2026-11-15 (Branch ticket/sim-41, gepusht): zwei Funde erledigt, Rest offen. Zeilennummern im Ticket sind veraltet, Code nach Funktionsnamen suchen (physics.js hat 323 Zeilen).
 
-Hinweis (SIM-42, PR #119): schon erledigt, nicht doppelt machen: Modellzahlen `0,5` (→ `greif_toleranz_in`) und `±0,3` (entfällt, Pin steckt auf dem Cup), zweiseitige Greifhöhe, SG6 filtert vor der Auswahl, `release()` setzt `theta`/`omega` zurück. Der Rest der Physik-Funde → SIM-43.
+Testen ohne node (fehlt auf diesem Mac): Attrappe `node` in den PATH, die die JS-Datei in `chrome --headless=new --dump-dom` ausführt (siehe docs/notes.md, 2026-11-15); dann `python3 -m unittest test_livesim` in tools/viewer (6 Tests inkl. C++-Abgleich). Die Attrappe liegt nur im Scratchpad der Sitzung und muss neu gebaut werden. Stand: Livesim 80 ok, Physik 102 ok, test_livesim OK, Format ok.
+
+Triage (Rat des Advisors: jeder Fund bekommt ein Etikett)
+- [x] Einheiten: Radiant intern ist Ausnahme (ADR-051 Nachtrag), Felder `theta_rad`, `omega_rad_s`, `phi_rad`, `crit_rad`
+- [x] Ereignisse STACK/TOPPLED über `lastTouch`: Greifen/Loslassen setzen es, kein Ersatz durch den Stacker mehr (Test mit Runner, vorher rot)
+- [x] schon in SIM-42 (#119): Modellzahlen 0,5/±0,3, SG6 vor Auswahl, zweiseitige Greifhöhe, `release()` setzt theta/omega zurück
+- [ ] → SIM-43 (nicht hier): `pushStanding` ω-Spitze, `toLying` Überlappung, `settle()` gleich hohe Teile, Loslassen unter Auflage teleportiert
+- [ ] offen: liegende Teile: Reichweite/Abstand/Nächstes aus dem Fußpunkt statt Schwerpunkt (livesim.js `doGrab`); `isFree` für liegende Teile (physics.js)
+- [ ] offen: `fallen` nie zurückgesetzt; Umkippen direkt zu „liegend“ meldet kein `toppled` (physics.js `integrate`)
+- [ ] offen: index.html `liegeRichtung` beim Reset zurücksetzen; `pristine` nie auf false
+- [ ] offen: index.html Tasten E/Q/F/V: bei Strg/Cmd/Alt zurückkehren, `preventDefault`
+- [ ] offen: Livesim gegen C++ bei aktiver `physik`: zuerst `grep physik sim/*.cpp` (nur sim/objects.hpp trifft); implementiert die C++-Sim den Block nicht, ist ein Abgleich neue Arbeit → dokumentierte Abweichung im ADR, ggf. neues Ticket
+- [ ] offen: schwache Tests stärken (physics_test.js `indexOf === -1 || hand.length === 2`, tote Variablen, Test „fern/liegend“ nur ohne `aufricht_rad_s`); je Test Mutationsprobe (Code kaputt machen → rot → zurück) in der Übergabe festhalten
+- [ ] offen: Aufräumen: `kick` doppelt `pushLying`; `impact`-Ereignis, `drop` ohne Aufrufer; Greif-Bedingung doppelt in `doGrab`/`hold()`; ausdrücklicher Schalter statt „aufricht_rad_s fehlt = aus“ (dann ctest, die C++-Sim liest sim_params.json auch). `setSupport` gibt es nicht mehr: Fehlalarm.
+
+Neue Tests nur mit Fixture-Werten, nie mit `schaetzung`-Werten aus sim_params.json. Vor /finish: ctest (cmake war auf diesem Mac vorhanden, noch nicht gelaufen), beide Roboter bauen, Format, board.py validate.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt aus /code-review high auf #114–#116 (unbestätigt) · –
+2026-11-15 · arjanssen (KI) · Einheiten-Ausnahme (ADR-051), lastTouch bei Greifen/Loslassen, Triage in Übergabe · ticket/sim-41
