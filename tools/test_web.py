@@ -193,6 +193,19 @@ class WebTest(unittest.TestCase):
             for verboten in ("Máté", "Lechner", "David", "Arved", "Janssen", "Drei Ingenieure", "Three engineers", "drei Maschinenbau", "three mechanical"):
                 self.assertNotIn(verboten, seite, name)
 
+    def test_teamfoto_eingesetzt(self):
+        # W-19: echtes Foto statt Platzhalter, DE und EN
+        self.assertTrue((WEB / "assets" / "team.jpg").exists())
+        for name, pfad in (("index.html", "assets/team.jpg"), ("en/index.html", "../assets/team.jpg")):
+            h = HTML[name]
+            fig = h[h.index('id="teamfoto"'):]
+            fig = fig[: fig.index("</figure>")]
+            self.assertIn(f'src="{pfad}"', fig, name)
+            self.assertRegex(fig, r'alt="[^"]{10,}"', name)
+            self.assertIn("width=", fig, name)
+            self.assertIn("height=", fig, name)
+            self.assertNotIn("dashed", fig, name)
+
     def test_partnerwand_gross_auf_hauptseite_vor_dem_ziel(self):
         for name, h in HTML.items():
             self.assertIn('id="partner"', h, name)
