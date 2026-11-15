@@ -412,7 +412,7 @@ var FBLive = (function () {
       phys.bodies.forEach(function (b, i) {
         // Hand auf Höhe des Teils (Fußpunkt bis Oberkante, mit Spielraum): mit hohem Lift wird nichts vom Boden gegriffen
         if ((b.state !== 'standing' && !(b.state === 'lying' && g.rise_rad_s !== null)) || hz < b.z - g.grab_tol_in || hz > b.z + b.h + g.grab_tol_in || !phys.isFree(i)) return;
-        var dx = b.x - r.x_in, dy = b.y - r.y_in, lu = dx * Math.cos(h) + dy * Math.sin(h), lv = -dx * Math.sin(h) + dy * Math.cos(h);
+        var foot = phys.pose(i), dx = foot.bx_in - r.x_in, dy = foot.by_in - r.y_in, lu = dx * Math.cos(h) + dy * Math.sin(h), lv = -dx * Math.sin(h) + dy * Math.cos(h);
         var front = r.outline.length_in / 2;
         if (lu < front - b.r || lu > front + g.reach_in + b.r || Math.abs(lv) > r.outline.width_in / 2 + b.r) return;
         var d = Math.sqrt((lu - front) * (lu - front) + lv * lv);

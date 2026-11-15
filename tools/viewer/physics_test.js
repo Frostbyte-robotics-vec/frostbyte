@@ -453,8 +453,6 @@ function runPhysicsTests(FBPhysics, FBLive) {
     check('losgelassen: steht senkrecht auf dem Boden', b.state === 'standing' && b.z === 0 && b.theta_rad === 0);
   }
   {
-    const gp2 = { welt: base.welt, physik: baseG.physik };
-    void gp2;
     const lieF = { feld_in: 144, goals: [{ id: 'G1', typ: 'neutral', x_in: 0, y_in: 0, hoehe_in: 3.25 }],
       posen: [{ id: 'START_STACKER', x_in: -40, y_in: 0, h_deg: 0 }, { id: 'START_RUNNER', x_in: 40, y_in: 60, h_deg: 180 }],
       objekte_start: { pins: [{ id: 'PIN_L', x_in: -30, y_in: 0, lage: 'liegt', ebene: 0, gelb_deg: 0 }] } };
@@ -462,6 +460,15 @@ function runPhysicsTests(FBPhysics, FBLive) {
     const lp = { welt: base.welt, live: { langsam_faktor: 0.4, ersatzpose_in: { stacker: { x_in: 0, y_in: 0, h_deg: 0 }, runner: { x_in: 0, y_in: 0, h_deg: 0 } }, kollision: { radius_in: { goals: 4.0 } } },
       roboter: { stacker: { antrieb: dr(12), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 12, breite: 12 } }, runner: { antrieb: dr(10), akku: { spannung_V: 12.6 }, umriss_in: { laenge: 10, breite: 10 } } },
       feldobjekte: { radius_in: { cup: 2.0, pin: 2.0 }, roboter_anteil: 0.5 }, physik: baseG.physik };
+    // SIM-41: Reichweite und Abstand gelten für den Fußpunkt des liegenden Teils (Schwerpunkt − c), nicht für dessen Mitte
+    const nearFoot = Object.assign({}, lieF, { objekte_start: { pins: [{ id: 'PIN_L', x_in: -28, y_in: 0, lage: 'liegt', ebene: 0 }] } });   // Mitte 6 in vor der Front (> Reichweite + r = 5), Fußpunkt 2,75 in
+    const liveF = FBLive.create(lp, nearFoot, { voltsAt: () => ({ left_V: 0, right_V: 0 }), cmdAt: (n, t) => (n === 'stacker' && t === 10 ? { type: 'grab' } : null) });
+    const evF = [];
+    for (let t = 0; t < 50; t++) { liveF.advance(0.001); liveF.takeEvents().forEach((e) => evF.push(e.text)); }
+    check('Livesim: liegendes Teil mit Fußpunkt in Reichweite (Mitte außerhalb) wird gegriffen', evF.indexOf('GRAB:PIN_L') >= 0, evF.join(' | '));
+    // ein liegendes Teil hat nichts obendrauf, auch wenn ein erhöhtes stehendes Teil in seiner Nähe steht
+    const wl = makeG([spec('L', 0, 0, { standing: false }), spec('S', 1, 1, { z_in: 4 })]);
+    check('liegendes Teil ist frei, auch mit einem erhöhten stehenden Teil in der Nähe', wl.isFree(0) === true);
     const plan = { 10: { type: 'grab' }, 20: { type: 'lift', dir: 1 }, 3000: { type: 'release' } };
     const volts = (n, t_ms) => (n === 'stacker' && t_ms < 3000 ? { left_V: 6, right_V: 6 } : { left_V: 0, right_V: 0 });
     const live = FBLive.create(lp, lieF, { voltsAt: volts, cmdAt: (n, t) => (n === 'stacker' && plan[t]) || null });

@@ -264,6 +264,7 @@ var FBPhysics = (function () {
       // Ein stehendes Teil hat nichts obendrauf (nur dann ist es greifbar).
       isFree: function (i) {
         var b = bodies[i], g = cfg.grab, f2 = g ? g.fang_radius_in * g.fang_radius_in : 0;
+        if (b.state === 'lying') return true;   // auf einem liegenden Teil steht nichts
         return !bodies.some(function (o) {
           var dx = o.x - b.x, dy = o.y - b.y;
           return o !== b && o.state === 'standing' && o.z > b.z + 1e-9 && dx * dx + dy * dy <= f2;
