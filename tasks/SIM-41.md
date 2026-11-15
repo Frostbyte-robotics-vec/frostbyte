@@ -59,9 +59,12 @@ Triage (Rat des Advisors: jeder Fund bekommt ein Etikett)
 
 Geprüft: ctest 2/2 grün, Format ok, board.py validate ok, test_livesim 6 Tests (mit Chrome-Attrappe) ok. Roboter-Builds nicht gelaufen (nur JS/Doku geändert). Am Roboter nichts zu prüfen; im Browser prüfen: Cmd+R/Cmd+V im Livesim, Backspace-Reset mit liegendem Pin (gelbe Seite wie im Feldplan).
 
+KI-Review (PR #124) abgearbeitet: `toLying` im Zweig „langsamer Aufschlag“ meldet jetzt toppled, wenn das Teil noch nicht als gefallen galt (Test 7b2). Zur Kenntnis: `GRAB_KEYS` in physics.js ist eine feste Liste, jeder neue Schlüssel in `physik.greifen` muss dort ergänzt werden. PR #123 (SIM-43) nutzt noch die alten Feldnamen (`theta`, `omega`, `phi`); wer zweiter merged, rebased und stellt auf `_rad` um.
+
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt aus /code-review high auf #114–#116 (unbestätigt) · –
 2026-11-15 · arjanssen (KI) · Einheiten-Ausnahme (ADR-051), lastTouch bei Greifen/Loslassen, Triage in Übergabe · ticket/sim-41
 2026-11-15 · arjanssen (KI) · fallen/pristine in physics.js, Tasten und Reset in index.html · ticket/sim-41
 2026-11-15 · arjanssen (KI) · Fußpunkt-Reichweite, Tests gestärkt, Tippfehler-Schutz, Triage abgeschlossen · ticket/sim-41
+2026-11-15 · arjanssen (KI) · Review-Punkt toppled bei langsamem Aufschlag behoben, Test 7b2 · siehe Branch

@@ -141,7 +141,7 @@ var FBPhysics = (function () {
           var wIn = Math.max(b.omega_rad_s, 0);
           ev.push({ type: 'impact', id: b.id, omega_rad_s: wIn });
           b.theta_rad = HALF_PI;
-          if (wIn < cfg.rest_omega_rad_s) toLying(b); else b.omega_rad_s = -cfg.bounce * wIn;
+          if (wIn < cfg.rest_omega_rad_s) { toLying(b); if (!b.fallen) { b.fallen = true; ev.push({ type: 'toppled', id: b.id }); } } else b.omega_rad_s = -cfg.bounce * wIn;
         } else if (next <= 0) {
           var wUp = Math.max(-b.omega_rad_s, 0);
           b.theta_rad = 0;

@@ -100,6 +100,12 @@ function runPhysicsTests(FBPhysics, FBLive) {
   const evs7b = [];
   run(w, 0.01, evs7b);
   check('Schlag direkt zum Boden: genau ein toppled', evs7b.filter((e) => e.type === 'toppled').length === 1, JSON.stringify(evs7b));
+  // 7b2 SIM-41-Review: langsamer Aufschlag (omega < Ruhegrenze) direkt aus dem Winkel unter dem Kippwinkel meldet ebenfalls toppled
+  w = make([spec('P', 0, 0)]);
+  w.bodies[0].state = 'tipping'; w.bodies[0].theta_rad = Math.PI / 2 - 0.0001; w.bodies[0].omega_rad_s = 0.3; w.bodies[0].fallen = false;
+  const evs7b2 = [];
+  run(w, 0.05, evs7b2);
+  check('langsamer Aufschlag: liegt und meldet genau ein toppled', w.bodies[0].state === 'lying' && evs7b2.filter((e) => e.type === 'toppled').length === 1, w.bodies[0].state + ' ' + JSON.stringify(evs7b2));
   // 7c SIM-41: richtet sich ein umgekipptes Teil wieder auf, gilt es danach als nicht gefallen (nächstes Umkippen meldet wieder)
   w = make([spec('P', 0, 0)]);
   w.bodies[0].state = 'tipping'; w.bodies[0].theta_rad = 0.05; w.bodies[0].omega_rad_s = -1; w.bodies[0].fallen = true;
