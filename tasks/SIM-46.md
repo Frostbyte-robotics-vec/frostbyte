@@ -27,9 +27,14 @@ tasks/SIM-44.md, docs/decisions/ADR-016-gps-fusion.md (Nachtrag), ADR-031/034, r
 
 ## Übergabe
 (aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
-
-KI-Review PR #127 (Empfehlung: ändern): (1) Zahlen ins Ticket übernehmen (Toggle 0/20 → 20/20, Median 16 → 68,5, P10 61, target_p10 40 bleibt; stehen bisher nur in ADR-016:23 und im PR-Text) und Verlauf-Zeile für die Arbeit anhängen; (2) „goto bleibt bei 0,5–1 in Seitenversatz stehen“ behandeln oder per neuem Ticket abspalten und hier vermerken. Code und Tests ohne Befund.
+Stand 2026-11-15 (fertig, PR #127 offen, Review-Punkte abgearbeitet): gestapelt auf ticket/sim-44 (PR #125); die Abhängigkeit von SIM-44 wurde bewusst genutzt, erst #125 mergen. Anfahrposen `APPROACH_TOGGLE_*` (61 in von der Mitte, Blick zur Wand, 10,5 in vom Toggle; Schätzwerte, TODO(HW) M-11) in field/field.json, `routes/skills_runner.route` fährt sie an. Roter Test zuerst: `field.json: jeder Toggle hat eine Anfahrpose vor der Wand` (eigene Grenzen, hängt nicht an `toggle_reichweite_in`).
+Messung (20 Läufe, Seed 1–20, Fusion an, Rauschprofil realistic), vorher → nachher: Runner-Toggle (beide) ausgelöst 0/20 → 20/20; Punkte-Median der Teamsumme 16 → 68,5; P10 61, damit `target_p10 40` (beide Routen) erfüllt und bleibt unverändert. Zahlen auch im ADR-016-Nachtrag.
+Abgespaltene Aufgabe: „goto bleibt 0,5–1 in seitlich stehen“ (Stacker bei NEUTRAL_R1, Timeout statt Ankunft) → eigenes Ticket SIM-48 (D-12-Bezug), nicht Teil dieses Tickets.
+Am echten Roboter: Anfahrabstand, Toggle-Reichweite (M-11), Abstand zur Wand (SIM-33).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-15 · arjanssen (KI) · Ticket angelegt (Befund aus SIM-44) · –
+2026-11-15 · arjanssen (KI) · Anfahrposen, Runner-Route, Test, Messung 20 Läufe (Toggle 0/20 → 20/20, Median 16 → 68,5) · –
+2026-11-15 · DAVIDCOPCOP (KI) · Review PR #127: Empfehlung ändern (Zahlen ins Ticket, goto-Seitenversatz abspalten) · –
+2026-11-15 · arjanssen (KI) · Review-Punkte abgearbeitet: Zahlen in Übergabe, goto-Seitenversatz → SIM-48 · –

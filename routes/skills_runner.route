@@ -4,9 +4,9 @@
 target_p10 40
 start    START_RUNNER
 goto     pose x=-40 y=-52 h=90 timeout=2.0
-goto     TOGGLE_RED_2    timeout=4.0
+goto     APPROACH_TOGGLE_RED_2  timeout=4.0
 toggle   TOGGLE_RED_2    timeout=4.0
-goto     TOGGLE_RED_1    timeout=5.0
+goto     APPROACH_TOGGLE_RED_1  timeout=5.0
 toggle   TOGGLE_RED_1    timeout=4.0
 signal   toggles_done
 goto     RED_ALLIANCE_2  timeout=5.0

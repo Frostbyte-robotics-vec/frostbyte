@@ -360,3 +360,30 @@ TEST_CASE("field.json: Midfield-Posen zeigen auf das Goal, Vorderkante in plausi
         CHECK(vorn <= 24.0);
     }
 }
+
+// SIM-46: Der Toggle sitzt an der Wand, der Roboter kann nicht auf ihn fahren. Zu jedem Toggle gibt es eine Anfahrpose
+// APPROACH_<TOGGLE> senkrecht vor der Wand: der 15″-Runner (Umriss CAD-01) passt mit Abstand an die Wand (Innenmaß
+// Portable 140,4″, SIM-33) und der Toggle ist nah genug (Schätzgrenze; die echte Reichweite misst M-11).
+TEST_CASE("field.json: jeder Toggle hat eine Anfahrpose vor der Wand") {
+    const Json f = field();
+    const double inner_half_in = 70.2;
+    const double runner_half_length_in = 14.88 / 2.0;
+    const double wall_gap_min_in = 1.0;
+    const double reach_max_in = 11.0;
+    const Json& toggles = f.at("toggles");
+    REQUIRE(toggles.size() == 4);
+    for (std::size_t i = 0; i < toggles.size(); ++i) {
+        const std::string id = toggles[i].at("id").as_string();
+        INFO(id);
+        const Json& pose = find_id(f.at("posen"), "APPROACH_" + id);
+        const double tx = toggles[i].at("x_in").as_number(), ty = toggles[i].at("y_in").as_number();
+        const double px = pose.at("x_in").as_number(), py = pose.at("y_in").as_number();
+        const bool on_x_wall = std::fabs(tx) > std::fabs(ty);
+        CHECK((on_x_wall ? py : px) == doctest::Approx(on_x_wall ? ty : tx));  // senkrecht vor dem Toggle
+        const double wall_in = on_x_wall ? std::fabs(px) : std::fabs(py);
+        CHECK(wall_in + runner_half_length_in + wall_gap_min_in <= inner_half_in);
+        CHECK(std::hypot(px - tx, py - ty) <= reach_max_in);
+        CHECK(wrap_deg(pose.at("h_deg").as_number()) ==
+              doctest::Approx(wrap_deg(toggles[i].at("wand_deg").as_number())));
+    }
+}
