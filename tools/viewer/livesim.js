@@ -412,7 +412,7 @@ var FBLive = (function () {
       phys.bodies.forEach(function (b, i) {
         // Hand auf Höhe des Teils (Fußpunkt bis Oberkante, mit Spielraum): mit hohem Lift wird nichts vom Boden gegriffen
         if ((b.state !== 'standing' && !(b.state === 'lying' && g.rise_rad_s !== null)) || hz < b.z - g.grab_tol_in || hz > b.z + b.h + g.grab_tol_in || !phys.isFree(i)) return;
-        var dx = b.x - r.x_in, dy = b.y - r.y_in, lu = dx * Math.cos(h) + dy * Math.sin(h), lv = -dx * Math.sin(h) + dy * Math.cos(h);
+        var foot = phys.pose(i), dx = foot.bx_in - r.x_in, dy = foot.by_in - r.y_in, lu = dx * Math.cos(h) + dy * Math.sin(h), lv = -dx * Math.sin(h) + dy * Math.cos(h);
         var front = r.outline.length_in / 2;
         if (lu < front - b.r || lu > front + g.reach_in + b.r || Math.abs(lv) > r.outline.width_in / 2 + b.r) return;
         var d = Math.sqrt((lu - front) * (lu - front) + lv * lv);
@@ -421,7 +421,7 @@ var FBLive = (function () {
         if (d < bestD) { best = i; bestD = d; }
       });
       if (best < 0) { if (blocked >= 0) emit(name, 'RULE:SG6'); return; }
-      if (phys.hold(best)) { r.hand.push(best); emit(name, 'GRAB:' + phys.bodies[best].id); }
+      if (phys.hold(best)) { r.hand.push(best); lastTouch[phys.bodies[best].id] = name; emit(name, 'GRAB:' + phys.bodies[best].id); }
     }
     function doRelease(name) {
       var r = robots[name];
@@ -430,6 +430,7 @@ var FBLive = (function () {
       var k = r.hand.findIndex(function (b) { return phys.bodies[b].kind === 'cup'; }), i = r.hand.splice(k < 0 ? r.hand.length - 1 : k, 1)[0];
       r.pinRaised = r.hand.length === 1 && phys.bodies[i].kind === 'cup';   // der Pin bleibt oben, bis er selbst abgelegt wird (sinkt nicht in den Cup)
       phys.release(i);
+      lastTouch[phys.bodies[i].id] = name;   // Kippen/Stapeln danach gehört dem, der losgelassen hat
       emit(name, 'DROP:' + phys.bodies[i].id);
     }
     function doLift(name, dir) {
@@ -498,8 +499,10 @@ var FBLive = (function () {
           if (phys) {
             updateHands(stepMs / 1000);
             phys.step(stepMs / 1000).forEach(function (e) {
-              if (e.type === 'toppled') emit(lastTouch[e.id] || ROBOTS[0], 'TOPPLED:' + e.id);
-              else if (e.type === 'landed' && e.stacked) emit(lastTouch[e.id] || ROBOTS[0], 'STACK:' + e.id);
+              var who = lastTouch[e.id];   // ohne Roboterkontakt gehört das Ereignis keinem Roboter (kein Ersatz durch den Stacker)
+              if (!who) return;
+              if (e.type === 'toppled') emit(who, 'TOPPLED:' + e.id);
+              else if (e.type === 'landed' && e.stacked) emit(who, 'STACK:' + e.id);
             });
           }
           acc_ms -= stepMs; stepNo++; n++;
