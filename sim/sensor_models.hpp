@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 
+#include "estimation/gps_fusion.hpp"
 #include "sim/json.hpp"
 #include "sim/rng.hpp"
 
@@ -34,11 +35,18 @@ struct GpsParams {
     double quality_loss_per_in_s = 0.0;  // Güteverlust je Zoll/Sekunde Fahrgeschwindigkeit
 };
 
+// GPS-Fusion im Steuertakt (SIM-44, estimation/gps_fusion.hpp). Ohne Block fusion in sim_params.json aus.
+struct FusionSimParams {
+    bool enabled = false;
+    GpsFusionParams params{};
+};
+
 struct SensorParams {
     OdometryParams odometry;
     bool odometry_is_tracking = false;  // true: "tracking" (Tracking-Rad), false: "encoder"
     ImuParams imu;
     GpsParams gps;
+    FusionSimParams fusion;
     double noise_scale = 1.0;
 };
 

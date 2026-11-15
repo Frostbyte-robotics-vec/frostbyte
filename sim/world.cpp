@@ -126,7 +126,9 @@ struct RobotRun {
     std::optional<OdometryModel> odo;
     std::optional<ImuModel> imu;
     std::optional<GpsModel> gps;
-    std::optional<Pose> est;
+    std::optional<Pose> est;          // Pose, die Regler und Route sehen (mit Fusion: Odometrie plus GPS-Korrektur)
+    Pose odo_pose;                    // reine Odometrie (Wegmesser + IMU), Eingang der Fusion
+    std::optional<GpsFusion> fusion;  // SIM-44, nur wenn sensoren.fusion.aktiv
     GpsSample gps_sample;
     double last_dist_in = 0.0;
     double last_measured_in = 0.0;
@@ -336,6 +338,9 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
         r.imu.emplace(s.sensors.imu, s.sensors.noise_scale, r.sensor_seed);
         r.gps.emplace(s.sensors.gps, s.sensors.noise_scale, r.sensor_seed);
         r.est = *s.start;  // der Roboter kennt seine Startpose
+        r.odo_pose = *s.start;
+        if (s.sensors.fusion.enabled)
+            r.fusion.emplace(s.sensors.fusion.params);
         // SG3 (Höhe) prüft die Schleife unten in jedem Schritt aus dem Lift-Winkel (SIM-32); beim Start steht der Lift unten.
         RobotRuleState rs;
         rs.length_in = s.length_in;
@@ -373,7 +378,21 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
                 r.last_measured_in = r.odo->measured_in();
                 const double h_deg = r.imu->measure_deg(r.drive->pose().h_deg, t_ms / 1000.0);
                 const double h_rad = h_deg * pi / 180.0;
-                r.est = Pose{r.est->x_in + step_in * std::cos(h_rad), r.est->y_in + step_in * std::sin(h_rad), h_deg};
+                r.odo_pose = Pose{r.odo_pose.x_in + step_in * std::cos(h_rad),
+                                  r.odo_pose.y_in + step_in * std::sin(h_rad), h_deg};
+                if (r.fusion) {
+                    // GPS in jedem Steuertakt (nicht nur beim Logschritt); das Log zeigt dieselbe Messung.
+                    const Pose p = r.drive->pose();
+                    r.gps_sample = r.gps->measure(p.x_in, p.y_in, p.h_deg, r.speed_in_s());
+                    const GpsReading reading{r.gps_sample.valid, r.gps_sample.x_in, r.gps_sample.y_in,
+                                             r.gps_sample.heading_deg, r.gps_sample.error_in};
+                    const frostbyte::Pose f =
+                        r.fusion->update(frostbyte::Pose{r.odo_pose.x_in, r.odo_pose.y_in, r.odo_pose.h_deg}, reading,
+                                         step_in / (cfg.steuer_ms / 1000.0));
+                    r.est = Pose{f.x_in, f.y_in, f.heading_deg};
+                } else {
+                    r.est = r.odo_pose;
+                }
                 if (r.setup.closed_loop) {
                     r.held_cmd = r.setup.closed_loop(t_ms, *r.est);
                 } else if (r.route) {
@@ -433,7 +452,7 @@ RunResult run_match(const SimConfig& cfg, std::uint64_t seed, std::ostream& stac
             }
             for (int i = 0; i < 2; ++i) {
                 RobotRun& r = runs[i];
-                if (r.drive) {
+                if (r.drive && !r.fusion) {
                     const Pose p = r.drive->pose();
                     r.gps_sample = r.gps->measure(p.x_in, p.y_in, p.h_deg, r.speed_in_s());
                 }
