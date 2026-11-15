@@ -38,6 +38,8 @@ Rat des Advisors (vor /finish): nicht `review`, sondern `blocked`, weil „Ausse
 **Frage an den Menschen:** Was genau sieht im Livesim (tools/viewer/index.html) noch falsch aus: Rückprall zu stark/schwach, Gleitweg, Kippdauer, Teile durch Roboter, Stapel? Bitte Szene beschreiben. Danach Werte in `physik` (sim_params.json, alles Schätzungen) anpassen und im Browser bestätigen lassen; dann kann das Ticket auf review.
 Test: `py -3 -m unittest discover -s tools/viewer -p "test_*.py"`. clang-format war auf diesem Rechner nicht installiert (nur JS geändert).
 
+Nach dem Merge von #124 (SIM-41, benennt Felder um): rebase und auf `theta_rad`/`omega_rad_s`/`phi_rad` umstellen. Die Tests lesen `.omega` und fallen auf; `separate()` nutzt `Math.cos(b.phi)` (wird sonst NaN, fällt in den Tests nicht auf). Bekannte Lücke: das Fahrtempo `vs` in livesim.js nimmt nur die mittlere Radgeschwindigkeit; beim Drehen auf der Stelle ist es 0, ein tiefes Eindringen kippt dann ohne Schwung (Kontaktpunktgeschwindigkeit = linear + ω·Hebelarm wäre richtig). Dazu: `toLying` meldet kein `toppled` (siehe Review #124).
+
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt (Rest aus SIM-42, Punkt 3) · –
