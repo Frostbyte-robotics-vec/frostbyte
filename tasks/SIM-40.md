@@ -2,7 +2,7 @@
 id: SIM-40
 phase: "5"
 titel: Liegende Cups/Pins im Browser-Livesim greifen: sichtbares Aufrichten in der Hand (Folge von SIM-39)
-status: review
+status: done
 owner: arjanssen
 branch: ticket/sim-40
 depends: [SIM-39]
@@ -33,3 +33,4 @@ Am Rechner zu prüfen: liegenden Pin aus dem Feldplan greifen (E): richtet er si
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt (Lücke aus SIM-39) · –
 2026-11-12 · arjanssen (KI) · Liegende Teile greifen und aufrichten, Tests, ADR-Nachtrag · siehe Branch
+2026-11-15 · arjanssen (KI) · PR #116 gemerged, Status auf done nachgezogen (Board-Validate auf main war rot)
