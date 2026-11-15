@@ -63,6 +63,8 @@ KI-Review (PR #124) abgearbeitet: `toLying` im Zweig „langsamer Aufschlag“ m
 
 Review-Hinweis (KI-Review PR #124, 2026-11-15, Empfehlung: ändern): `integrate` → `toLying` (Aufschlag mit `wIn < ruhe_omega_rad_s`) meldet kein `toppled`, wenn das Teil nie über dem Kippwinkel einen Schritt beendet hat; Test 7b prüft nur den Rückprall-Zweig. `toppled` auch dort melden (`!fallen`) mit Test bei kleinem omega, oder als Fehlalarm begründen. Merge-Reihenfolge: PR #123 (SIM-43) nutzt die alten Feldnamen in physics.js; wer zweiter merged, rebased.
 
+Review-Hinweis (KI-Review PR #124, 2026-11-15, Empfehlung: ändern): `integrate` → `toLying` (Aufschlag mit `wIn < ruhe_omega_rad_s`) meldet kein `toppled`, wenn das Teil nie über dem Kippwinkel einen Schritt beendet hat; Test 7b prüft nur den Rückprall-Zweig. `toppled` auch dort melden (`!fallen`) mit Test bei kleinem omega, oder als Fehlalarm begründen. Merge-Reihenfolge: PR #123 (SIM-43) nutzt die alten Feldnamen in physics.js; wer zweiter merged, rebased.
+
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt aus /code-review high auf #114–#116 (unbestätigt) · –
