@@ -19,12 +19,16 @@ namespace frostbyte {
 
 struct MotionConfig {
     double max_volts = 12.0;
-    double track_width_in = 12.0;         // follow: Spurbreite zur Umrechnung der Krümmung in links/rechts
-    double turn_tol_deg = 2.0;            // turn_to fertig innerhalb dieser Abweichung ...
-    double move_tol_in = 1.0;             // move_to/follow fertig innerhalb dieses Abstands ...
-    double settle_s = 0.1;                // ... wenn sie so lange gehalten wird
-    double near_in = 4.0;                 // move_to: näher als das wird nicht mehr nachgelenkt (kein Kreiseln am Ziel)
-    double lookahead_in = 10.0;           // follow: Vorausschau-Radius
+    double track_width_in = 12.0;  // follow: Spurbreite zur Umrechnung der Krümmung in links/rechts
+    double turn_tol_deg = 2.0;     // turn_to fertig innerhalb dieser Abweichung ...
+    double move_tol_in = 1.0;      // move_to/follow fertig innerhalb dieses Abstands ...
+    double settle_s = 0.1;         // ... wenn sie so lange gehalten wird
+    double near_in = 4.0;          // move_to: näher als das wird nicht mehr nachgelenkt (kein Kreiseln am Ziel)
+    double near_turn_deg = 20.0;   // move_to: näher als near_in, aber noch außerhalb der Toleranz: nachdrehen, wenn
+                                   // der Lenkfehler größer ist (Querversatz, SIM-48)
+    double min_move_v = 0.0;     // move_to: Mindestspannung zum Ziel, solange es außerhalb der Toleranz liegt und der
+                                 // Roboter ausgerichtet ist (Haftreibung; 0 = aus). Messen: kS (TODO(HW))
+    double lookahead_in = 10.0;  // follow: Vorausschau-Radius
     double follow_max_volts = 8.0;        // follow: Grenze für die Fahrspannung, damit für die Lenkung Luft bleibt
     double blocked_window_s = 0.5;        // blocked: Länge des Prüffensters
     double blocked_min_effort_v = 2.0;    // blocked nur, wenn die Spannung im ganzen Fenster mindestens so hoch war
@@ -226,6 +230,11 @@ private:
         const double he = wrap_deg(rad_to_deg(std::atan2(dy, dx)) - facing_deg);
         // Abstand längs der Blickrichtung: nach dem Überfahren negativ, also fährt der Roboter zurück.
         double lin = lat_.update(d * std::cos(deg_to_rad(he)), dt_s);
+        // Kurz vor dem Ziel ist der P-Anteil kleiner als die Haftreibung: ohne Mindestspannung bliebe der Roboter
+        // knapp außerhalb der Toleranz stehen (SIM-48).
+        const bool aligned = std::fabs(he) <= cfg_.near_turn_deg || std::fabs(he) >= 180.0 - cfg_.near_turn_deg;
+        if (d > tol_in && aligned && lin != 0.0 && std::fabs(lin) < cfg_.min_move_v)
+            lin = std::copysign(cfg_.min_move_v, lin);
         if (reverse)
             lin = -lin;
         // War der Roboter schon nah am Ziel und ist darüber hinaus, wendet er nicht, sondern richtet das Heck
@@ -235,8 +244,10 @@ private:
         double steer = he;
         if (approached_ && std::fabs(he) > 90.0)
             steer = wrap_deg(he + 180.0);
+        // Nah am Ziel wird nicht nachgelenkt (kein Kreiseln), außer der Roboter steht noch außerhalb der Toleranz und
+        // zeigt deutlich vorbei: Ein Differentialantrieb korrigiert quer nur durch Drehen (SIM-48).
         double a = 0.0;
-        if (d > cfg_.near_in)
+        if (d > cfg_.near_in || (d > tol_in && std::fabs(steer) > cfg_.near_turn_deg))
             a = ang_.update(steer, dt_s);
         else
             ang_.reset();

@@ -55,6 +55,8 @@ inline constexpr frostbyte::MotionConfig motion{
     .move_tol_in = 0.5,
     .settle_s = 0.1,
     .near_in = 4.0,
+    .near_turn_deg = 20.0,
+    .min_move_v = 0.8,  // TODO(HW): Haftreibung kS messen (SIM-48), sim_params.json hat 0.6 V als Schaetzung
     .lookahead_in = 10.0,
     .follow_max_volts = 8.0,
     .blocked_window_s = 0.5,
