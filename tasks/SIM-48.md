@@ -2,7 +2,7 @@
 id: SIM-48
 phase: "5"
 titel: goto bleibt 0,5–1 in seitlich vom Ziel stehen (Differentialantrieb korrigiert quer nicht) → Timeout statt Ankunft
-status: review
+status: done
 owner: arjanssen
 branch: ticket/sim-48
 depends: [SIM-44]
