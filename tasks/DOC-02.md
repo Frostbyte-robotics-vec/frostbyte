@@ -42,8 +42,9 @@ tasks/M-08.md, tasks/C-06.md, tasks/SIM-33.md, ADR-022, ADR-027.
 —
 
 ## Übergabe
-Angelegt aus der Sitzung vom 2026-11-12, bewusst `blocked`: kein KI-Ticket, solange die Antworten fehlen.
+Antworten 2026-11-16: SIM-33 Perimeter = Portable 140,4″ (PDF-Pfad des offiziellen Manuals fehlt noch); M-08 entfällt; C-06 noch nicht verfügbar; SIM-45 entfällt.
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-12 · arjanssen (KI) · Ticket angelegt: Fragen aus M-08, C-06, SIM-33 gesammelt · –
+2026-11-16 · arjanssen (Mensch, per KI notiert) · Fragen M-08, C-06, SIM-33, SIM-45 gestellt und beantwortet · –

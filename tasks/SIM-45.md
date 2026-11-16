@@ -2,7 +2,7 @@
 id: SIM-45
 phase: "5"
 titel: Livesim: Roboter fährt durch Pins/Cups (Räder/Antrieb außerhalb der Kollisionsform?) klären und beheben
-status: blocked
+status: done
 owner: 
 branch: 
 depends: [SIM-43]
@@ -29,18 +29,10 @@ tools/viewer/livesim.js (`boxOf`, `touchBodies`, `penetrationBoxCircle`), tools/
 —
 
 ## Übergabe
-(aktueller Stand für die nächste Sitzung – wird bei jedem Sitzungsende überschrieben)
-
-Gemessen (Livesim-Fixture wie physics_test Abschnitt 14, Stacker-Umriss 17,5 × 17,5, Teilradius 1,58, Frontanfahrt; Skript nur im Scratchpad, nicht im Repo):
-- Cup/Pin stehend, Frontanfahrt 3 / 6 / 11 V: Teil durchläuft standing → tipping → lying und liegt danach VOR dem Roboter (Cup bei 6 V: Roboterfront −1,85 in, Objektmitte +0,14 in = Front + Radius, es wird geschoben, nicht überfahren). Im Endzustand kein Durchfahren.
-- Während des Kippens (rund 0,3 s) steckt die Teilmitte bis 6 in hinter der Roboterfront (Pin 5,6 · Cup 6,1 in bei 6 V, bei 11 V gleich). Folgt aus Berührhöhe 4 in plus Hebel um die Fußkante und ist in SIM-38/ADR-051 so gewollt; sichtbar als „Modell läuft kurz durch den Roboter“.
-- Liegender Pin: kein Durchfahren (SIM-30 testet das).
-- Räder liegen laut CAD-Messung innerhalb des Umrisses. Lift/Greifer/Aufnahme haben keine Kollisionsform (Kandidat d).
-Es ist kein Fehler reproduzierbar. Ohne die Szene des Menschen rate ich nicht weiter (Status blocked).
-
-Frage an den Menschen: Szene beschreiben. (1) Mit Taste C: deckt der Umriss die Räder? (2) Cup/Pin stehend oder liegend, am Boden oder auf Goal/Stapel? (3) Front, Seite, Ecke oder beim Drehen auf der Stelle? (4) Tempo (Shift)? Bekannte Lücken: beim Drehen ist `vs` = 0, also Winkelgeschwindigkeit 0; Kandidat (b): Teile mit z > 0 werden nie berührt.
+Entfällt (2026-11-16): Szene nicht mehr bekannt, nicht reproduzierbar; gemessenes Kippverhalten (ADR-051) ist gewollt. Bei erneutem Auftreten neues Ticket mit Szene (Taste C, stehend/liegend, Front/Seite/Ecke, Tempo).
 
 ## Verlauf
 <!-- je Sitzung eine Zeile anhängen: Datum · Person · was gemacht wurde · Commit -->
 2026-11-15 · DAVIDCOPCOP (KI) · Ticket angelegt aus Handtest-Befund, Modellmaße gemessen · –
 2026-11-15 · DAVIDCOPCOP (KI) · Frontanfahrt gemessen, im Endzustand kein Durchfahren, Rückfrage an den Menschen, Status blocked · –
+2026-11-16 · arjanssen (Mensch, per KI notiert) · entfällt, nicht reproduzierbar; als done geschlossen · –
