@@ -114,12 +114,25 @@ class WebTest(unittest.TestCase):
 
     def test_freie_fotos_haben_bildnachweis(self):
         h = HTML["index.html"]
-        for datei in ("worlds-match.jpg",):  # W-21: Ziel-Foto ist jetzt ziel-weltfinale.jpg (Quelle offen)
+        for datei in ("worlds-match.jpg",):  # W-21: Ziel-Foto: ziel-worlds-2027.jpg (W-22)
             self.assertIn(f"assets/{datei}", h)
         self.assertIn("Rick Tyler", h)
         self.assertIn("CC BY-SA 3.0", h)
         self.assertIn("Wrc Ynapmoc", h)
         self.assertIn("CC BY 3.0", h)
+
+    def test_zielfoto_ist_worlds_2027_banner(self):
+        # W-22: Banner ohne Beschnitt (Text im Bild), kein altes Konfetti-Foto
+        css = (WEB / "assets" / "style.css").read_text(encoding="utf-8")
+        self.assertFalse((WEB / "assets" / "ziel-weltfinale.jpg").exists())
+        self.assertIn(".tl-item .pic.banner img{object-fit:contain}", css)
+        for name, pfad in (("index.html", "assets/ziel-worlds-2027.jpg"), ("en/index.html", "../assets/ziel-worlds-2027.jpg")):
+            h = HTML[name]
+            ziel = h[h.index('class="tl-item goal'):]
+            ziel = ziel[: ziel.index("<span class=\"dot\">")]
+            self.assertIn('class="pic banner"', ziel, name)
+            self.assertIn(f'src="{pfad}"', ziel, name)
+            self.assertNotIn("ziel-weltfinale", h, name)
 
     def test_mosaik_fotos_haben_bildnachweis_und_alte_dateien_sind_weg(self):
         h = HTML["index.html"]
