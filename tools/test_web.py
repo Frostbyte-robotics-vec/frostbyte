@@ -67,9 +67,9 @@ class WebTest(unittest.TestCase):
         self.assertFalse((WEB / "sponsoring.html").exists())
         for name, h in HTML.items():
             self.assertNotIn("sponsoring.html", h)
-            # W-14 (Mensch, 2026-11-12): "Hauptpartner"/"Supporter" sind als Bezeichnung erlaubt, Pakete/Preise bleiben verboten
+            # W-21 (Mensch, 2026-11-18): Stufennamen Terabyte/Gigabyte/Megabyte/Kilobyte sind öffentlich erlaubt, Pakete/Preise bleiben verboten
             for wort in ("Sponsoring-Pakete", "Budget", "10'000", "ab 500", "ab 1'500",
-                         "tierlbl", "slot-main", "grid3", "grid6", "Kilobyte", "Megabyte", "Gigabyte", "35'000", "€"):
+                         "tierlbl", "slot-main", "grid3", "grid6", "35'000", "€"):
                 self.assertNotIn(wort, h, f"{name}: {wort}")
 
     def test_ids_sind_eindeutig(self):
@@ -114,7 +114,7 @@ class WebTest(unittest.TestCase):
 
     def test_freie_fotos_haben_bildnachweis(self):
         h = HTML["index.html"]
-        for datei in ("worlds-match.jpg", "team-trophy.jpg"):
+        for datei in ("worlds-match.jpg",):  # W-21: Ziel-Foto ist jetzt ziel-weltfinale.jpg (Quelle offen)
             self.assertIn(f"assets/{datei}", h)
         self.assertIn("Rick Tyler", h)
         self.assertIn("CC BY-SA 3.0", h)
@@ -167,7 +167,7 @@ class WebTest(unittest.TestCase):
         # W-11: Folie 12 des Decks nennt weitere Namen, die noch nicht bestätigt sind
         for name, h in HTML.items():
             # W-14: TechLabs ist vom Menschen bestätigt (2026-11-12)
-            for fremd in ("Bachofen", "rosttec", "Student Project House"):
+            for fremd in ("Bachofen", "rosttec"):  # W-21: Student Project House vom Menschen bestätigt (2026-11-18)
                 self.assertNotIn(fremd, h, f"{name}: {fremd}")
 
     def test_kein_scroll_fortschrittsbalken(self):
@@ -223,7 +223,7 @@ class WebTest(unittest.TestCase):
 
     # ---- W-14: Partner mit Logos (Stufen) und zwei Formulare ----
     def test_partnerstufen_mit_logos(self):
-        # Mensch 2026-11-12: Novagear Hauptpartner, TechLabs Supporter; norelem vorerst weglassen
+        # Mensch 2026-11-12: norelem vorerst weglassen; 2026-11-18: Stufen Terabyte (Novagear), Kilobyte (TechLabs, ETH SPH)
         for name, h in HTML.items():
             wand = h[h.index('id="partner"'):h.index('id="ziel"')]
             self.assertNotIn("norelem", h, name)
@@ -231,10 +231,16 @@ class WebTest(unittest.TestCase):
             sup = wand[wand.index('class="ptier ptier-sup'):]
             self.assertRegex(haupt, r'<img src="(?:\.\./)?assets/sponsoren/novagear\.png" alt="Novagear" width="\d+" height="\d+"')
             self.assertRegex(sup, r'<img src="(?:\.\./)?assets/sponsoren/techlabs\.png" alt="TechLabs" width="\d+" height="\d+"')
+            # W-21: Logos verlinken auf die Partnerseiten; ETH SPH ebenfalls unter Kilobyte
+            self.assertRegex(sup, r'<img src="(?:\.\./)?assets/sponsoren/eth-sph\.svg" alt="ETH Student Project House"')
+            for url, teil in (("https://www.novagear.ch", haupt), ("https://www.techlabs.ch", sup), ("https://sph.ethz.ch", sup)):
+                self.assertRegex(teil, r'<a [^>]*href="' + re.escape(url) + r'"[^>]*target="_blank"[^>]*rel="noopener"[^>]*><img', name)
             self.assertNotIn("techlabs.png", haupt, name)
             self.assertNotIn("novagear.png", sup, name)
-            self.assertIn("Hauptpartner" if name == "index.html" else "Main partner", haupt, name)
-            self.assertIn("Supporter", sup, name)
+            self.assertIn("Terabyte", haupt, name)  # W-21: Stufen heissen Terabyte/Gigabyte/Megabyte/Kilobyte
+            self.assertIn("Kilobyte", sup, name)
+            self.assertNotIn("Gigabyte", wand, name)  # leere Stufen nicht anzeigen
+            self.assertNotIn("Megabyte", wand, name)
             self.assertNotIn('class="slot"', wand, name)  # W-16: kein Platz "Partner werden" neben dem Supporter
             self.assertNotIn("Ihr Logo", wand, name)
             self.assertNotIn("Your logo", wand, name)
