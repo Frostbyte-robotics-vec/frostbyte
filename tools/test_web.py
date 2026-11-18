@@ -114,7 +114,7 @@ class WebTest(unittest.TestCase):
 
     def test_freie_fotos_haben_bildnachweis(self):
         h = HTML["index.html"]
-        for datei in ("worlds-match.jpg", "team-trophy.jpg"):
+        for datei in ("worlds-match.jpg",):  # W-21: Ziel-Foto ist jetzt ziel-weltfinale.jpg (Quelle offen)
             self.assertIn(f"assets/{datei}", h)
         self.assertIn("Rick Tyler", h)
         self.assertIn("CC BY-SA 3.0", h)
