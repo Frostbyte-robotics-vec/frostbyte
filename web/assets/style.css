@@ -195,6 +195,8 @@ section{position:relative}
 .tl-item .pic{border-radius:3px;overflow:hidden;background:var(--paper);border:1px solid var(--line)}
 .tl-item .pic img{width:100%;height:100%;object-fit:cover}
 .tl-item .pic.contain img{object-fit:contain;padding:12px}
+.tl-item .pic.banner{background:#000}
+.tl-item .pic.banner img{object-fit:contain}
 .tl-item .dot{width:14px;height:14px;border-radius:50%;background:var(--paper);border:2px solid var(--line);position:relative;z-index:1;align-self:center}
 .tl-item.now .dot{background:var(--blue);border-color:var(--blue);box-shadow:0 0 0 6px rgba(26,111,209,.18);animation:pulse 2.2s infinite}
 .tl-item.goal .dot{background:var(--ink);border-color:var(--ink)}
