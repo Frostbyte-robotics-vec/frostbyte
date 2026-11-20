@@ -461,5 +461,32 @@ class WebTest(unittest.TestCase):
         seite = news_build.seite("T", "B", "")
         self.assertIn('href="../impressum.html"', seite.split("<footer", 1)[1])
 
+    def test_llms_und_robots_txt(self):
+        """W-23: llms.txt/robots.txt vorhanden, Links echt, keine Robotertechnik, keine technischen Unterseiten."""
+        llms = (WEB / "llms.txt").read_text(encoding="utf-8")
+        self.assertTrue(llms.startswith("# Frostbyte"))
+        self.assertRegex(llms, r"(?m)^> .+")
+        for muss in ("ETH Zurich", "Switzerland", "VEX U", "frostbyte.eth.robotics@gmail.com"):
+            self.assertIn(muss, llms)
+        verboten = r"(?i)stacker|runner|cascade|intake|\bCAD\b|24\s*(″|\"|in\b|inch)|15\s*(″|\"|in\b|inch)|firmware|PROS|lift|claw|odometr|best team|beste"
+        self.assertNotRegex(llms, verboten)
+        links = re.findall(r"\]\((https?://[^)\s]+)\)", llms)
+        self.assertTrue(links)
+        for url in links:
+            self.assertNotRegex(url, r"/(board|viewer|sim)(/|$)")
+            if url.startswith("https://frostbyterobotics.ch/"):
+                pfad = url.split("frostbyterobotics.ch/", 1)[1] or "index.html"
+                if pfad.endswith("/"):
+                    pfad += "index.html"
+                ziel = WEB / pfad
+                if pfad.startswith("news/"):  # News wird im Workflow erzeugt (tools/news_build.py)
+                    continue
+                self.assertTrue(ziel.is_file(), url)
+        robots = (WEB / "robots.txt").read_text(encoding="utf-8")
+        self.assertRegex(robots, r"(?m)^User-agent: \*")
+        self.assertNotRegex(robots, r"(?m)^Disallow: /\s*$")
+        for pfad in ("/board/", "/viewer/", "/sim/"):  # ADR-049: nur über die direkte Adresse erreichbar
+            self.assertIn(f"Disallow: {pfad}", robots)
+
 if __name__ == "__main__":
     unittest.main()
