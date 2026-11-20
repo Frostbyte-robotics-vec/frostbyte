@@ -485,6 +485,8 @@ class WebTest(unittest.TestCase):
         robots = (WEB / "robots.txt").read_text(encoding="utf-8")
         self.assertRegex(robots, r"(?m)^User-agent: \*")
         self.assertNotRegex(robots, r"(?m)^Disallow: /\s*$")
+        for pfad in ("/board/", "/viewer/", "/sim/"):  # ADR-049: nur über die direkte Adresse erreichbar
+            self.assertIn(f"Disallow: {pfad}", robots)
 
 if __name__ == "__main__":
     unittest.main()

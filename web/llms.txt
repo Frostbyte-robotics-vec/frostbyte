@@ -2,7 +2,7 @@
 
 > Frostbyte is a Swiss university robotics team: the VEX U student team of ETH Zurich (Zurich, Switzerland). Started in autumn 2026, it competes in the VEX Robotics Competition university league (VEX U) in the 2026/27 season, with the goal of qualifying for the VEX Robotics World Championship 2027 in Las Vegas.
 
-Frostbyte is run by students of the Department of Mechanical and Process Engineering at ETH Zurich, supervised by Prof. Dr. Stefan Leutenegger (Professor of Mobile Robotics). The team is organised as the association "Verein Frostbyte" in Zurich. Season 2026/27 is the team's first season. Companies and individuals who would like to support the team are welcome to get in touch.
+Frostbyte is run by mechanical engineering students of ETH Zurich, supervised by Prof. Dr. Stefan Leutenegger (Professor of Mobile Robotics). The team is organised as the association "Verein Frostbyte" in Zurich. Season 2026/27 is the team's first season. Companies who would like to support the team are welcome to get in touch.
 
 ## Team and season
 
