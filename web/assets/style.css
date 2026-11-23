@@ -385,7 +385,10 @@ footer .wrap{padding-block:56px 34px;display:grid;gap:40px}
 .plogo{border:1px solid var(--line);border-radius:4px;background:var(--paper);display:grid;place-items:center;padding:clamp(24px,4vw,56px)}
 .plogo img{height:auto;width:100%}
 .plogo-main img{max-width:620px}
+.plogo-mid img{max-width:300px}
+.plogo-mid img[src$="infineon.svg"]{max-width:150px}
 .plogo-sup img{max-width:300px}
+.plogo-sup img[src$="vacuumschmelze.svg"]{max-width:150px}
 .plogos{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:clamp(16px,2vw,24px)}
 .plogo{text-decoration:none}
 .plogo:hover{border-color:var(--slate)}

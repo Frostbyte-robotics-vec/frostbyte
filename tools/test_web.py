@@ -240,8 +240,20 @@ class WebTest(unittest.TestCase):
         for name, h in HTML.items():
             wand = h[h.index('id="partner"'):h.index('id="ziel"')]
             self.assertNotIn("norelem", h, name)
-            haupt = re.search(r'class="ptier ptier-main[^"]*".*?(?=class="ptier ptier-sup|$)', wand, re.S).group(0)
+            haupt = re.search(r'class="ptier ptier-main[^"]*".*?(?=class="ptier ptier-mid|$)', wand, re.S).group(0)
+            mid = re.search(r'class="ptier ptier-mid[^"]*".*?(?=class="ptier ptier-sup|$)', wand, re.S).group(0)  # W-24
             sup = wand[wand.index('class="ptier ptier-sup'):]
+            self.assertLess(wand.index("Terabyte"), wand.index("Megabyte"), name)
+            self.assertLess(wand.index("Megabyte"), wand.index("Kilobyte"), name)
+            self.assertIn("Megabyte", mid, name)
+            for datei, alt, url, teil in (
+                ("rapidmanufacturing.png", "Rapid Manufacturing", "https://www.rapidmanufacturing.ch", mid),
+                ("infineon.svg", "Infineon", "https://www.infineon.com", mid),
+                ("vacuumschmelze.svg", "Vacuumschmelze", "https://vacuumschmelze.de", sup),
+            ):
+                self.assertRegex(teil, r'<a [^>]*href="' + re.escape(url) + r'"[^>]*target="_blank"[^>]*rel="noopener"[^>]*><img src="(?:\.\./)?assets/sponsoren/' + re.escape(datei) + '" alt="' + alt + r'" width="\d+" height="\d+"', name)
+                self.assertTrue((WEB / "assets/sponsoren" / datei).is_file(), datei)
+            self.assertNotIn("?", re.search(r'href="(https://www\.infineon\.com[^"]*)"', mid).group(1), name)  # keine Tracking-Parameter
             self.assertRegex(haupt, r'<img src="(?:\.\./)?assets/sponsoren/novagear\.png" alt="Novagear" width="\d+" height="\d+"')
             self.assertRegex(sup, r'<img src="(?:\.\./)?assets/sponsoren/techlabs\.png" alt="TechLabs" width="\d+" height="\d+"')
             # W-21: Logos verlinken auf die Partnerseiten; ETH SPH ebenfalls unter Kilobyte
@@ -253,7 +265,6 @@ class WebTest(unittest.TestCase):
             self.assertIn("Terabyte", haupt, name)  # W-21: Stufen heissen Terabyte/Gigabyte/Megabyte/Kilobyte
             self.assertIn("Kilobyte", sup, name)
             self.assertNotIn("Gigabyte", wand, name)  # leere Stufen nicht anzeigen
-            self.assertNotIn("Megabyte", wand, name)
             self.assertNotIn('class="slot"', wand, name)  # W-16: kein Platz "Partner werden" neben dem Supporter
             self.assertNotIn("Ihr Logo", wand, name)
             self.assertNotIn("Your logo", wand, name)
