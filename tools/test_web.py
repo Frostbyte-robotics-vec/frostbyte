@@ -248,12 +248,14 @@ class WebTest(unittest.TestCase):
             self.assertIn("Megabyte", mid, name)
             for datei, alt, url, teil in (
                 ("rapidmanufacturing.png", "Rapid Manufacturing", "https://www.rapidmanufacturing.ch", mid),
+                ("inficon.png", "Inficon", "https://www.inficon.com", mid),  # W-25
                 ("vacuumschmelze.svg", "Vacuumschmelze", "https://vacuumschmelze.de", sup),
                 ("mobile-robotics-lab.png", "Mobile Robotics Lab", "https://mrl.ethz.ch", sup),  # W-25
             ):
                 self.assertRegex(teil, r'<a [^>]*href="' + re.escape(url) + r'"[^>]*target="_blank"[^>]*rel="noopener"[^>]*><img src="(?:\.\./)?assets/sponsoren/' + re.escape(datei) + '" alt="' + alt + r'" width="\d+" height="\d+"', name)
                 self.assertTrue((WEB / "assets/sponsoren" / datei).is_file(), datei)
             self.assertNotIn("infineon", h.lower(), name)  # W-25: falscher Name, richtig ist Inficon
+            self.assertNotIn("?", re.search(r'href="(https://www\.inficon\.com[^"]*)"', mid).group(1), name)
             self.assertNotIn("?", re.search(r'href="(https://mrl\.ethz\.ch[^"]*)"', sup).group(1), name)  # keine Tracking-Parameter
             self.assertRegex(haupt, r'<img src="(?:\.\./)?assets/sponsoren/novagear\.png" alt="Novagear" width="\d+" height="\d+"')
             self.assertRegex(sup, r'<img src="(?:\.\./)?assets/sponsoren/techlabs\.png" alt="TechLabs" width="\d+" height="\d+"')
